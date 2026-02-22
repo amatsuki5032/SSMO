@@ -161,11 +161,11 @@
 // ============================================================
 const PROGRESS_DATA = {
   lastUpdated: "2026-02-23",
-  currentMilestone: "m1",
+  currentMilestone: "m2",
   milestones: {
     m0: { progress: 100, status: "done" },
-    m1: { progress: 83, status: "active" },
-    m2: { progress: 0, status: "locked" },
+    m1: { progress: 100, status: "done" },
+    m2: { progress: 0, status: "active" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
@@ -276,13 +276,13 @@ const PROGRESS_DATA = {
     {
       id: "m1-5",
       title: "ラグコンペンセーション基盤",
-      status: "todo",
+      status: "done",
       desc: "攻撃時にサーバーが過去に巻き戻してヒット判定",
       details: [
-        { text: "ワールドスナップショット保持（過去2秒）", done: false },
-        { text: "タイムスタンプ付き巻き戻し機構", done: false },
-        { text: "巻き戻し状態でのヒット判定API", done: false },
-        { text: "最大補正時間 150ms 上限", done: false },
+        { text: "ワールドスナップショット保持（過去2秒）", done: true },
+        { text: "タイムスタンプ付き巻き戻し機構", done: true },
+        { text: "巻き戻し状態でのヒット判定API", done: true },
+        { text: "最大補正時間 150ms 上限", done: true },
       ],
     },
     {

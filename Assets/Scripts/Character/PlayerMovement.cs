@@ -125,6 +125,9 @@ public class PlayerMovement : NetworkBehaviour
         {
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
+
+            // ラグコンペンセーション用にプレイヤーを登録
+            LagCompensationManager.Instance.RegisterPlayer(OwnerClientId, transform);
         }
 
         // オーナーのみ予測バッファを確保（他プレイヤーのインスタンスでは不要）
@@ -156,6 +159,12 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        // サーバー: ラグコンペンセーション登録解除
+        if (IsServer)
+        {
+            LagCompensationManager.Instance.UnregisterPlayer(OwnerClientId);
+        }
+
         // コールバック解除（メモリリーク防止）
         if (!IsOwner && !IsServer)
         {
