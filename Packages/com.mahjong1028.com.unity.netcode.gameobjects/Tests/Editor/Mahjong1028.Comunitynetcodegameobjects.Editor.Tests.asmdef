@@ -1,0 +1,14 @@
+{
+    "name": "Mahjong1028.Comunitynetcodegameobjects.Editor.Tests",
+    "references": [
+        "Mahjong1028.Comunitynetcodegameobjects.Editor",
+        "Mahjong1028.Comunitynetcodegameobjects"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

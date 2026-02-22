@@ -1,0 +1,30 @@
+# Unity generated
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+Recording/
+
+# IDE
+.vs/
+.vscode/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Unity asset imports
+*.meta
+
+# ParrelSync clones
+ParrelSync/

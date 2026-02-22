@@ -1,0 +1,11 @@
+{
+    "name": "Mahjong1028.Comunitynetcodegameobjects.Tests",
+    "references": [
+        "Mahjong1028.Comunitynetcodegameobjects"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

@@ -1,0 +1,10 @@
+{
+    "name": "Mahjong1028.Comunitynetcodegameobjects.Editor",
+    "references": [
+      "Mahjong1028.Comunitynetcodegameobjects"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
