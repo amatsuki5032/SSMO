@@ -55,4 +55,9 @@ public static class GameConfig
     // === M1: Prediction & Reconciliation ===
     public const int PREDICTION_BUFFER_SIZE = 1024;        // 予測用リングバッファサイズ（約17秒分 @60Hz）
     public const float RECONCILIATION_THRESHOLD = 0.01f;   // リコンシリエーション発動閾値 (m)
+
+    // === M1-4: Interpolation（他プレイヤー補間表示）===
+    public const float INTERPOLATION_DELAY = 0.1f;         // 補間遅延 (秒)。表示時刻を100ms遅らせる
+    public const float SNAP_THRESHOLD = 5f;                // スナップ閾値 (m)。これ以上離れたら補間せず瞬間移動
+    public const int INTERPOLATION_BUFFER_SIZE = 32;       // 補間用リングバッファサイズ（約1秒分 @30Hz）
 }

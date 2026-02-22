@@ -8,7 +8,7 @@ using UnityEngine;
 /// 1. クライアント（IsOwner）: FixedUpdate で入力取得 → ローカル予測 → ServerRpc 送信
 /// 2. サーバー: 入力受信 → 権威的な移動計算 → NetworkVariable 更新 → ClientRpc で確定状態返送
 /// 3. クライアント（IsOwner）: サーバー確定状態と予測を比較 → ズレたら巻き戻し＋再シミュレーション
-/// 4. 他プレイヤー（!IsOwner）: NetworkVariable を直接反映（M1-4 で補間に変更予定）
+/// 4. 他プレイヤー（!IsOwner）: 補間表示（100ms遅延で滑らかに表示）
 ///
 /// 参考: Gabriel Gambetta "Client-Side Prediction and Server Reconciliation"
 /// </summary>
@@ -45,6 +45,17 @@ public class PlayerMovement : NetworkBehaviour
         public Vector3 Position;
         public float RotationY;
         public float VerticalVelocity;
+    }
+
+    /// <summary>
+    /// 補間用スナップショット。他プレイヤー表示の滑らか補間に使う
+    /// サーバーから受信した位置・回転をタイムスタンプ付きで保持する
+    /// </summary>
+    private struct InterpolationState
+    {
+        public double Timestamp;
+        public Vector3 Position;
+        public float RotationY;
     }
 
     // ============================================================
@@ -92,6 +103,13 @@ public class PlayerMovement : NetworkBehaviour
     // サーバーから最後に受信した確定ティック。古いパケットの破棄に使用
     private uint _lastServerTick;
 
+    // --- 補間用リングバッファ（!IsOwner 用）---
+    // サーバーから受信した状態を時系列順に保持し、
+    // 100ms 遅延で2点間を Lerp することで滑らかに表示する
+    private InterpolationState[] _interpBuffer;
+    private int _interpCount;      // バッファ内の有効エントリ数
+    private int _interpWriteIdx;   // 次の書き込み位置
+
     // ============================================================
     // ライフサイクル
     // ============================================================
@@ -114,6 +132,34 @@ public class PlayerMovement : NetworkBehaviour
         {
             _inputBuffer = new MoveInput[GameConfig.PREDICTION_BUFFER_SIZE];
             _stateBuffer = new MoveState[GameConfig.PREDICTION_BUFFER_SIZE];
+        }
+
+        // リモートクライアント上の他プレイヤー: 補間バッファを初期化
+        // サーバー（ホスト含む）は ApplyMovement で直接 transform を更新するため不要
+        if (!IsOwner && !IsServer)
+        {
+            _interpBuffer = new InterpolationState[GameConfig.INTERPOLATION_BUFFER_SIZE];
+
+            // 初期状態をバッファに記録（OnValueChanged は初期値では発火しないため）
+            _interpBuffer[0] = new InterpolationState
+            {
+                Timestamp = NetworkManager.Singleton.ServerTime.Time,
+                Position = _netPosition.Value,
+                RotationY = _netRotationY.Value
+            };
+            _interpWriteIdx = 1;
+            _interpCount = 1;
+
+            _netPosition.OnValueChanged += OnNetPositionChanged;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        // コールバック解除（メモリリーク防止）
+        if (!IsOwner && !IsServer)
+        {
+            _netPosition.OnValueChanged -= OnNetPositionChanged;
         }
     }
 
@@ -141,15 +187,115 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     /// <summary>
-    /// LateUpdate: 他プレイヤー表示更新
-    /// M1-4 で補間（Interpolation）に差し替え予定
+    /// LateUpdate: 他プレイヤーの補間表示（描画FPS で実行）
+    /// 100ms 遅延で過去の2状態間を線形補間し、30Hz の状態更新を滑らかに表示する
     /// </summary>
     private void LateUpdate()
     {
+        // オーナーはクライアント予測で表示するため補間不要
         if (IsOwner) return;
 
-        transform.position = _netPosition.Value;
-        transform.rotation = Quaternion.Euler(0f, _netRotationY.Value, 0f);
+        // サーバー（ホスト含む）は ApplyMovement で直接 transform を更新しているため補間不要
+        if (IsServer) return;
+
+        ApplyInterpolation();
+    }
+
+    // ============================================================
+    // 補間処理（他プレイヤー表示用）
+    // ============================================================
+
+    /// <summary>
+    /// NetworkVariable の位置変更コールバック
+    /// サーバーから受信した状態をタイムスタンプ付きでリングバッファに記録する
+    /// </summary>
+    private void OnNetPositionChanged(Vector3 oldValue, Vector3 newValue)
+    {
+        _interpBuffer[_interpWriteIdx] = new InterpolationState
+        {
+            Timestamp = NetworkManager.Singleton.ServerTime.Time,
+            Position = newValue,
+            RotationY = _netRotationY.Value
+        };
+        _interpWriteIdx = (_interpWriteIdx + 1) % GameConfig.INTERPOLATION_BUFFER_SIZE;
+        if (_interpCount < GameConfig.INTERPOLATION_BUFFER_SIZE)
+            _interpCount++;
+    }
+
+    /// <summary>
+    /// 補間表示の適用
+    /// 表示時刻（現在 - 100ms）を挟む2つの状態スナップショットを見つけ、
+    /// 線形補間で滑らかに表示する
+    /// </summary>
+    private void ApplyInterpolation()
+    {
+        // バッファが空なら NetworkVariable の値を直接適用（安全策）
+        if (_interpCount == 0)
+        {
+            transform.position = _netPosition.Value;
+            transform.rotation = Quaternion.Euler(0f, _netRotationY.Value, 0f);
+            return;
+        }
+
+        // 表示時刻 = 現在のサーバー時刻 - 補間遅延（100ms）
+        // 過去の状態を表示することで、パケット間の補間が可能になる
+        double renderTime = NetworkManager.Singleton.ServerTime.Time - GameConfig.INTERPOLATION_DELAY;
+
+        // バッファから補間対象の2状態を探す
+        // 最古のエントリから順に走査し、renderTime を挟む区間を見つける
+        int oldestIdx = (_interpWriteIdx - _interpCount + GameConfig.INTERPOLATION_BUFFER_SIZE)
+                        % GameConfig.INTERPOLATION_BUFFER_SIZE;
+
+        InterpolationState before = default;
+        InterpolationState after = default;
+        bool found = false;
+
+        for (int i = 0; i < _interpCount - 1; i++)
+        {
+            int currIdx = (oldestIdx + i) % GameConfig.INTERPOLATION_BUFFER_SIZE;
+            int nextIdx = (oldestIdx + i + 1) % GameConfig.INTERPOLATION_BUFFER_SIZE;
+
+            if (_interpBuffer[currIdx].Timestamp <= renderTime
+                && renderTime <= _interpBuffer[nextIdx].Timestamp)
+            {
+                before = _interpBuffer[currIdx];
+                after = _interpBuffer[nextIdx];
+                found = true;
+                break;
+            }
+        }
+
+        // 補間対象が見つからない場合（バッファ不足・パケットロス）
+        // 最新の状態をそのまま適用する安全策
+        if (!found)
+        {
+            int newestIdx = (_interpWriteIdx - 1 + GameConfig.INTERPOLATION_BUFFER_SIZE)
+                            % GameConfig.INTERPOLATION_BUFFER_SIZE;
+            transform.position = _interpBuffer[newestIdx].Position;
+            transform.rotation = Quaternion.Euler(0f, _interpBuffer[newestIdx].RotationY, 0f);
+            return;
+        }
+
+        // スナップ閾値チェック: 距離が大きすぎる場合は瞬間移動（テレポート対策）
+        if (Vector3.Distance(before.Position, after.Position) > GameConfig.SNAP_THRESHOLD)
+        {
+            transform.position = after.Position;
+            transform.rotation = Quaternion.Euler(0f, after.RotationY, 0f);
+            return;
+        }
+
+        // 2状態間の線形補間
+        double duration = after.Timestamp - before.Timestamp;
+        float t = (duration > 0.0)
+            ? Mathf.Clamp01((float)((renderTime - before.Timestamp) / duration))
+            : 1f;
+
+        transform.position = Vector3.Lerp(before.Position, after.Position, t);
+        transform.rotation = Quaternion.Slerp(
+            Quaternion.Euler(0f, before.RotationY, 0f),
+            Quaternion.Euler(0f, after.RotationY, 0f),
+            t
+        );
     }
 
     // ============================================================

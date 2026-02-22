@@ -160,11 +160,11 @@
 // status: "done" | "inprogress" | "todo"
 // ============================================================
 const PROGRESS_DATA = {
-  lastUpdated: "2026-02-22",
+  lastUpdated: "2026-02-23",
   currentMilestone: "m1",
   milestones: {
     m0: { progress: 100, status: "done" },
-    m1: { progress: 50, status: "active" },
+    m1: { progress: 83, status: "active" },
     m2: { progress: 0, status: "locked" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
@@ -264,13 +264,13 @@ const PROGRESS_DATA = {
     {
       id: "m1-4",
       title: "他プレイヤーの補間表示",
-      status: "todo",
+      status: "done",
       desc: "100ms遅延の滑らか補間 + スナップ閾値",
       details: [
-        { text: "状態バッファリング（直近N個保持）", done: false },
-        { text: "線形補間（Lerp）実装", done: false },
-        { text: "補間遅延 100ms 設定", done: false },
-        { text: "スナップ閾値（大きなズレは瞬間移動）", done: false },
+        { text: "状態バッファリング（直近N個保持）", done: true },
+        { text: "線形補間（Lerp）実装", done: true },
+        { text: "補間遅延 100ms 設定", done: true },
+        { text: "スナップ閾値（大きなズレは瞬間移動）", done: true },
       ],
     },
     {
