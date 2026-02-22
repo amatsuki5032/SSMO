@@ -51,4 +51,8 @@ public static class GameConfig
     public const float ROTATION_SPEED = 720f;          // 回転速度 (deg/s)
     public const float GRAVITY = -20f;                 // 重力加速度 (m/s²)
     public const float GROUND_STICK_FORCE = -2f;       // 接地時の下向き力（斜面での浮き防止）
+
+    // === M1: Prediction & Reconciliation ===
+    public const int PREDICTION_BUFFER_SIZE = 1024;        // 予測用リングバッファサイズ（約17秒分 @60Hz）
+    public const float RECONCILIATION_THRESHOLD = 0.01f;   // リコンシリエーション発動閾値 (m)
 }

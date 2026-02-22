@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSMO Progress Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0C0C12;
+    color: #E4E4E7;
+    padding: 24px 20px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    padding: 20px 0 24px;
+    border-bottom: 1px solid #27272A;
+    margin-bottom: 24px;
+  }
+  .header-tag { font-size: 11px; letter-spacing: 4px; color: #EF4444; font-weight: 700; margin-bottom: 8px; }
+  .header h1 { font-size: 22px; font-weight: 900; color: #FAFAFA; margin-bottom: 6px; }
+  .header-sub { font-size: 12px; color: #71717A; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .stat-card {
+    background: #16161C; border-radius: 12px; padding: 16px; border: 1px solid #27272A;
+  }
+  .stat-card.active { border-color: #EF444430; }
+  .stat-label { font-size: 11px; color: #71717A; margin-bottom: 8px; }
+  .stat-label.red { color: #EF4444; }
+  .stat-value { font-size: 28px; font-weight: 900; color: #FAFAFA; }
+  .progress-bar { height: 4px; background: #27272A; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+  .progress-fill.gradient { background: linear-gradient(90deg, #EF4444, #F59E0B); }
+  .progress-fill.red { background: #EF4444; }
+
+  .section-title { font-size: 13px; font-weight: 700; color: #A1A1AA; margin-bottom: 12px; }
+
+  .milestone-bar { display: flex; gap: 4px; margin-bottom: 24px; }
+  .milestone-item {
+    flex: 1; text-align: center; padding: 10px 4px; border-radius: 8px;
+    background: #16161C; border: 1px solid #27272A; cursor: default;
+  }
+  .milestone-item.done { border-color: #10B98140; background: #10B98110; }
+  .milestone-item.active { border-color: #EF444440; background: #EF444410; }
+  .milestone-icon { font-size: 16px; margin-bottom: 4px; }
+  .milestone-label { font-size: 10px; font-weight: 700; }
+  .milestone-label.done { color: #10B981; }
+  .milestone-label.active { color: #EF4444; }
+  .milestone-label.locked { color: #52525B; }
+
+  .task-card {
+    background: #16161C; border-radius: 10px; border: 1px solid #27272A;
+    margin-bottom: 8px; overflow: hidden;
+  }
+  .task-card.inprogress { border-color: #F59E0B40; }
+  .task-header {
+    padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  }
+  .task-header:hover { background: #1a1a22; }
+  .task-icon { font-size: 16px; }
+  .task-title { font-size: 13px; font-weight: 700; color: #FAFAFA; }
+  .task-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600;
+  }
+  .task-badge.done { background: #10B98118; color: #10B981; }
+  .task-badge.inprogress { background: #F59E0B18; color: #F59E0B; }
+  .task-badge.todo { background: #6B728018; color: #6B7280; }
+  .task-desc { font-size: 11px; color: #71717A; margin-top: 2px; }
+  .task-count { font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .task-count.done { color: #10B981; }
+  .task-count.inprogress { color: #F59E0B; }
+  .task-count.todo { color: #6B7280; }
+  .task-progress { height: 2px; background: #27272A; margin: 0 16px; }
+  .task-progress-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
+  .task-arrow { color: #52525B; font-size: 10px; transition: transform 0.2s; }
+  .task-arrow.open { transform: rotate(180deg); }
+  .task-details {
+    padding: 12px 16px 14px; border-top: 1px solid #27272A; display: none;
+  }
+  .task-details.open { display: block; }
+  .detail-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+  .detail-check { font-size: 14px; }
+  .detail-check.done { color: #10B981; }
+  .detail-check.todo { color: #374151; }
+  .detail-text.done { color: #A1A1AA; text-decoration: line-through; }
+  .detail-text.todo { color: #71717A; }
+
+  .principles {
+    padding: 14px; background: #16161C; border-radius: 10px;
+    border: 1px solid #EF444420; font-size: 11px; color: #71717A; line-height: 1.8;
+    margin-top: 20px;
+  }
+  .principles-title { font-weight: 700; color: #EF4444; font-size: 12px; margin-bottom: 4px; }
+  .principles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .principle { display: flex; gap: 6px; align-items: flex-start; }
+  .principle-dot { color: #EF4444; flex-shrink: 0; }
+
+  .footer { text-align: center; margin-top: 20px; font-size: 10px; color: #3F3F46; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-tag">SSMO DEVELOPMENT TRACKER</div>
+  <h1>真三國無双Online風 4v4アクション対戦</h1>
+  <div class="header-sub">サーバー権威型 × クライアント予測 × 60Hz固定ティック</div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">全体進捗</div>
+    <div class="stat-value" id="overall-percent">--%</div>
+    <div class="progress-bar"><div class="progress-fill gradient" id="overall-bar" style="width:0%"></div></div>
+  </div>
+  <div class="stat-card active">
+    <div class="stat-label red">M1 進捗（現在）</div>
+    <div class="stat-value" id="m1-count">-/-</div>
+    <div class="progress-bar"><div class="progress-fill red" id="m1-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="section-title">マイルストーン</div>
+<div class="milestone-bar" id="milestone-bar"></div>
+
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#EF4444;margin-bottom:12px;">
+  🌐 M1: ネットワーク同期基盤 — タスク詳細
+</div>
+<div id="task-list"></div>
+
+<div class="principles">
+  <div class="principles-title">🔒 アーキテクチャ原則</div>
+  <div class="principles-grid">
+    <div class="principle"><span class="principle-dot">■</span>サーバー権威型（クライアント値を信用しない）</div>
+    <div class="principle"><span class="principle-dot">■</span>FixedUpdate 60Hz 固定ティック</div>
+    <div class="principle"><span class="principle-dot">■</span>ネットワーク前提設計（後付け禁止）</div>
+    <div class="principle"><span class="principle-dot">■</span>動作最優先（箱人間でOK）</div>
+  </div>
+</div>
+
+<div class="footer" id="footer">SSMO © 2025 amatsuki5032</div>
+
+<script>
+// ============================================================
+// ★★★ CCが更新するのはこの PROGRESS_DATA だけ ★★★
+// タスク完了時に status と details[].done を更新する
+// status: "done" | "inprogress" | "todo"
+// ============================================================
+const PROGRESS_DATA = {
+  lastUpdated: "2026-02-22",
+  currentMilestone: "m1",
+  milestones: {
+    m0: { progress: 100, status: "done" },
+    m1: { progress: 50, status: "active" },
+    m2: { progress: 0, status: "locked" },
+    m3: { progress: 0, status: "locked" },
+    m4: { progress: 0, status: "locked" },
+    m5: { progress: 0, status: "locked" },
+    m6: { progress: 0, status: "locked" },
+  },
+  m1Tasks: [
+    {
+      id: "m1-1",
+      title: "NetworkPlayer Prefab",
+      status: "done",
+      desc: "箱人間 + NetworkObject + CharacterController",
+      details: [
+        { text: "箱人間モデル（Body/Head/Nose）作成", done: true },
+        { text: "NetworkObject コンポーネント追加", done: true },
+        { text: "CharacterController 設定", done: true },
+        { text: "Prefab化 + NetworkManager登録", done: true },
+      ],
+    },
+    {
+      id: "m1-2",
+      title: "サーバー権威型 移動同期",
+      status: "done",
+      desc: "入力→ServerRpc→サーバー計算→NetworkVariable同期",
+      details: [
+        { text: "PlayerMovement.cs 作成", done: true },
+        { text: "NetworkVariable で位置・回転同期", done: true },
+        { text: "ServerRpc で入力送信 + バリデーション", done: true },
+        { text: "重力処理 + 回転同期", done: true },
+        { text: "ParrelSync 2人接続テスト成功", done: true },
+      ],
+    },
+    {
+      id: "m1-3",
+      title: "クライアント予測 + リコンシリエーション",
+      status: "done",
+      desc: "ローカル即時実行→サーバー確認→ズレ修正",
+      details: [
+        { text: "FixedUpdate ベースに移行", done: true },
+        { text: "ティック番号システム", done: true },
+        { text: "入力バッファ（リングバッファ）", done: true },
+        { text: "クライアント予測（ローカル即時実行）", done: true },
+        { text: "サーバー確定状態の返送", done: true },
+        { text: "リコンシリエーション（巻き戻し再計算）", done: true },
+      ],
+    },
+    {
+      id: "m1-4",
+      title: "他プレイヤーの補間表示",
+      status: "todo",
+      desc: "100ms遅延の滑らか補間 + スナップ閾値",
+      details: [
+        { text: "状態バッファリング（直近N個保持）", done: false },
+        { text: "線形補間（Lerp）実装", done: false },
+        { text: "補間遅延 100ms 設定", done: false },
+        { text: "スナップ閾値（大きなズレは瞬間移動）", done: false },
+      ],
+    },
+    {
+      id: "m1-5",
+      title: "ラグコンペンセーション基盤",
+      status: "todo",
+      desc: "攻撃時にサーバーが過去に巻き戻してヒット判定",
+      details: [
+        { text: "ワールドスナップショット保持（過去2秒）", done: false },
+        { text: "タイムスタンプ付き巻き戻し機構", done: false },
+        { text: "巻き戻し状態でのヒット判定API", done: false },
+        { text: "最大補正時間 150ms 上限", done: false },
+      ],
+    },
+    {
+      id: "m1-6",
+      title: "ネットワーク統計HUD",
+      status: "done",
+      desc: "RTT / PacketLoss / 接続状態の表示",
+      details: [
+        { text: "OnGUI ベースの HUD 実装", done: true },
+        { text: "RTT(ms) 表示", done: true },
+        { text: "PacketLoss(%) 表示", done: true },
+        { text: "未接続時 Not Connected 表示", done: true },
+      ],
+    },
+  ],
+};
+// ============================================================
+// ★★★ ここまでがCC更新対象 ★★★
+// ============================================================
+
+const MILESTONES_META = [
+  { id: "m0", label: "M0", title: "環境構築", icon: "🏗️", color: "#10B981" },
+  { id: "m1", label: "M1", title: "ネットワーク同期", icon: "🌐", color: "#EF4444" },
+  { id: "m2", label: "M2", title: "戦闘アクション", icon: "⚔️", color: "#F59E0B" },
+  { id: "m3", label: "M3", title: "4v4対戦", icon: "🏰", color: "#8B5CF6" },
+  { id: "m4", label: "M4", title: "キャラ&コンテンツ", icon: "🎭", color: "#06B6D4" },
+  { id: "m5", label: "M5", title: "インフラ", icon: "🛡️", color: "#EC4899" },
+  { id: "m6", label: "M6", title: "α版", icon: "✨", color: "#F97316" },
+];
+
+const STATUS_ICONS = { done: "✅", inprogress: "🔨", todo: "⬜" };
+const STATUS_LABELS = { done: "完了", inprogress: "作業中", todo: "未着手" };
+const STATUS_COLORS = { done: "#10B981", inprogress: "#F59E0B", todo: "#6B7280" };
+
+function render() {
+  const d = PROGRESS_DATA;
+
+  // Overall progress
+  const weights = { m0: 5, m1: 20, m2: 25, m3: 20, m4: 15, m5: 10, m6: 5 };
+  let overall = 0;
+  MILESTONES_META.forEach(m => {
+    overall += (d.milestones[m.id].progress / 100) * weights[m.id];
+  });
+  overall = Math.round(overall);
+  document.getElementById("overall-percent").textContent = overall + "%";
+  document.getElementById("overall-bar").style.width = overall + "%";
+
+  // M1 progress
+  const m1Done = d.m1Tasks.filter(t => t.status === "done").length;
+  const m1Total = d.m1Tasks.length;
+  const m1Pct = Math.round((m1Done / m1Total) * 100);
+  document.getElementById("m1-count").textContent = m1Done + "/" + m1Total;
+  document.getElementById("m1-bar").style.width = m1Pct + "%";
+
+  // Milestone bar
+  const mBar = document.getElementById("milestone-bar");
+  mBar.innerHTML = "";
+  MILESTONES_META.forEach(m => {
+    const ms = d.milestones[m.id];
+    const div = document.createElement("div");
+    div.className = "milestone-item " + ms.status;
+    if (ms.status === "active") div.style.borderColor = m.color + "40";
+    if (ms.status === "active") div.style.background = m.color + "10";
+    if (ms.status === "done") div.style.borderColor = m.color + "40";
+    if (ms.status === "done") div.style.background = m.color + "10";
+    div.innerHTML = `
+      <div class="milestone-icon">${m.icon}</div>
+      <div class="milestone-label ${ms.status}" style="color:${ms.status === "locked" ? "#52525B" : m.color}">${m.label}</div>
+      <div class="progress-bar" style="margin-top:6px"><div style="height:100%;width:${ms.progress}%;background:${m.color};border-radius:2px"></div></div>
+    `;
+    mBar.appendChild(div);
+  });
+
+  // Task list
+  const tList = document.getElementById("task-list");
+  tList.innerHTML = "";
+  d.m1Tasks.forEach(task => {
+    const sc = STATUS_COLORS[task.status];
+    const doneCount = task.details.filter(x => x.done).length;
+    const totalCount = task.details.length;
+    const pct = Math.round((doneCount / totalCount) * 100);
+    const isDefault = task.status === "inprogress";
+
+    const card = document.createElement("div");
+    card.className = "task-card" + (task.status === "inprogress" ? " inprogress" : "");
+
+    card.innerHTML = `
+      <div class="task-header" onclick="toggleTask('${task.id}')">
+        <span class="task-icon">${STATUS_ICONS[task.status]}</span>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="task-title">${task.title}</span>
+            <span class="task-badge ${task.status}">${STATUS_LABELS[task.status]}</span>
+          </div>
+          <div class="task-desc">${task.desc}</div>
+        </div>
+        <div class="task-count ${task.status}">${doneCount}/${totalCount}</div>
+        <span class="task-arrow${isDefault ? " open" : ""}" id="arrow-${task.id}">▼</span>
+      </div>
+      <div class="task-progress"><div class="task-progress-fill" style="width:${pct}%;background:${sc}"></div></div>
+      <div class="task-details${isDefault ? " open" : ""}" id="details-${task.id}">
+        ${task.details.map(x => `
+          <div class="detail-item">
+            <span class="detail-check ${x.done ? "done" : "todo"}">${x.done ? "✓" : "○"}</span>
+            <span class="detail-text ${x.done ? "done" : "todo"}">${x.text}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    tList.appendChild(card);
+  });
+
+  // Footer
+  document.getElementById("footer").textContent =
+    `SSMO © 2025 amatsuki5032 — Last updated: ${d.lastUpdated}`;
+}
+
+function toggleTask(id) {
+  const details = document.getElementById("details-" + id);
+  const arrow = document.getElementById("arrow-" + id);
+  details.classList.toggle("open");
+  arrow.classList.toggle("open");
+}
+
+render();
+</script>
+</body>
+</html>

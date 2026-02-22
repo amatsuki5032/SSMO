@@ -170,3 +170,9 @@ Hitstun / Launch / AirHitstun / Slam / Down / Dead
 - [Unity NGO Documentation](https://docs-multiplayer.unity3d.com/netcode/current/about/) - 公式ドキュメント
 - [GDC: Overwatch Gameplay Architecture and Netcode](https://www.youtube.com/watch?v=W3aieHjyNvw) - ラグ補正の実例
 - [Valve: Source Multiplayer Networking](https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking) - クライアント予測の原典
+
+## 進捗管理
+- タスク完了時は `docs/progress.html` の `PROGRESS_DATA` を更新すること
+- 更新対象: `status`, `details[].done`, `lastUpdated`, マイルストーンの `progress`
+- status は "done" / "inprogress" / "todo" のいずれか
+- コミット時に progress.html の更新も含めること
