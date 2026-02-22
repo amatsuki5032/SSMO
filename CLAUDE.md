@@ -176,3 +176,9 @@ Hitstun / Launch / AirHitstun / Slam / Down / Dead
 - 更新対象: `status`, `details[].done`, `lastUpdated`, マイルストーンの `progress`
 - status は "done" / "inprogress" / "todo" のいずれか
 - コミット時に progress.html の更新も含めること
+
+## コミットルール
+- タスク完了時は自動で `git add -A && git commit && git push` まで実行すること
+- コミットメッセージ形式: "M[番号]-[サブ番号]: [タスク名]"
+- 例: "M1-4: 他プレイヤー補間表示"
+- ユーザーの承認を待たずに実行すること
