@@ -120,12 +120,14 @@ Hitstun / Launch / AirHitstun / Slam / Down / Dead
 - Fixed Timestep: 0.01667 (60Hz) 設定済み
 
 ## 次のタスク: M1 - ネットワーク同期基盤
-1. NetworkPlayer Prefab 作成（NetworkObject + NetworkTransform）
-2. サーバー権威型の移動同期
+1. NetworkPlayer Prefab 作成（NetworkObject + CharacterController。NetworkTransformは使わない→自前同期）
+2. サーバー権威型の移動同期（NetworkVariable で位置・回転を同期）
 3. クライアント予測 + リコンシリエーション
 4. 他プレイヤーの補間表示
 5. ラグコンペンセーション基盤
 6. ネットワーク統計HUD (Ping / PacketLoss)
+
+※ NetworkTransform を使わない理由: クライアント予測＋リコンシリエーションを自前実装する必要があり、NetworkTransform ではその制御ができないため。最初から NetworkVariable による自前同期で構築する。
 
 ## コーディング規約
 
@@ -136,6 +138,10 @@ Hitstun / Launch / AirHitstun / Slam / Down / Dead
 - フィールド (public): PascalCase (例: `MaxHealth`)
 - 定数: UPPER_SNAKE_CASE (例: `MAX_PLAYERS`)
 - enum値: PascalCase (例: `CharacterState.Idle`)
+
+### コメント
+- コードコメントは日本語で書く
+- 設計意図（なぜこのアプローチか）を必ずコメントに含める
 
 ### ネットワーク関連の規約
 - サーバー専用処理は `[ServerRpc]` または `if (IsServer)` で明示

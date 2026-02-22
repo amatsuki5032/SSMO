@@ -45,4 +45,10 @@ public static class GameConfig
     public const float MUSOU_GAIN_ON_HIT = 2f;       // 攻撃ヒット時の獲得量
     public const float MUSOU_GAIN_ON_DAMAGE = 5f;    // 被ダメージ時の獲得量
     public const float MUSOU_DURATION_SEC = 4f;       // 無双乱舞持続時間
+
+    // === M1: Movement ===
+    public const float MOVE_SPEED = 6f;               // 移動速度 (m/s)
+    public const float ROTATION_SPEED = 720f;          // 回転速度 (deg/s)
+    public const float GRAVITY = -20f;                 // 重力加速度 (m/s²)
+    public const float GROUND_STICK_FORCE = -2f;       // 接地時の下向き力（斜面での浮き防止）
 }
