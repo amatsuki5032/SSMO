@@ -1,99 +1,172 @@
 using UnityEngine;
 
 /// <summary>
-/// ダメージ計算（サーバー側で実行）
+/// ダメージ計算（★サーバー側のみで実行★）
 /// クライアントの値は一切信用しない
+///
+/// 計算フロー（docs/combat-spec.md セクション16 準拠）:
+/// 1. 攻撃倍率 = モーション倍率 × 属性倍率（チャージ攻撃のみ）
+/// 2. 基礎ダメージ = ATK × 攻撃倍率
+/// 3. 防御計算 = 基礎ダメージ × (100 / (100 + DEF))   ※斬属性は DEF=0
+/// 4. 空中補正 = 空中被弾時 ÷2
+/// 5. 根性補正 = HP帯による軽減
+/// 6. ガード補正 = ガード時 ×0.2
+/// 7. 斬保証 / 最低保証
+/// 8. クリティカル判定
 /// </summary>
 public static class DamageCalculator
 {
     /// <summary>
-    /// 基本ダメージ計算
+    /// ダメージ計算結果
+    /// 斬属性はHP・無双ゲージ両方にダメージを与えるため、分離して返す
+    /// </summary>
+    public struct DamageResult
+    {
+        public int HpDamage;        // HPダメージ
+        public int MusouDamage;     // 無双ゲージダメージ（斬属性のみ、通常は0）
+        public int AttackerMusouCost; // 攻撃側の無双ゲージ減少（斬属性のみ、通常は0）
+        public bool IsCritical;     // クリティカルが発生したか
+    }
+
+    /// <summary>
+    /// メインのダメージ計算
     /// </summary>
     /// <param name="attackerATK">攻撃者の攻撃力</param>
     /// <param name="motionMultiplier">モーション倍率 (N1=0.8, C6=3.0 等)</param>
     /// <param name="defenderDEF">被弾者の防御力</param>
-    /// <param name="elementMultiplier">属性相性倍率 (有利=1.2, 不利=0.8, 等倍=1.0)</param>
-    /// <param name="isGuarding">ガード中か</param>
-    /// <param name="isJustGuard">ジャストガード成功か</param>
-    /// <returns>最終ダメージ値</returns>
-    public static int Calculate(
+    /// <param name="defenderHpRatio">被弾者の現在HP割合 (0.0〜1.0)</param>
+    /// <param name="element">攻撃の属性（チャージ攻撃のみ乗る）</param>
+    /// <param name="elementLevel">属性レベル (0〜4、0=属性なし)</param>
+    /// <param name="isAirborne">被弾者が空中か（空中補正÷2）</param>
+    /// <param name="isGuarding">被弾者がガード中か（ダメージ×0.2）</param>
+    public static DamageResult Calculate(
         float attackerATK,
         float motionMultiplier,
         float defenderDEF,
-        float elementMultiplier = 1.0f,
-        bool isGuarding = false,
-        bool isJustGuard = false)
+        float defenderHpRatio,
+        ElementType element = ElementType.None,
+        int elementLevel = 0,
+        bool isAirborne = false,
+        bool isGuarding = false)
     {
-        // 基礎ダメージ
-        float baseDamage = attackerATK * motionMultiplier;
+        var result = new DamageResult();
 
-        // 属性補正
-        baseDamage *= elementMultiplier;
+        // --- 1. 攻撃倍率 ---
+        float elementMultiplier = GetElementDamageMultiplier(element, elementLevel);
+        float attackMultiplier = motionMultiplier * elementMultiplier;
 
-        // 防御計算: ATK / (ATK + DEF) 式 → DEF が高いほど軽減
-        float defenseMultiplier = 100f / (100f + defenderDEF);
-        float damage = baseDamage * defenseMultiplier;
+        // --- 2. 基礎ダメージ ---
+        float baseDamage = attackerATK * attackMultiplier;
 
-        // クリティカル判定 (5%確率で1.5倍)
-        if (Random.value < 0.05f)
+        // --- 3. 防御計算 ---
+        // 斬属性は防御力無視（DEF=0として計算）
+        float effectiveDEF = (element == ElementType.Slash) ? 0f : defenderDEF;
+        float damage = baseDamage * (100f / (100f + effectiveDEF));
+
+        // --- 4. 空中補正 ---
+        if (isAirborne)
         {
-            damage *= 1.5f;
+            damage /= GameConfig.AIR_DAMAGE_DIVISOR;
         }
 
-        // ガード補正
-        if (isJustGuard)
-        {
-            damage = 0f;
-        }
-        else if (isGuarding)
+        // --- 5. 根性補正（HP帯によるダメージ軽減）---
+        damage /= GetGutsDivisor(defenderHpRatio);
+
+        // --- 6. ガード補正 ---
+        if (isGuarding)
         {
             damage *= (1f - GameConfig.GUARD_DAMAGE_REDUCTION);
         }
 
-        // 最低ダメージ保証 (1)
-        return Mathf.Max(1, Mathf.RoundToInt(damage));
+        // --- 7. 斬保証 ---
+        if (element == ElementType.Slash)
+        {
+            float slashMinDamage = GetSlashMinDamage(elementLevel);
+            damage = Mathf.Max(damage, slashMinDamage);
+        }
+
+        // --- 8. クリティカル判定 (5%確率で×1.5) ---
+        if (Random.value < 0.05f)
+        {
+            damage *= 1.5f;
+            result.IsCritical = true;
+        }
+
+        // --- 最低ダメージ保証 ---
+        result.HpDamage = Mathf.Max(1, Mathf.RoundToInt(damage));
+
+        // --- 斬属性: 無双ゲージにもダメージ + 攻撃側の無双も減少 ---
+        if (element == ElementType.Slash)
+        {
+            result.MusouDamage = result.HpDamage;
+            result.AttackerMusouCost = Mathf.RoundToInt(result.HpDamage * 0.5f); // 仮値
+        }
+
+        return result;
     }
+
+    // ============================================================
+    // 属性倍率
+    // ============================================================
 
     /// <summary>
-    /// 属性相性テーブル
-    /// 火 > 風 > 雷 > 氷 > 火
+    /// 属性レベルに応じたダメージ倍率を返す
+    /// 属性なし or レベル0 の場合は 1.0（等倍）
+    ///
+    /// 属性同士の相性はない。倍率は属性種別×レベルで決まる
     /// </summary>
-    public static float GetElementMultiplier(ElementType attacker, ElementType defender)
+    public static float GetElementDamageMultiplier(ElementType element, int level)
     {
-        if (attacker == ElementType.None || defender == ElementType.None)
-            return 1.0f;
+        if (level <= 0) return 1.0f;
 
-        // 有利属性
-        if ((attacker == ElementType.Fire  && defender == ElementType.Wind) ||
-            (attacker == ElementType.Wind  && defender == ElementType.Thunder) ||
-            (attacker == ElementType.Thunder && defender == ElementType.Ice) ||
-            (attacker == ElementType.Ice   && defender == ElementType.Fire))
+        // 各属性の1レベルあたりの倍率増分
+        float perLevel = element switch
         {
-            return 1.2f;
-        }
+            ElementType.Fire    => 0.175f,  // Lv1: ×1.175, Lv4: ×1.70
+            ElementType.Ice     => 0.25f,   // Lv1: ×1.25,  Lv4: ×2.00
+            ElementType.Thunder => 0.50f,   // Lv1: ×1.50,  Lv4: ×3.00
+            ElementType.Wind    => 0.50f,   // Lv1: ×1.50,  Lv4: ×3.00
+            ElementType.Slash   => 0f,      // 斬は倍率ではなく最低保証で処理
+            _                   => 0f,
+        };
 
-        // 不利属性
-        if ((defender == ElementType.Fire  && attacker == ElementType.Wind) ||
-            (defender == ElementType.Wind  && attacker == ElementType.Thunder) ||
-            (defender == ElementType.Thunder && attacker == ElementType.Ice) ||
-            (defender == ElementType.Ice   && attacker == ElementType.Fire))
-        {
-            return 0.8f;
-        }
-
-        // 同属性 or その他
-        return 1.0f;
+        return 1.0f + perLevel * level;
     }
-}
 
-/// <summary>
-/// 属性タイプ
-/// </summary>
-public enum ElementType
-{
-    None,
-    Fire,    // 火
-    Ice,     // 氷
-    Thunder, // 雷
-    Wind     // 風
+    // ============================================================
+    // 根性補正
+    // ============================================================
+
+    /// <summary>
+    /// HP帯による被ダメージ軽減除数を返す
+    /// 青帯 (50-100%): ÷1 / 黄帯 (20-50%): ÷1.5 / 赤帯 (0-20%): ÷2
+    /// HP が低いほど硬くなる設計（逆転要素）
+    /// </summary>
+    public static float GetGutsDivisor(float hpRatio)
+    {
+        if (hpRatio > GameConfig.GUTS_BLUE_THRESHOLD)
+            return 1f;
+        if (hpRatio > GameConfig.GUTS_YELLOW_THRESHOLD)
+            return GameConfig.GUTS_YELLOW_DIVISOR;
+        return GameConfig.GUTS_RED_DIVISOR;
+    }
+
+    // ============================================================
+    // 斬属性最低保証
+    // ============================================================
+
+    /// <summary>
+    /// 斬属性のレベル別最低保証ダメージ
+    /// </summary>
+    public static float GetSlashMinDamage(int level)
+    {
+        return level switch
+        {
+            1 => 10f,
+            2 => 20f,
+            3 => 30f,
+            4 => 40f,
+            _ => 0f,
+        };
+    }
 }

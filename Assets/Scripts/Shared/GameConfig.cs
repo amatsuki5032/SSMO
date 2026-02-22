@@ -24,17 +24,19 @@ public static class GameConfig
     public const int RESPAWN_TIME_SECONDS = 5;       // リスポーン時間
 
     // === 戦闘 ===
-    public const float HITSTOP_NORMAL_SEC = 0.05f;   // 通常ヒットストップ (3F@60Hz)
-    public const float HITSTOP_HEAVY_SEC = 0.083f;   // 重攻撃ヒットストップ (5F@60Hz)
-    public const float COMBO_INPUT_WINDOW_SEC = 0.25f; // コンボ入力受付ウィンドウ
-    public const float INPUT_BUFFER_SEC = 0.15f;     // 先行入力バッファ
+    // ※ ヒットストップなし（常時戦闘が流れるスピード感を重視）
+    public const float INPUT_BUFFER_SEC = 0.15f;     // 先行入力バッファ (150ms)
+    // コンボ受付ウィンドウ: 各攻撃モーションの最後30%フレーム（モーション依存）
 
-    // === ガード & 回避 ===
-    public const float GUARD_DAMAGE_REDUCTION = 0.8f;  // ガード時ダメージカット率
-    public const float JUST_GUARD_WINDOW_SEC = 0.2f;   // ジャストガード受付時間
-    public const float DODGE_INVINCIBLE_SEC = 0.1f;    // 回避無敵フレーム (6F@60Hz)
-    public const float DODGE_RECOVERY_SEC = 0.2f;      // 回避硬直時間
-    public const int MAX_CONSECUTIVE_DODGES = 3;       // 連続回避上限
+    // === ガード ===
+    public const float GUARD_DAMAGE_REDUCTION = 0.8f;  // ガード時ダメージカット率（80%カット = ×0.2）
+    public const float GUARD_ANGLE = 180f;             // ガード有効角度（正面180度）
+    public const float EG_CHARGE_SEC = 1.0f;           // エレメンタルガード準備時間（△押し込み）
+
+    // === ジャンプ ===
+    public const float JUMP_HEIGHT = 3f;               // ジャンプ高さ (m)（武器種で変動、仮値）
+    public const float JUMP_DURATION = 0.6f;           // 滞空時間 (秒)（武器種で変動、仮値）
+    public const float JUMP_INVINCIBLE_SEC = 0.067f;   // ジャンプ離陸無敵 (4F@60Hz、仮値)
 
     // === 交戦距離 ===
     public const float MELEE_RANGE_MAX = 5f;         // 近接攻撃最大距離 (m)
@@ -42,9 +44,23 @@ public static class GameConfig
 
     // === 無双ゲージ ===
     public const float MUSOU_GAUGE_MAX = 100f;
-    public const float MUSOU_GAIN_ON_HIT = 2f;       // 攻撃ヒット時の獲得量
-    public const float MUSOU_GAIN_ON_DAMAGE = 5f;    // 被ダメージ時の獲得量
+    public const float MUSOU_GAIN_ON_HIT = 2f;       // 攻撃ヒット時の獲得量（倍率依存、仮値）
+    public const float MUSOU_GAIN_ON_DAMAGE = 5f;    // 被ダメージ時の獲得量（倍率依存、仮値）
     public const float MUSOU_DURATION_SEC = 4f;       // 無双乱舞持続時間
+    // 無双ゲージ初期値: 戦闘開始時 0 / リスポーン時 MAX
+
+    // === 根性補正（HP帯によるダメージ軽減）===
+    public const float GUTS_BLUE_THRESHOLD = 0.5f;    // 青帯 (50-100%): ÷1
+    public const float GUTS_YELLOW_THRESHOLD = 0.2f;  // 黄帯 (20-50%):  ÷1.5
+    // 赤帯 (0-20%): ÷2
+    public const float GUTS_YELLOW_DIVISOR = 1.5f;
+    public const float GUTS_RED_DIVISOR = 2f;
+
+    // === 空中補正 ===
+    public const float AIR_DAMAGE_DIVISOR = 2f;       // 空中被弾ダメージ ÷2
+
+    // === ダッシュ攻撃 ===
+    public const float DASH_ATTACK_MOVE_TIME = 1.5f;  // ダッシュ攻撃発動に必要な連続移動時間 (秒、仮値)
 
     // === M1: Movement ===
     public const float MOVE_SPEED = 6f;               // 移動速度 (m/s)
