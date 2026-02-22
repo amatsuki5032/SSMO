@@ -53,6 +53,18 @@
   .milestone-label.active { color: #EF4444; }
   .milestone-label.locked { color: #52525B; }
 
+  .ms-section { margin-bottom: 20px; }
+  .ms-section-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; margin-bottom: 12px;
+    cursor: pointer; user-select: none;
+  }
+  .ms-section-header:hover { opacity: 0.8; }
+  .ms-section-arrow { color: #52525B; font-size: 10px; transition: transform 0.2s; margin-left: auto; }
+  .ms-section-arrow.open { transform: rotate(180deg); }
+  .ms-section-tasks { display: none; }
+  .ms-section-tasks.open { display: block; }
+
   .task-card {
     background: #16161C; border-radius: 10px; border: 1px solid #27272A;
     margin-bottom: 8px; overflow: hidden;
@@ -118,19 +130,16 @@
     <div class="progress-bar"><div class="progress-fill gradient" id="overall-bar" style="width:0%"></div></div>
   </div>
   <div class="stat-card active">
-    <div class="stat-label red">M1 進捗（現在）</div>
-    <div class="stat-value" id="m1-count">-/-</div>
-    <div class="progress-bar"><div class="progress-fill red" id="m1-bar" style="width:0%"></div></div>
+    <div class="stat-label red" id="current-ms-label">-- 進捗（現在）</div>
+    <div class="stat-value" id="current-ms-count">-/-</div>
+    <div class="progress-bar"><div class="progress-fill red" id="current-ms-bar" style="width:0%"></div></div>
   </div>
 </div>
 
 <div class="section-title">マイルストーン</div>
 <div class="milestone-bar" id="milestone-bar"></div>
 
-<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#EF4444;margin-bottom:12px;">
-  🌐 M1: ネットワーク同期基盤 — タスク詳細
-</div>
-<div id="task-list"></div>
+<div id="all-tasks"></div>
 
 <div class="principles">
   <div class="principles-title">🔒 アーキテクチャ原則</div>
@@ -162,6 +171,56 @@ const PROGRESS_DATA = {
     m5: { progress: 0, status: "locked" },
     m6: { progress: 0, status: "locked" },
   },
+  m0Tasks: [
+    {
+      id: "m0-1",
+      title: "GitHub リポジトリ & プロジェクト作成",
+      status: "done",
+      desc: "Git初期化・README・.gitignore・Git LFS設定",
+      details: [
+        { text: "Git 初期化 & GitHub Push", done: true },
+        { text: "README.md 作成", done: true },
+        { text: ".gitignore / .gitattributes 設定", done: true },
+        { text: "Git LFS 設定（3Dモデル/テクスチャ）", done: true },
+      ],
+    },
+    {
+      id: "m0-2",
+      title: "Unity プロジェクト & パッケージ導入",
+      status: "done",
+      desc: "Unity 6.3 LTS + NGO 2.9.2 + ParrelSync",
+      details: [
+        { text: "Unity 6.3 LTS プロジェクト作成", done: true },
+        { text: "NGO 2.9.2 導入", done: true },
+        { text: "Multiplayer Tools 2.2.8 導入", done: true },
+        { text: "ParrelSync 1.5.2 導入", done: true },
+      ],
+    },
+    {
+      id: "m0-3",
+      title: "基本スクリプト & フォルダ構造",
+      status: "done",
+      desc: "Scripts/配下のフォルダ分割 + 共有定数・計算式",
+      details: [
+        { text: "Scripts/ フォルダ構造作成 (Netcode/Combat/Character/UI/Shared/Server)", done: true },
+        { text: "GameConfig.cs（共有定数）", done: true },
+        { text: "CharacterState.cs（ステートenum）", done: true },
+        { text: "DamageCalculator.cs（ダメージ計算式）", done: true },
+      ],
+    },
+    {
+      id: "m0-4",
+      title: "接続確認",
+      status: "done",
+      desc: "NetworkManager + Transport設定 → Host接続テスト",
+      details: [
+        { text: "NetworkManager + Unity Transport 設定", done: true },
+        { text: "HelloNetwork.cs 作成", done: true },
+        { text: "Host 接続テスト成功", done: true },
+        { text: "Fixed Timestep 60Hz (0.01667) 設定", done: true },
+      ],
+    },
+  ],
   m1Tasks: [
     {
       id: "m1-1",
@@ -239,19 +298,303 @@ const PROGRESS_DATA = {
       ],
     },
   ],
+  m2Tasks: [
+    {
+      id: "m2-1",
+      title: "通常攻撃コンボ (N1→N6)",
+      status: "todo",
+      desc: "コンボステートマシン + 先行入力バッファ",
+      details: [
+        { text: "コンボステートマシン実装", done: false },
+        { text: "モーション毎の攻撃範囲・威力設定", done: false },
+        { text: "入力受付ウィンドウ (250ms)", done: false },
+        { text: "先行入力バッファ (150ms)", done: false },
+        { text: "サーバーでコンボカウンター管理", done: false },
+      ],
+    },
+    {
+      id: "m2-2",
+      title: "ヒット判定システム",
+      status: "todo",
+      desc: "Hitbox/Hurtbox + サーバー権威判定 + ラグ補正",
+      details: [
+        { text: "Hitbox（攻撃側カプセル）実装", done: false },
+        { text: "Hurtbox（被攻撃側カプセル）実装", done: false },
+        { text: "アクティブフレーム管理", done: false },
+        { text: "サーバー権威ヒット判定", done: false },
+        { text: "ラグ補正付きヒット判定フロー", done: false },
+      ],
+    },
+    {
+      id: "m2-3",
+      title: "ヒットリアクション",
+      status: "todo",
+      desc: "のけぞり・打ち上げ・ダウン + ヒットストップ",
+      details: [
+        { text: "のけぞり (Hitstun)", done: false },
+        { text: "打ち上げ (Launch) + エリアル", done: false },
+        { text: "叩きつけ (Slam) + ダウン (Down)", done: false },
+        { text: "吹き飛ばし (Knockback)", done: false },
+        { text: "ヒットストップ（通常3F / 重攻撃5F）", done: false },
+        { text: "リアクション同期（サーバー権威）", done: false },
+      ],
+    },
+    {
+      id: "m2-4",
+      title: "ガード & 回避",
+      status: "todo",
+      desc: "ガード80%カット・ジャストガード・ステップ無敵",
+      details: [
+        { text: "ガード入力 & ダメージ80%カット", done: false },
+        { text: "ジャストガード（200ms窓, ダメージ0）", done: false },
+        { text: "ガード崩し（C1, 投げ, 無双）", done: false },
+        { text: "ステップ回避（無敵6F / 100ms）", done: false },
+        { text: "連続回避制限（最大3回）", done: false },
+      ],
+    },
+    {
+      id: "m2-5",
+      title: "チャージ攻撃 (C1→C6)",
+      status: "todo",
+      desc: "N[x]→△で派生。ガード崩し・打ち上げ・薙ぎ払い等",
+      details: [
+        { text: "C1: ガードブレイク（単発高威力）", done: false },
+        { text: "C2: 打ち上げ（エリアルコンボ起点）", done: false },
+        { text: "C3: 360°薙ぎ払い（範囲攻撃）", done: false },
+        { text: "C4: 突き→吹き飛ばし", done: false },
+        { text: "C5: 多段遠距離攻撃", done: false },
+        { text: "C6: 武器固有フィニッシュ", done: false },
+        { text: "サーバーでチャージタイミング検証", done: false },
+      ],
+    },
+    {
+      id: "m2-6",
+      title: "無双乱舞 & 覚醒",
+      status: "todo",
+      desc: "ゲージMAXで発動。無敵+連撃+フィニッシュ",
+      details: [
+        { text: "無双ゲージ管理（サーバー権威）", done: false },
+        { text: "無双発動（衝撃波+無敵+連撃+フィニッシュ）", done: false },
+        { text: "覚醒（ATK+30% / DEF+20% / SPD+15% / 30秒）", done: false },
+        { text: "覚醒無双（強化版）", done: false },
+      ],
+    },
+    {
+      id: "m2-7",
+      title: "遠隔攻撃システム",
+      status: "todo",
+      desc: "投射物のサーバー権威生成・同期・ラグ補正",
+      details: [
+        { text: "投射物生成・同期（サーバー権威）", done: false },
+        { text: "弓矢（100m, 40m/s, 直線）", done: false },
+        { text: "投射物ラグ補正（高速弾のみ）", done: false },
+        { text: "遠近バランス調整（弓DPS < 近接DPS）", done: false },
+      ],
+    },
+  ],
+  m3Tasks: [
+    {
+      id: "m3-1",
+      title: "マッチメイキング & ロビー",
+      status: "todo",
+      desc: "ルーム作成/参加/Ready → カウントダウン開始",
+      details: [
+        { text: "ルーム作成 / 参加 / 準備完了", done: false },
+        { text: "Firestore ルーム管理", done: false },
+        { text: "クイックマッチ（自動マッチング）", done: false },
+        { text: "チーム選択（赤/青）", done: false },
+        { text: "全員Ready → カウントダウン → 開始", done: false },
+      ],
+    },
+    {
+      id: "m3-2",
+      title: "バトルマップ",
+      status: "todo",
+      desc: "官渡の戦い（中規模・拠点5つ）+ 勝利条件",
+      details: [
+        { text: "マップ1: 官渡の戦い（中規模, 拠点5つ）", done: false },
+        { text: "拠点制圧ルール（エリア内人数で占領）", done: false },
+        { text: "NPC配兵（各チーム20-30体）", done: false },
+        { text: "ボス配置（総大将1 + 副将2）", done: false },
+        { text: "勝利条件（総大将撃破 or 拠点数 or 時間切れ）", done: false },
+        { text: "ミニマップ（味方/拠点表示）", done: false },
+      ],
+    },
+    {
+      id: "m3-3",
+      title: "NPC AI（サーバー実行）",
+      status: "todo",
+      desc: "雑兵AI + 武将AI。サーバーで全AI計算",
+      details: [
+        { text: "雑兵AI（最寄り敵に接近→攻撃）", done: false },
+        { text: "武将AI（ガード/回避/コンボ/スキル）", done: false },
+        { text: "AI状態の全クライアント同期", done: false },
+        { text: "Spatial Hashing（多AI最適化）", done: false },
+      ],
+    },
+    {
+      id: "m3-4",
+      title: "バトルHUD & UI",
+      status: "todo",
+      desc: "HP/ゲージ/キルログ/スコア/残り時間",
+      details: [
+        { text: "自キャラ HP / 無双 / 覚醒ゲージ", done: false },
+        { text: "敵頭上HP表示", done: false },
+        { text: "キルログ（右上）", done: false },
+        { text: "チームスコア & 残り時間", done: false },
+        { text: "Ping表示（常時）", done: false },
+      ],
+    },
+    {
+      id: "m3-5",
+      title: "リザルト & レーティング",
+      status: "todo",
+      desc: "戦績表示・MVP・ELOレート・リーダーボード",
+      details: [
+        { text: "戦績（キル/デス/アシスト/拠点制圧）", done: false },
+        { text: "MVP選出", done: false },
+        { text: "ELOレーティング計算", done: false },
+        { text: "Firestore レーティング保存", done: false },
+        { text: "シーズンリーダーボード", done: false },
+      ],
+    },
+  ],
+  m4Tasks: [
+    {
+      id: "m4-1",
+      title: "武器種実装（初期6種）",
+      status: "todo",
+      desc: "大剣/双剣/槍/戟/拳/弓。各N1-N6 + C1-C6モーション",
+      details: [
+        { text: "大剣（3m, 広範囲・高威力・遅い）", done: false },
+        { text: "双剣（1.5m, 手数型・連撃コンボ）", done: false },
+        { text: "槍（4.5m, 突き特化・リーチ戦）", done: false },
+        { text: "戟（3.5m, 打ち上げ・回転斬り）", done: false },
+        { text: "拳（1m, 超近距離ラッシュ・投げ）", done: false },
+        { text: "弓（100m, 遠距離射撃・牽制）", done: false },
+        { text: "武器別固有無双乱舞", done: false },
+      ],
+    },
+    {
+      id: "m4-2",
+      title: "キャラクター作成（8-12体）",
+      status: "todo",
+      desc: "固有スキル + 3Dモデル + モーション",
+      details: [
+        { text: "初期8-12体（各チーム4-6選択可）", done: false },
+        { text: "キャラ固有スキル（パッシブ+アクティブ）", done: false },
+        { text: "3Dモデル作成（Mixamo + 改変 or Asset Store）", done: false },
+        { text: "攻撃モーション作成", done: false },
+      ],
+    },
+    {
+      id: "m4-3",
+      title: "育成 & カスタマイズ",
+      status: "todo",
+      desc: "レベル・装備・スキルセット・見た目変更",
+      details: [
+        { text: "キャラレベル & ステータス成長", done: false },
+        { text: "装備（武器/防具/アクセサリ）", done: false },
+        { text: "スキルセット選択（4つから2つ等）", done: false },
+        { text: "見た目カスタマイズ（カラバリ）", done: false },
+        { text: "Firestore 永続化", done: false },
+      ],
+    },
+  ],
+  m5Tasks: [
+    {
+      id: "m5-1",
+      title: "専用サーバーデプロイ",
+      status: "todo",
+      desc: "Docker + AWS/GCP + オートスケール + 監視",
+      details: [
+        { text: "Docker イメージ（Unity Headless Server）", done: false },
+        { text: "AWS/GCP コンテナ実行（ECS/GKE）", done: false },
+        { text: "東京リージョン（ap-northeast-1）", done: false },
+        { text: "同時対戦数によるオートスケール", done: false },
+        { text: "監視（Prometheus + Grafana）", done: false },
+        { text: "ゲームサーバーオーケストレーション（Agones）", done: false },
+      ],
+    },
+    {
+      id: "m5-2",
+      title: "チート対策",
+      status: "todo",
+      desc: "移動速度/攻撃間隔バリデーション + 異常検知",
+      details: [
+        { text: "移動速度上限バリデーション（サーバー側）", done: false },
+        { text: "攻撃間隔妥当性チェック", done: false },
+        { text: "異常検知（瞬間移動・異常攻撃速度）", done: false },
+        { text: "レポートシステム + リプレイ保存", done: false },
+      ],
+    },
+    {
+      id: "m5-3",
+      title: "通信セキュリティ",
+      status: "todo",
+      desc: "パケット暗号化・リプレイ攻撃防止・レートリミット",
+      details: [
+        { text: "パケット暗号化（TLS/DTLS）", done: false },
+        { text: "リプレイ攻撃防止（シーケンス# + タイムスタンプ）", done: false },
+        { text: "レートリミット（異常送信頻度ブロック）", done: false },
+        { text: "Firebase Auth トークン検証", done: false },
+      ],
+    },
+  ],
+  m6Tasks: [
+    {
+      id: "m6-1",
+      title: "ポリッシュ & エフェクト",
+      status: "todo",
+      desc: "UI/UX仕上げ・VFX・演出・BGM/SE・チュートリアル",
+      details: [
+        { text: "UI/UX仕上げ（全画面統一デザイン）", done: false },
+        { text: "エフェクト強化（VFX Graph / Particle System）", done: false },
+        { text: "無双演出（カメラ + エフェクト）", done: false },
+        { text: "BGM & SE（Wwise/FMOD/Unity Audio）", done: false },
+        { text: "設定画面（グラフィック/サウンド/キーバインド）", done: false },
+        { text: "チュートリアル（ソロ練習ミッション）", done: false },
+      ],
+    },
+    {
+      id: "m6-2",
+      title: "フルテスト",
+      status: "todo",
+      desc: "8人同時安定性・レイテンシ・FPS最適化・メモリリーク",
+      details: [
+        { text: "8人同時対戦安定性テスト", done: false },
+        { text: "レイテンシテスト（50/100/200ms）", done: false },
+        { text: "FPS最適化（60fps目標, ミドルスペックPC）", done: false },
+        { text: "メモリリーク検出", done: false },
+        { text: "クラッシュレポート（Sentry）", done: false },
+      ],
+    },
+    {
+      id: "m6-3",
+      title: "α版リリース",
+      status: "todo",
+      desc: "Steam/itch.io配布 + Discord + フィードバック収集",
+      details: [
+        { text: "Steam / itch.io ビルド配布", done: false },
+        { text: "Discord フィードバックサーバー開設", done: false },
+        { text: "既知の問題リスト公開", done: false },
+        { text: "プレイ動画公開（Twitter/YouTube）", done: false },
+      ],
+    },
+  ],
 };
 // ============================================================
 // ★★★ ここまでがCC更新対象 ★★★
 // ============================================================
 
 const MILESTONES_META = [
-  { id: "m0", label: "M0", title: "環境構築", icon: "🏗️", color: "#10B981" },
-  { id: "m1", label: "M1", title: "ネットワーク同期", icon: "🌐", color: "#EF4444" },
-  { id: "m2", label: "M2", title: "戦闘アクション", icon: "⚔️", color: "#F59E0B" },
-  { id: "m3", label: "M3", title: "4v4対戦", icon: "🏰", color: "#8B5CF6" },
-  { id: "m4", label: "M4", title: "キャラ&コンテンツ", icon: "🎭", color: "#06B6D4" },
-  { id: "m5", label: "M5", title: "インフラ", icon: "🛡️", color: "#EC4899" },
-  { id: "m6", label: "M6", title: "α版", icon: "✨", color: "#F97316" },
+  { id: "m0", label: "M0", title: "環境構築", icon: "🏗️", color: "#10B981", weeks: "Week 1-2" },
+  { id: "m1", label: "M1", title: "ネットワーク同期", icon: "🌐", color: "#EF4444", weeks: "Week 3-8" },
+  { id: "m2", label: "M2", title: "戦闘アクション", icon: "⚔️", color: "#F59E0B", weeks: "Week 9-22" },
+  { id: "m3", label: "M3", title: "4v4対戦", icon: "🏰", color: "#8B5CF6", weeks: "Week 23-28" },
+  { id: "m4", label: "M4", title: "キャラ&コンテンツ", icon: "🎭", color: "#06B6D4", weeks: "Week 29-38" },
+  { id: "m5", label: "M5", title: "インフラ", icon: "🛡️", color: "#EC4899", weeks: "Week 39-44" },
+  { id: "m6", label: "M6", title: "α版", icon: "✨", color: "#F97316", weeks: "Week 45-52" },
 ];
 
 const STATUS_ICONS = { done: "✅", inprogress: "🔨", todo: "⬜" };
@@ -271,12 +614,15 @@ function render() {
   document.getElementById("overall-percent").textContent = overall + "%";
   document.getElementById("overall-bar").style.width = overall + "%";
 
-  // M1 progress
-  const m1Done = d.m1Tasks.filter(t => t.status === "done").length;
-  const m1Total = d.m1Tasks.length;
-  const m1Pct = Math.round((m1Done / m1Total) * 100);
-  document.getElementById("m1-count").textContent = m1Done + "/" + m1Total;
-  document.getElementById("m1-bar").style.width = m1Pct + "%";
+  // Current milestone progress
+  const curMs = MILESTONES_META.find(m => m.id === d.currentMilestone);
+  const curTasks = d[d.currentMilestone + "Tasks"] || [];
+  const curDone = curTasks.filter(t => t.status === "done").length;
+  const curTotal = curTasks.length;
+  const curPct = curTotal > 0 ? Math.round((curDone / curTotal) * 100) : 0;
+  document.getElementById("current-ms-label").textContent = curMs.label + " 進捗（現在）";
+  document.getElementById("current-ms-count").textContent = curDone + "/" + curTotal;
+  document.getElementById("current-ms-bar").style.width = curPct + "%";
 
   // Milestone bar
   const mBar = document.getElementById("milestone-bar");
@@ -285,10 +631,8 @@ function render() {
     const ms = d.milestones[m.id];
     const div = document.createElement("div");
     div.className = "milestone-item " + ms.status;
-    if (ms.status === "active") div.style.borderColor = m.color + "40";
-    if (ms.status === "active") div.style.background = m.color + "10";
-    if (ms.status === "done") div.style.borderColor = m.color + "40";
-    if (ms.status === "done") div.style.background = m.color + "10";
+    if (ms.status === "active") { div.style.borderColor = m.color + "40"; div.style.background = m.color + "10"; }
+    if (ms.status === "done") { div.style.borderColor = m.color + "40"; div.style.background = m.color + "10"; }
     div.innerHTML = `
       <div class="milestone-icon">${m.icon}</div>
       <div class="milestone-label ${ms.status}" style="color:${ms.status === "locked" ? "#52525B" : m.color}">${m.label}</div>
@@ -297,43 +641,67 @@ function render() {
     mBar.appendChild(div);
   });
 
-  // Task list
-  const tList = document.getElementById("task-list");
-  tList.innerHTML = "";
-  d.m1Tasks.forEach(task => {
-    const sc = STATUS_COLORS[task.status];
-    const doneCount = task.details.filter(x => x.done).length;
-    const totalCount = task.details.length;
-    const pct = Math.round((doneCount / totalCount) * 100);
-    const isDefault = task.status === "inprogress";
+  // All milestone task sections
+  const allTasks = document.getElementById("all-tasks");
+  allTasks.innerHTML = "";
+  MILESTONES_META.forEach(m => {
+    const ms = d.milestones[m.id];
+    const tasks = d[m.id + "Tasks"] || [];
+    if (tasks.length === 0) return;
 
-    const card = document.createElement("div");
-    card.className = "task-card" + (task.status === "inprogress" ? " inprogress" : "");
+    const isActive = ms.status === "active";
+    const isDone = ms.status === "done";
+    const isOpen = isActive || isDone;
 
-    card.innerHTML = `
-      <div class="task-header" onclick="toggleTask('${task.id}')">
-        <span class="task-icon">${STATUS_ICONS[task.status]}</span>
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="task-title">${task.title}</span>
-            <span class="task-badge ${task.status}">${STATUS_LABELS[task.status]}</span>
-          </div>
-          <div class="task-desc">${task.desc}</div>
-        </div>
-        <div class="task-count ${task.status}">${doneCount}/${totalCount}</div>
-        <span class="task-arrow${isDefault ? " open" : ""}" id="arrow-${task.id}">▼</span>
+    const section = document.createElement("div");
+    section.className = "ms-section";
+
+    const doneCount = tasks.filter(t => t.status === "done").length;
+    section.innerHTML = `
+      <div class="ms-section-header" onclick="toggleSection('${m.id}')" style="color:${ms.status === 'locked' ? '#52525B' : m.color}">
+        ${m.icon} ${m.label}: ${m.title} — ${m.weeks}
+        <span style="font-size:11px;font-weight:600;color:#71717A;margin-left:4px">(${doneCount}/${tasks.length})</span>
+        <span class="ms-section-arrow${isOpen ? ' open' : ''}" id="ms-arrow-${m.id}">▼</span>
       </div>
-      <div class="task-progress"><div class="task-progress-fill" style="width:${pct}%;background:${sc}"></div></div>
-      <div class="task-details${isDefault ? " open" : ""}" id="details-${task.id}">
-        ${task.details.map(x => `
-          <div class="detail-item">
-            <span class="detail-check ${x.done ? "done" : "todo"}">${x.done ? "✓" : "○"}</span>
-            <span class="detail-text ${x.done ? "done" : "todo"}">${x.text}</span>
-          </div>
-        `).join("")}
-      </div>
+      <div class="ms-section-tasks${isOpen ? ' open' : ''}" id="ms-tasks-${m.id}"></div>
     `;
-    tList.appendChild(card);
+    allTasks.appendChild(section);
+
+    const tList = section.querySelector(".ms-section-tasks");
+    tasks.forEach(task => {
+      const sc = STATUS_COLORS[task.status];
+      const tDone = task.details.filter(x => x.done).length;
+      const tTotal = task.details.length;
+      const pct = Math.round((tDone / tTotal) * 100);
+      const isDefaultOpen = task.status === "inprogress";
+
+      const card = document.createElement("div");
+      card.className = "task-card" + (task.status === "inprogress" ? " inprogress" : "");
+      card.innerHTML = `
+        <div class="task-header" onclick="toggleTask('${task.id}')">
+          <span class="task-icon">${STATUS_ICONS[task.status]}</span>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="task-title">${task.title}</span>
+              <span class="task-badge ${task.status}">${STATUS_LABELS[task.status]}</span>
+            </div>
+            <div class="task-desc">${task.desc}</div>
+          </div>
+          <div class="task-count ${task.status}">${tDone}/${tTotal}</div>
+          <span class="task-arrow${isDefaultOpen ? ' open' : ''}" id="arrow-${task.id}">▼</span>
+        </div>
+        <div class="task-progress"><div class="task-progress-fill" style="width:${pct}%;background:${sc}"></div></div>
+        <div class="task-details${isDefaultOpen ? ' open' : ''}" id="details-${task.id}">
+          ${task.details.map(x => `
+            <div class="detail-item">
+              <span class="detail-check ${x.done ? 'done' : 'todo'}">${x.done ? '✓' : '○'}</span>
+              <span class="detail-text ${x.done ? 'done' : 'todo'}">${x.text}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      tList.appendChild(card);
+    });
   });
 
   // Footer
@@ -342,10 +710,13 @@ function render() {
 }
 
 function toggleTask(id) {
-  const details = document.getElementById("details-" + id);
-  const arrow = document.getElementById("arrow-" + id);
-  details.classList.toggle("open");
-  arrow.classList.toggle("open");
+  document.getElementById("details-" + id).classList.toggle("open");
+  document.getElementById("arrow-" + id).classList.toggle("open");
+}
+
+function toggleSection(id) {
+  document.getElementById("ms-tasks-" + id).classList.toggle("open");
+  document.getElementById("ms-arrow-" + id).classList.toggle("open");
 }
 
 render();
