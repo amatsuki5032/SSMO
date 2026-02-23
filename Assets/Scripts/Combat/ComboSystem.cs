@@ -2,15 +2,21 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// 通常攻撃コンボシステム（サーバー権威）
+/// 通常攻撃コンボ + チャージ攻撃システム（サーバー権威）
 ///
-/// コンボの流れ:
-/// 1. □ボタン（左クリック）→ TryStartAttack() で N1 開始
+/// 通常攻撃（N コンボ）:
+/// 1. □（左クリック）→ TryStartAttack() で N1 開始
 /// 2. Attack ステート中に□ → コンボウィンドウ内なら次段に進む
 /// 3. 入力がなくモーション終了 → コンボ終了 → Idle
 ///
+/// チャージ攻撃（C 派生）:
+/// 1. △（右クリック）→ TryStartCharge() で C 技に派生
+/// 2. Idle/Move → C1、N1中 → C2、N2中 → C3 ...
+/// 3. C3 は△連打でラッシュ追加ヒット
+/// 4. チャージ終了後は必ず Idle に戻る
+///
 /// コンボウィンドウ: 各攻撃モーションの最後 30% の区間
-/// 先行入力: ウィンドウ前に押された攻撃入力をバッファし、ウィンドウ到達時に自動消費
+/// 先行入力: ウィンドウ前に押された攻撃入力をバッファし、ウィンドウ到達時に自動消費（150ms）
 /// </summary>
 [RequireComponent(typeof(CharacterStateMachine))]
 public class ComboSystem : NetworkBehaviour
@@ -33,16 +39,24 @@ public class ComboSystem : NetworkBehaviour
     public int ComboStep => _networkComboStep.Value;
 
     // ============================================================
-    // サーバー側管理データ
+    // サーバー側管理データ — 通常攻撃
     // ============================================================
 
     private CharacterStateMachine _stateMachine;
-    private int _comboStep;          // 現在のコンボ段数（0 = 非攻撃）
-    private float _attackTimer;      // 現在の攻撃モーションの残り時間
-    private bool _comboWindowOpen;   // コンボ受付ウィンドウが開いているか
+    private int _comboStep;             // 現在のコンボ段数（0 = 非攻撃）
+    private float _attackTimer;         // 現在の攻撃モーションの残り時間
+    private bool _comboWindowOpen;      // コンボ受付ウィンドウが開いているか
     private bool _hasBufferedAttack;    // 先行入力バッファに攻撃入力があるか
     private float _inputBufferTimer;    // 先行入力の残り有効時間（INPUT_BUFFER_SEC で初期化、0 で無効）
     private int _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
+
+    // ============================================================
+    // サーバー側管理データ — チャージ攻撃
+    // ============================================================
+
+    private int _chargeType;       // 現在のチャージ技番号（0 = 非チャージ、1 = C1 ...）
+    private float _chargeTimer;    // チャージ攻撃モーションの残り時間
+    private int _rushHitCount;     // C3 ラッシュの追加ヒット数
 
     // ============================================================
     // ライフサイクル
@@ -54,21 +68,22 @@ public class ComboSystem : NetworkBehaviour
     }
 
     /// <summary>
-    /// サーバーのみ: 毎 FixedUpdate でコンボタイマーを更新
+    /// サーバーのみ: 毎 FixedUpdate でコンボ・チャージタイマーを更新
     /// PlayerMovement とは独立してタイマーを進める（60Hz で安定動作）
     /// </summary>
     private void FixedUpdate()
     {
         if (!IsServer) return;
         UpdateCombo();
+        UpdateCharge();
     }
 
     // ============================================================
-    // 攻撃入力処理（★サーバー側で実行★）
+    // 通常攻撃入力処理（★サーバー側で実行★）
     // ============================================================
 
     /// <summary>
-    /// 攻撃入力を処理する。サーバー権威
+    /// 通常攻撃入力を処理する。サーバー権威
     /// - Idle/Move → N1 開始
     /// - Attack + コンボウィンドウ → 次の段に進む
     /// - Attack + ウィンドウ前 → 先行入力バッファに保存
@@ -106,21 +121,64 @@ public class ComboSystem : NetworkBehaviour
     }
 
     // ============================================================
-    // コンボ更新（★サーバー側 FixedUpdate★）
+    // チャージ攻撃入力処理（★サーバー側で実行★）
     // ============================================================
 
     /// <summary>
-    /// コンボタイマーを毎 FixedUpdate で更新する
+    /// チャージ攻撃入力を処理する。サーバー権威
+    /// - Idle/Move（_comboStep==0）→ C1
+    /// - Attack（N1中）→ C2、（N2中）→ C3 ...
+    /// - Charge（C3中）→ ラッシュ追加ヒット
+    /// </summary>
+    /// <param name="moveInput">チャージ開始時の向き設定に使う移動入力</param>
+    public void TryStartCharge(Vector2 moveInput)
+    {
+        if (!IsServer) return;
+
+        CharacterState current = _stateMachine.CurrentState;
+
+        // C3 ラッシュ継続: Charge ステート中に△で追加ヒット
+        if (current == CharacterState.Charge && _chargeType == 3)
+        {
+            if (_rushHitCount < GameConfig.C3_RUSH_MAX_HITS)
+            {
+                _rushHitCount++;
+                _chargeTimer = GameConfig.C3_RUSH_DURATION;
+                Debug.Log($"[Combo] {gameObject.name}: C3 ラッシュ {_rushHitCount}hit");
+            }
+            return;
+        }
+
+        // 新しいチャージ攻撃の開始: CanAcceptInput で入力受付を判定
+        if (!_stateMachine.CanAcceptInput(InputType.ChargeAttack)) return;
+
+        // チャージタイプ決定: _comboStep に応じて C1〜C5
+        // _comboStep == 0 → C1（Idle/Move から直接）
+        // _comboStep == 1 → C2（N1 から派生）
+        // _comboStep == 2 → C3（N2 から派生）
+        // _comboStep == 3 → C4（N3 から派生）
+        // _comboStep == 4 → C5（N4 から派生）
+        int chargeType = (_comboStep == 0) ? 1 : _comboStep + 1;
+
+        StartCharge(chargeType, moveInput);
+    }
+
+    // ============================================================
+    // 通常攻撃更新（★サーバー側 FixedUpdate★）
+    // ============================================================
+
+    /// <summary>
+    /// 通常攻撃コンボタイマーを毎 FixedUpdate で更新する
     /// - タイマー減算
     /// - コンボウィンドウの開放判定
-    /// - 先行入力バッファの消費
+    /// - 先行入力バッファの消費・タイムアウト
     /// - モーション終了時のコンボ終了処理
     /// </summary>
     private void UpdateCombo()
     {
         if (_comboStep == 0) return;
 
-        // 外部要因で Attack から離脱した場合（被弾等）→ コンボリセット
+        // 外部要因で Attack から離脱した場合（被弾・チャージ派生等）→ コンボリセット
         if (_stateMachine.CurrentState != CharacterState.Attack)
         {
             ResetCombo();
@@ -170,7 +228,36 @@ public class ComboSystem : NetworkBehaviour
     }
 
     // ============================================================
-    // 内部ヘルパー
+    // チャージ攻撃更新（★サーバー側 FixedUpdate★）
+    // ============================================================
+
+    /// <summary>
+    /// チャージ攻撃タイマーを毎 FixedUpdate で更新する
+    /// タイマー満了で Idle に遷移。C3 ラッシュ中は△入力がないと終了
+    /// </summary>
+    private void UpdateCharge()
+    {
+        if (_chargeType == 0) return;
+
+        // 外部要因で Charge から離脱した場合（被弾等）→ チャージリセット
+        if (_stateMachine.CurrentState != CharacterState.Charge)
+        {
+            ResetCharge();
+            return;
+        }
+
+        _chargeTimer -= GameConfig.FIXED_DELTA_TIME;
+
+        if (_chargeTimer <= 0f)
+        {
+            Debug.Log($"[Combo] {gameObject.name}: C{_chargeType} 終了");
+            ResetCharge();
+            _stateMachine.TryChangeState(CharacterState.Idle);
+        }
+    }
+
+    // ============================================================
+    // 内部ヘルパー — 通常攻撃
     // ============================================================
 
     /// <summary>
@@ -188,7 +275,7 @@ public class ComboSystem : NetworkBehaviour
     }
 
     /// <summary>
-    /// コンボ状態を完全にリセットする
+    /// 通常攻撃コンボ状態をリセットする
     /// </summary>
     private void ResetCombo()
     {
@@ -200,9 +287,54 @@ public class ComboSystem : NetworkBehaviour
         _networkComboStep.Value = 0;
     }
 
+    // ============================================================
+    // 内部ヘルパー — チャージ攻撃
+    // ============================================================
+
     /// <summary>
-    /// コンボ段数に応じた攻撃持続時間を返す
-    /// 将来的に武器種ごとの持続時間テーブルに拡張可能
+    /// チャージ攻撃を開始する。N コンボをリセットし Charge ステートに遷移
+    /// </summary>
+    /// <param name="chargeType">チャージ技番号（1=C1, 2=C2 ...）</param>
+    /// <param name="moveInput">開始時の向き設定用移動入力</param>
+    private void StartCharge(int chargeType, Vector2 moveInput)
+    {
+        // N コンボをリセット（チャージ派生で N コンボは終了）
+        ResetCombo();
+
+        _chargeType = chargeType;
+        _chargeTimer = GetChargeDuration(chargeType);
+        _rushHitCount = 0;
+
+        // ステートを Charge に遷移
+        _stateMachine.TryChangeState(CharacterState.Charge);
+
+        // チャージ開始時のスティック方向で向きを設定（その後は固定）
+        if (moveInput.sqrMagnitude > 0.01f)
+        {
+            Vector3 dir = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
+            float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+        }
+
+        Debug.Log($"[Combo] {gameObject.name}: C{chargeType} 開始");
+    }
+
+    /// <summary>
+    /// チャージ攻撃状態をリセットする
+    /// </summary>
+    private void ResetCharge()
+    {
+        _chargeType = 0;
+        _chargeTimer = 0f;
+        _rushHitCount = 0;
+    }
+
+    // ============================================================
+    // 持続時間テーブル
+    // ============================================================
+
+    /// <summary>
+    /// コンボ段数に応じた通常攻撃持続時間を返す
     /// </summary>
     public static float GetAttackDuration(int step)
     {
@@ -213,6 +345,23 @@ public class ComboSystem : NetworkBehaviour
             3 => GameConfig.N3_DURATION,
             4 => GameConfig.N4_DURATION,
             _ => 0.5f, // 安全策: 未定義段はデフォルト値
+        };
+    }
+
+    /// <summary>
+    /// チャージ技番号に応じた持続時間を返す
+    /// </summary>
+    public static float GetChargeDuration(int chargeType)
+    {
+        return chargeType switch
+        {
+            1 => GameConfig.C1_DURATION,
+            2 => GameConfig.C2_DURATION,
+            3 => GameConfig.C3_DURATION,
+            4 => GameConfig.C4_DURATION,
+            5 => GameConfig.C5_DURATION,
+            6 => GameConfig.C6_DURATION,
+            _ => 0.7f, // 安全策: 未定義はデフォルト値
         };
     }
 }

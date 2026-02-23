@@ -127,4 +127,14 @@ public static class GameConfig
     public const float N2_DURATION = 0.5f;
     public const float N3_DURATION = 0.55f;
     public const float N4_DURATION = 0.65f;
+
+    // === M2-4a: チャージ攻撃 ===
+    public const float C1_DURATION = 0.7f;           // C1 持続時間（仮値）
+    public const float C2_DURATION = 0.6f;           // C2 打ち上げ
+    public const float C3_DURATION = 0.5f;           // C3 ラッシュ初段
+    public const float C3_RUSH_DURATION = 0.2f;      // C3 ラッシュ追加ヒット間隔
+    public const int C3_RUSH_MAX_HITS = 8;           // C3 ラッシュ最大追加ヒット数
+    public const float C4_DURATION = 0.8f;           // C4 吹き飛ばし
+    public const float C5_DURATION = 0.7f;           // C5 チャージシュート
+    public const float C6_DURATION = 1.0f;           // C6 最大技
 }

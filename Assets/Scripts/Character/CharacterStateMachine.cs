@@ -219,7 +219,7 @@ public class CharacterStateMachine : NetworkBehaviour
                 _ => false,
             },
 
-            CharacterState.Charge => false, // 将来: BreakCharge(L2)のみ
+            CharacterState.Charge => input == InputType.ChargeAttack, // C3ラッシュ用
 
             CharacterState.DashAttack => input == InputType.NormalAttack, // ラッシュ派生
 

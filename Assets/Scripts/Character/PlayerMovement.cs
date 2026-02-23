@@ -106,6 +106,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool _jumpPressed;      // ジャンプ（押した瞬間のみ、消費後リセット）
     private bool _guardHeld;        // ガード（押しっぱなし）
     private bool _attackPressed;    // 攻撃（押した瞬間のみ、消費後リセット）
+    private bool _chargePressed;   // チャージ攻撃（押した瞬間のみ、消費後リセット）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -212,6 +213,10 @@ public class PlayerMovement : NetworkBehaviour
         // 攻撃は押した瞬間のみ true（FixedUpdate で消費されるまで保持）
         if (Input.GetMouseButtonDown(0))
             _attackPressed = true;
+
+        // チャージ攻撃（右クリック）も押した瞬間のみ true
+        if (Input.GetMouseButtonDown(1))
+            _chargePressed = true;
     }
 
     /// <summary>
@@ -354,7 +359,7 @@ public class PlayerMovement : NetworkBehaviour
             JumpPressed = _jumpPressed,
             GuardHeld = _guardHeld,
             AttackPressed = _attackPressed,
-            ChargePressed = false,  // M2-4で実装
+            ChargePressed = _chargePressed,
             MusouPressed = false,   // M2-8で実装
             Tick = _currentTick
         };
@@ -362,6 +367,7 @@ public class PlayerMovement : NetworkBehaviour
         // 瞬間入力は消費後リセット（1ティックのみ有効）
         _jumpPressed = false;
         _attackPressed = false;
+        _chargePressed = false;
 
         if (IsServer)
         {
@@ -371,6 +377,8 @@ public class PlayerMovement : NetworkBehaviour
             ProcessDashTracking(input);
             if (input.AttackPressed && _comboSystem != null)
                 _comboSystem.TryStartAttack();
+            if (input.ChargePressed && _comboSystem != null)
+                _comboSystem.TryStartCharge(input.MoveInput);
             Vector2 move = GetEffectiveMove(input);
             float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
             if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
@@ -696,6 +704,8 @@ public class PlayerMovement : NetworkBehaviour
         // 攻撃入力 → コンボシステムに委譲（サーバー権威）
         if (input.AttackPressed && _comboSystem != null)
             _comboSystem.TryStartAttack();
+        if (input.ChargePressed && _comboSystem != null)
+            _comboSystem.TryStartCharge(input.MoveInput);
 
         // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
         Vector2 move = GetEffectiveMove(input);
