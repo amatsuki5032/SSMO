@@ -20,23 +20,7 @@ public class PlayerMovement : NetworkBehaviour
     // データ構造
     // ============================================================
 
-    /// <summary>
-    /// 移動入力データ。RPC でシリアライズ可能にする
-    /// ティック番号を付与することで、サーバーからの確定応答と対応付ける
-    /// </summary>
-    private struct MoveInput : INetworkSerializable
-    {
-        public uint Tick;
-        public float Horizontal;
-        public float Vertical;
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {
-            serializer.SerializeValue(ref Tick);
-            serializer.SerializeValue(ref Horizontal);
-            serializer.SerializeValue(ref Vertical);
-        }
-    }
+    // 入力データは PlayerInput（Assets/Scripts/Shared/PlayerInput.cs）を使用
 
     /// <summary>
     /// 移動状態のスナップショット。リコンシリエーション時の比較・復元に使う
@@ -95,10 +79,12 @@ public class PlayerMovement : NetworkBehaviour
     // Update() は可変FPSで呼ばれるため、最新の入力を保持して FixedUpdate() で消費する
     private float _inputH;
     private float _inputV;
+    private bool _jumpPressed;      // ジャンプ（押した瞬間のみ、消費後リセット）
+    private bool _guardHeld;        // ガード（押しっぱなし）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
-    private MoveInput[] _inputBuffer;
+    private PlayerInput[] _inputBuffer;
     private MoveState[] _stateBuffer;
 
     // --- リコンシリエーション ---
@@ -140,7 +126,7 @@ public class PlayerMovement : NetworkBehaviour
         // オーナーのみ予測バッファを確保（他プレイヤーのインスタンスでは不要）
         if (IsOwner)
         {
-            _inputBuffer = new MoveInput[GameConfig.PREDICTION_BUFFER_SIZE];
+            _inputBuffer = new PlayerInput[GameConfig.PREDICTION_BUFFER_SIZE];
             _stateBuffer = new MoveState[GameConfig.PREDICTION_BUFFER_SIZE];
         }
 
@@ -189,6 +175,13 @@ public class PlayerMovement : NetworkBehaviour
 
         _inputH = Input.GetAxisRaw("Horizontal");
         _inputV = Input.GetAxisRaw("Vertical");
+
+        // ジャンプは押した瞬間のみ true にする（FixedUpdate で消費されるまで保持）
+        if (Input.GetKeyDown(KeyCode.Space))
+            _jumpPressed = true;
+
+        // ガードは押しっぱなしで true
+        _guardHeld = Input.GetKey(KeyCode.LeftShift);
     }
 
     /// <summary>
@@ -324,34 +317,42 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void ProcessOwnerTick()
     {
-        // ステートマシンが移動を許可しない場合は入力をゼロにする
+        // ステートマシンが移動を許可しない場合は移動入力をゼロにする
         // （ステートチェックは予測にも使われるのでクライアント側でも実行）
         bool canMove = _stateMachine == null || _stateMachine.CanMove();
         float h = canMove ? _inputH : 0f;
         float v = canMove ? _inputV : 0f;
 
-        MoveInput input = new MoveInput
+        // 全入力を1構造体にまとめる
+        PlayerInput input = new PlayerInput
         {
-            Tick = _currentTick,
-            Horizontal = h,
-            Vertical = v
+            MoveInput = new Vector2(h, v),
+            JumpPressed = _jumpPressed,
+            GuardHeld = _guardHeld,
+            AttackPressed = false,  // M2-3で実装
+            ChargePressed = false,  // M2-4で実装
+            MusouPressed = false,   // M2-8で実装
+            Tick = _currentTick
         };
+
+        // ジャンプ入力は消費後リセット（1ティックのみ有効）
+        _jumpPressed = false;
 
         if (IsServer)
         {
             // --- ホスト（サーバー兼オーナー）---
             // Idle ↔ Move ステート遷移（サーバー権威）
-            UpdateMoveState(h, v);
+            UpdateMoveState(input.MoveInput.x, input.MoveInput.y);
 
-            ApplyMovement(input.Horizontal, input.Vertical);
+            ApplyMovement(input.MoveInput.x, input.MoveInput.y);
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
         }
         else
         {
             // --- リモートクライアント ---
-            SubmitMoveInputServerRpc(input);
-            ApplyMovement(input.Horizontal, input.Vertical);
+            SubmitInputServerRpc(input);
+            ApplyMovement(input.MoveInput.x, input.MoveInput.y);
 
             int idx = (int)(_currentTick % GameConfig.PREDICTION_BUFFER_SIZE);
             _inputBuffer[idx] = input;
@@ -444,32 +445,30 @@ public class PlayerMovement : NetworkBehaviour
     // ============================================================
 
     /// <summary>
-    /// クライアント → サーバーへの入力送信
-    /// サーバーは権威として移動を計算し、確定状態をクライアントに返す
+    /// クライアント → サーバーへの統合入力送信
+    /// サーバーは権威として移動計算・ステート遷移を行い、確定状態をクライアントに返す
     /// </summary>
     [ServerRpc]
-    private void SubmitMoveInputServerRpc(MoveInput input)
+    private void SubmitInputServerRpc(PlayerInput input)
     {
         // ステートマシンによる移動制限（サーバー権威で再チェック）
         bool canMove = _stateMachine == null || _stateMachine.CanMove();
         if (!canMove)
         {
-            input.Horizontal = 0f;
-            input.Vertical = 0f;
+            input.MoveInput = Vector2.zero;
         }
 
         // Idle ↔ Move ステート遷移（サーバー権威）
-        UpdateMoveState(input.Horizontal, input.Vertical);
+        UpdateMoveState(input.MoveInput.x, input.MoveInput.y);
 
         // サーバー権威で移動計算
-        ApplyMovement(input.Horizontal, input.Vertical);
+        ApplyMovement(input.MoveInput.x, input.MoveInput.y);
 
         // 他プレイヤー表示用に NetworkVariable を更新
         _netPosition.Value = transform.position;
         _netRotationY.Value = transform.eulerAngles.y;
 
         // オーナーに確定状態を返送（リコンシリエーション用）
-        // ClientRpc は全クライアントに届くが、処理するのはオーナーのみ
         // TODO: ClientRpcParams で送信先をオーナーに限定して帯域を節約する
         ConfirmStateClientRpc(
             input.Tick,
@@ -530,7 +529,7 @@ public class PlayerMovement : NetworkBehaviour
             // バッファの整合性チェック
             if (_inputBuffer[replayIdx].Tick != replayTick) break;
 
-            ApplyMovement(_inputBuffer[replayIdx].Horizontal, _inputBuffer[replayIdx].Vertical);
+            ApplyMovement(_inputBuffer[replayIdx].MoveInput.x, _inputBuffer[replayIdx].MoveInput.y);
 
             // リプレイ結果でバッファを更新（次回のリコンシリエーションに備える）
             _stateBuffer[replayIdx] = new MoveState
