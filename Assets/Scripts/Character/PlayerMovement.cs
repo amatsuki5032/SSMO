@@ -13,6 +13,7 @@ using UnityEngine;
 /// 参考: Gabriel Gambetta "Client-Side Prediction and Server Reconciliation"
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CharacterStateMachine))]
 public class PlayerMovement : NetworkBehaviour
 {
     // ============================================================
@@ -119,6 +120,10 @@ public class PlayerMovement : NetworkBehaviour
     {
         _controller = GetComponent<CharacterController>();
         _stateMachine = GetComponent<CharacterStateMachine>();
+        if (_stateMachine == null)
+        {
+            Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterStateMachine が見つかりません");
+        }
     }
 
     public override void OnNetworkSpawn()

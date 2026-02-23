@@ -21,20 +21,20 @@ public class CharacterStateMachine : NetworkBehaviour
 
     /// <summary>
     /// 現在のキャラクターステート。サーバーのみ書き込み可能
+    /// 初期値は OnNetworkSpawn() で設定する（Spawn前の .Value 代入は NGO 警告の原因になる）
     /// </summary>
     private readonly NetworkVariable<CharacterState> _state = new(
-        CharacterState.Idle,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
+        readPerm: NetworkVariableReadPermission.Everyone,
+        writePerm: NetworkVariableWritePermission.Server
     );
 
     /// <summary>
     /// 状態異常フラグ。ステートとは別にビットフラグで管理（感電・燃焼・鈍足は他ステートと共存）
+    /// 初期値は OnNetworkSpawn() で設定する
     /// </summary>
     private readonly NetworkVariable<StatusEffect> _statusEffects = new(
-        StatusEffect.None,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
+        readPerm: NetworkVariableReadPermission.Everyone,
+        writePerm: NetworkVariableWritePermission.Server
     );
 
     // ============================================================
@@ -84,6 +84,14 @@ public class CharacterStateMachine : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // サーバーのみ: NetworkVariable の初期値を設定
+        // Spawn 後に代入することで "NetworkVariable is written to before spawned" 警告を回避
+        if (IsServer)
+        {
+            _state.Value = CharacterState.Idle;
+            _statusEffects.Value = StatusEffect.None;
+        }
+
         // ステート変更のコールバック登録（全クライアント + サーバー）
         _state.OnValueChanged += HandleStateChanged;
     }
@@ -476,6 +484,7 @@ public class CharacterStateMachine : NetworkBehaviour
     /// </summary>
     private void HandleStateChanged(CharacterState oldState, CharacterState newState)
     {
+        Debug.Log($"[StateMachine] {gameObject.name}: {oldState} → {newState}");
         OnStateChanged?.Invoke(oldState, newState);
     }
 }
