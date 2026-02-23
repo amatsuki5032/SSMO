@@ -112,7 +112,7 @@ public class TeamManager : NetworkBehaviour
         _teamAssignments.OnListChanged -= OnTeamAssignmentsChanged;
     }
 
-    protected override void OnDestroy()
+    public override void OnDestroy()
     {
         if (Instance == this)
             Instance = null;

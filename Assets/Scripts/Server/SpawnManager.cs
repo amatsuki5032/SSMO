@@ -80,7 +80,7 @@ public class SpawnManager : NetworkBehaviour
         }
     }
 
-    protected override void OnDestroy()
+    public override void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
