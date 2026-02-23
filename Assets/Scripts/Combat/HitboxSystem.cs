@@ -181,6 +181,13 @@ public class HitboxSystem : NetworkBehaviour
             // ガード方向判定: 正面180度以内ならガード成功、背面はめくり
             bool isGuardSuccess = hurtbox.IsGuardingAgainst(transform.position);
 
+            // ガード不可技判定: C1・無双乱舞はガードを貫通する
+            if (isGuardSuccess && IsUnguardable(chargeType))
+            {
+                Debug.Log($"[Guard] ガード不可技！ C{chargeType} が {hurtbox.gameObject.name} のガードを貫通");
+                isGuardSuccess = false;
+            }
+
             if (isGuardSuccess)
             {
                 // EGReady 中にガード成功 → EGカウンター発動
@@ -189,33 +196,43 @@ public class HitboxSystem : NetworkBehaviour
                 {
                     var attackerReaction = GetComponent<ReactionSystem>();
                     targetEG.OnEGCounter(transform, attackerReaction);
-                    // EGカウンター時はダメージも無し（カウンターで反撃するため）
+                    // EGカウンター時はダメージもノックバックも無し（カウンターで反撃するため）
                     continue;
                 }
 
-                Debug.Log($"[Guard] {hurtbox.gameObject.name} ガード成功（{gameObject.name} の攻撃）");
+                Debug.Log($"[Guard] {hurtbox.gameObject.name} ガード成功（{gameObject.name} の攻撃）→ ダメージ0");
 
-                // ガード成功: リアクション無し（Guard ステート維持）+ ガードノックバック
-                ApplyGuardKnockback(hurtbox.transform, transform.position);
+                // ガード成功: ダメージ完全カット + ノックバックのみ
+                // EG準備中はノックバックなし（その場で完全に受け止める）
+                bool isEGState = hurtbox.GetComponent<EGSystem>()?.IsInEGState ?? false;
+                if (!isEGState)
+                {
+                    ApplyGuardKnockback(hurtbox.transform, transform.position);
+                }
+
+                // 攻撃者の無双ゲージ増加（ガードされても攻撃ヒット扱い）
+                var attackerGaugeOnGuard = GetComponent<MusouGauge>();
+                if (attackerGaugeOnGuard != null)
+                    attackerGaugeOnGuard.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
+
+                continue; // ダメージ0 → HP減少・ダメージ通知をスキップ
             }
-            else
+
+            // ガード失敗（めくり）or 非ガード: 通常リアクション適用
+            if (hurtbox.IsGuarding())
             {
-                // ガード失敗（めくり）or 非ガード: 通常リアクション適用
-                if (hurtbox.IsGuarding())
-                {
-                    Debug.Log($"[Guard] めくり！ {hurtbox.gameObject.name} のガードを貫通");
-                }
-
-                var targetReaction = hurtbox.GetComponent<ReactionSystem>();
-                if (targetReaction != null)
-                {
-                    HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
-                    AttackLevel attackLevel = GetAttackLevel(comboStep, chargeType);
-                    targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType, attackLevel);
-                }
+                Debug.Log($"[Guard] めくり！ {hurtbox.gameObject.name} のガードを貫通");
             }
 
-            // ダメージ計算・HP減少
+            var targetReaction = hurtbox.GetComponent<ReactionSystem>();
+            if (targetReaction != null)
+            {
+                HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
+                AttackLevel attackLevel = GetAttackLevel(comboStep, chargeType);
+                targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType, attackLevel);
+            }
+
+            // ダメージ計算・HP減少（ガード成功時はここに到達しない）
             var targetHealth = hurtbox.GetComponent<HealthSystem>();
             if (targetHealth != null)
             {
@@ -236,8 +253,7 @@ public class HitboxSystem : NetworkBehaviour
                     motionMultiplier,
                     GameConfig.DEFAULT_DEF,
                     targetHealth.GetHpRatio(),
-                    isAirborne: isAirborne,
-                    isGuarding: isGuardSuccess
+                    isAirborne: isAirborne
                 );
 
                 targetHealth.TakeDamage(damageResult.HpDamage);
@@ -278,6 +294,27 @@ public class HitboxSystem : NetworkBehaviour
 
         // 通常攻撃・ダッシュ攻撃は攻撃レベル2
         return AttackLevel.Normal;
+    }
+
+    // ============================================================
+    // ガード不可技判定
+    // ============================================================
+
+    /// <summary>
+    /// ガード不可技かを判定する
+    /// C1（ガードブレイク相当）と無双乱舞はガードを貫通する
+    /// </summary>
+    private bool IsUnguardable(int chargeType)
+    {
+        // C1 はガード不可
+        if (chargeType == 1) return true;
+
+        // 無双乱舞中の攻撃はガード不可
+        var state = _stateMachine.CurrentState;
+        if (state == CharacterState.Musou || state == CharacterState.TrueMusou)
+            return true;
+
+        return false;
     }
 
     // ============================================================

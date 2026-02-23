@@ -29,7 +29,7 @@ public static class GameConfig
     // コンボ受付ウィンドウ: 各攻撃モーションの最後30%フレーム（モーション依存）
 
     // === ガード ===
-    public const float GUARD_DAMAGE_REDUCTION = 0.8f;  // ガード時ダメージカット率（80%カット = ×0.2）
+    // ガード成功時はダメージ完全カット（0ダメージ）。ガード不可技のみ貫通する
     public const float GUARD_ANGLE = 180f;             // ガード有効角度（正面180度）
     public const float EG_CHARGE_SEC = 1.0f;           // エレメンタルガード準備時間（△押し込み）
     public const float EG_MUSOU_DRAIN_RATE = 5f;         // EG維持中の無双ゲージ減少量/秒

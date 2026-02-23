@@ -10,9 +10,9 @@ using UnityEngine;
 /// 3. 防御計算 = 基礎ダメージ × (100 / (100 + DEF))   ※斬属性は DEF=0
 /// 4. 空中補正 = 空中被弾時 ÷2
 /// 5. 根性補正 = HP帯による軽減
-/// 6. ガード補正 = ガード時 ×0.2
-/// 7. 斬保証 / 最低保証
-/// 8. クリティカル判定
+/// 6. 斬保証 / 最低保証
+/// 7. クリティカル判定
+/// ※ ガード成功時はダメージ0（完全カット）。呼び出し側でスキップする
 /// </summary>
 public static class DamageCalculator
 {
@@ -38,7 +38,6 @@ public static class DamageCalculator
     /// <param name="element">攻撃の属性（チャージ攻撃のみ乗る）</param>
     /// <param name="elementLevel">属性レベル (0〜4、0=属性なし)</param>
     /// <param name="isAirborne">被弾者が空中か（空中補正÷2）</param>
-    /// <param name="isGuarding">被弾者がガード中か（ダメージ×0.2）</param>
     public static DamageResult Calculate(
         float attackerATK,
         float motionMultiplier,
@@ -46,8 +45,7 @@ public static class DamageCalculator
         float defenderHpRatio,
         ElementType element = ElementType.None,
         int elementLevel = 0,
-        bool isAirborne = false,
-        bool isGuarding = false)
+        bool isAirborne = false)
     {
         var result = new DamageResult();
 
@@ -72,20 +70,14 @@ public static class DamageCalculator
         // --- 5. 根性補正（HP帯によるダメージ軽減）---
         damage /= GetGutsDivisor(defenderHpRatio);
 
-        // --- 6. ガード補正 ---
-        if (isGuarding)
-        {
-            damage *= (1f - GameConfig.GUARD_DAMAGE_REDUCTION);
-        }
-
-        // --- 7. 斬保証 ---
+        // --- 6. 斬保証 ---
         if (element == ElementType.Slash)
         {
             float slashMinDamage = GetSlashMinDamage(elementLevel);
             damage = Mathf.Max(damage, slashMinDamage);
         }
 
-        // --- 8. クリティカル判定 ---
+        // --- 7. クリティカル判定 ---
         if (Random.value < GameConfig.CRITICAL_RATE)
         {
             damage *= GameConfig.CRITICAL_MULTIPLIER;
