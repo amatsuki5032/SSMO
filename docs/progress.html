@@ -160,7 +160,7 @@
 // status: "done" | "inprogress" | "todo"
 // ============================================================
 const PROGRESS_DATA = {
-  lastUpdated: "2026-02-23",
+  lastUpdated: "2026-02-24",
   currentMilestone: "m3",
   milestones: {
     m0: { progress: 100, status: "done" },
@@ -412,8 +412,7 @@ const PROGRESS_DATA = {
         { text: "のけぞり無双脱出", done: true },
         { text: "ヒット/被弾でゲージ増加", done: true },
         { text: "EGSystem を MusouGauge 連携に移行", done: true },
-        { text: "覚醒（ATK+30% / DEF+20% / SPD+15% / 30秒）— M4向け", done: false },
-        { text: "覚醒無双（強化版）— M4向け", done: false },
+        { text: "※ 覚醒システムは廃止（仙箪システムとしてM4で検討）", done: true },
       ],
     },
     {
@@ -441,6 +440,19 @@ const PROGRESS_DATA = {
         { text: "EG中ノックバックなし（完全に受け止める）", done: true },
         { text: "DamageCalculator からガード補正ステップ削除", done: true },
         { text: "combat-spec.md / CLAUDE.md ドキュメント更新", done: true },
+      ],
+    },
+    {
+      id: "m2-visual",
+      title: "ビジュアルポリッシュ（ノックバック・攻撃前進）",
+      status: "done",
+      desc: "被弾ノックバック + 吹き飛ばし修正 + ガードノックバック + 攻撃前進移動",
+      details: [
+        { text: "被弾のけぞりノックバック（後方0.5m移動）", done: true },
+        { text: "C4吹き飛ばし（放物線軌道修正）", done: true },
+        { text: "ガード成功時ノックバック（0.3m）", done: true },
+        { text: "攻撃前進移動（N1-N4 / C1-C5 / ダッシュ攻撃 / 無双）", done: true },
+        { text: "GameConfig.cs に ADVANCE_* 定数追加（11種）", done: true },
       ],
     },
   ],
