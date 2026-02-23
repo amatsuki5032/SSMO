@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 5196386211214597604}
   - component: {fileID: 4045368752086689921}
   - component: {fileID: 53047790272597321}
+  - component: {fileID: 7901121124169488826}
+  - component: {fileID: 4332280896199368995}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -127,6 +129,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9398ade7d0d72db49bf9b95903001de8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ComboSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &7901121124169488826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fdba9b613605214fa67189030f931e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitboxSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &4332280896199368995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ebfc12c19c9c1742a7b0a486181922e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HurtboxComponent
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2542845171839978957
 GameObject:

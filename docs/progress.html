@@ -165,7 +165,7 @@ const PROGRESS_DATA = {
   milestones: {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
-    m2: { progress: 21, status: "active" },
+    m2: { progress: 25, status: "active" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
@@ -362,6 +362,8 @@ const PROGRESS_DATA = {
         { text: "HitboxSystem.cs（OverlapCapsuleNonAlloc + サーバー権威判定）", done: true },
         { text: "ComboSystem にセグメント追跡プロパティ追加", done: true },
         { text: "1攻撃1ヒット（AttackSequence による管理）", done: true },
+        { text: "ラグコンペンセーション連携（Rewindスコープ + RTT計算）", done: true },
+        { text: "NotifyHitClientRpc（全クライアントへヒット通知）", done: true },
       ],
     },
     {

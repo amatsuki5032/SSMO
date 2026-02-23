@@ -3,10 +3,16 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// サーバー権威型ヒット判定システム
+/// サーバー権威型ヒット判定システム（ラグコンペンセーション対応）
 ///
 /// 攻撃ステート中にキャラ前方のカプセル領域を走査し、
 /// HurtboxComponent を持つ対象とのヒットを判定する
+///
+/// ラグコンペンセーション:
+/// - 攻撃者の推定ビュータイム（現在時刻 - RTT/2 - 補間遅延）まで
+///   全敵プレイヤーの位置を巻き戻してからヒット判定を実行
+/// - 最大補正時間は MAX_LAG_COMPENSATION_MS（150ms）
+/// - 巻き戻し → 判定 → 復元 は using (Rewind) スコープで自動管理
 ///
 /// 判定ルール:
 /// - サーバー側でのみ実行
@@ -55,11 +61,12 @@ public class HitboxSystem : NetworkBehaviour
     }
 
     // ============================================================
-    // ヒット判定（★サーバー側で実行★）
+    // ヒット判定（★サーバー側で実行 + ラグコンペンセーション★）
     // ============================================================
 
     /// <summary>
     /// 現在の攻撃に対応する Hitbox をチェックし、範囲内の対象にヒットを適用する
+    /// 攻撃者のビュータイムまで敵を巻き戻してから判定する
     /// </summary>
     private void CheckHitbox()
     {
@@ -90,16 +97,57 @@ public class HitboxSystem : NetworkBehaviour
         // アクティブフレーム外ならスキップ
         if (currentFrame < hitbox.ActiveStartFrame || currentFrame > hitbox.ActiveEndFrame) return;
 
-        // カプセル領域を計算（キャラ位置 + オフセット + 前方 × Length）
+        // ラグコンペンセーション: 攻撃者のビュータイムを計算
+        // ホスト（サーバー兼クライアント）は巻き戻し不要（RTT=0）
+        double viewTime = NetworkManager.Singleton.ServerTime.Time;
+        bool needsRewind = !IsOwnedByServer;
+
+        if (needsRewind)
+        {
+            // リモートクライアントの場合: RTT/2 + 補間遅延分だけ過去を参照
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            ulong clientId = OwnerClientId;
+            double rttSec = transport.GetCurrentRtt(clientId) / 1000.0;
+            double clientViewTime = NetworkManager.Singleton.ServerTime.Time - (rttSec / 2.0);
+            viewTime = LagCompensationManager.Instance.EstimateViewTime(clientViewTime);
+
+            double rewindMs = (NetworkManager.Singleton.ServerTime.Time - viewTime) * 1000.0;
+            Debug.Log($"[LagComp] {gameObject.name}: 巻き戻し {rewindMs:F1}ms (RTT={rttSec * 1000.0:F1}ms)");
+        }
+
+        // カプセル領域を計算（攻撃者自身の位置は巻き戻さない）
         Vector3 basePos = transform.position + transform.rotation * hitbox.Offset;
         Vector3 endPos = basePos + transform.forward * hitbox.Length;
 
-        // Physics.OverlapCapsule で範囲内の Collider を取得
-        int hitCount = Physics.OverlapCapsuleNonAlloc(
-            basePos, endPos, hitbox.Radius, _hitResults
-        );
+        // 巻き戻しスコープ内で OverlapCapsule を実行
+        // using ブロックを抜けると自動的に全プレイヤーが元の位置に復元される
+        int hitCount;
+        if (needsRewind)
+        {
+            using (LagCompensationManager.Instance.Rewind(viewTime))
+            {
+                hitCount = Physics.OverlapCapsuleNonAlloc(
+                    basePos, endPos, hitbox.Radius, _hitResults
+                );
+                ProcessHits(hitCount);
+            }
+        }
+        else
+        {
+            // ホストは巻き戻し不要（現在位置でそのまま判定）
+            hitCount = Physics.OverlapCapsuleNonAlloc(
+                basePos, endPos, hitbox.Radius, _hitResults
+            );
+            ProcessHits(hitCount);
+        }
+    }
 
-        // ヒット対象のフィルタリング
+    /// <summary>
+    /// OverlapCapsule の結果をフィルタリングしてヒットを確定する
+    /// 巻き戻しスコープ内で呼ばれる（敵位置が過去に戻った状態）
+    /// </summary>
+    private void ProcessHits(int hitCount)
+    {
         for (int i = 0; i < hitCount; i++)
         {
             var hurtbox = _hitResults[i].GetComponent<HurtboxComponent>();
@@ -116,9 +164,38 @@ public class HitboxSystem : NetworkBehaviour
 
             // ヒット確定
             _hitTargetsThisAttack.Add(hurtbox.NetworkObjectId);
-            Debug.Log($"[Hit] {gameObject.name} → {hurtbox.gameObject.name} ヒット");
 
-            // TODO: DamageSystem にヒット情報を送信（M2-5b で実装）
+            int comboStep = _comboSystem.ComboStep;
+            int chargeType = _comboSystem.ChargeType;
+            bool isDash = _comboSystem.IsDashAttacking;
+
+            Debug.Log($"[Hit] {gameObject.name} → {hurtbox.gameObject.name} ヒット確定" +
+                      $" (N{comboStep}/C{chargeType}/D={isDash})");
+
+            // 全クライアントにヒット通知（エフェクト表示用）
+            Vector3 hitPoint = hurtbox.transform.position;
+            NotifyHitClientRpc(NetworkObjectId, hurtbox.NetworkObjectId, hitPoint);
+
+            // TODO: DamageSystem にヒット情報を送信（M2-6 で実装）
         }
+    }
+
+    // ============================================================
+    // クライアント通知
+    // ============================================================
+
+    /// <summary>
+    /// ヒット確定を全クライアントに通知する
+    /// クライアント側でヒットエフェクト・SE を再生する
+    /// </summary>
+    /// <param name="attackerNetId">攻撃者の NetworkObjectId</param>
+    /// <param name="targetNetId">被弾者の NetworkObjectId</param>
+    /// <param name="hitPosition">ヒット位置（エフェクト表示用）</param>
+    [ClientRpc]
+    private void NotifyHitClientRpc(ulong attackerNetId, ulong targetNetId, Vector3 hitPosition)
+    {
+        // TODO: ヒットエフェクト・SE の再生（M2-6 以降で実装）
+        Debug.Log($"[Hit-Client] ヒット通知受信: attacker={attackerNetId} → target={targetNetId}" +
+                  $" pos={hitPosition}");
     }
 }
