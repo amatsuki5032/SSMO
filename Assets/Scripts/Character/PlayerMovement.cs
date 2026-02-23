@@ -72,6 +72,7 @@ public class PlayerMovement : NetworkBehaviour
     private CharacterController _controller;
     private CharacterStateMachine _stateMachine;
     private ComboSystem _comboSystem;
+    private EGSystem _egSystem;
     private float _verticalVelocity;
 
     // --- ジャンプ ---
@@ -107,6 +108,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool _guardHeld;        // ガード（押しっぱなし）
     private bool _attackPressed;    // 攻撃（押した瞬間のみ、消費後リセット）
     private bool _chargePressed;   // チャージ攻撃（押した瞬間のみ、消費後リセット）
+    private bool _chargeHeld;      // チャージ長押し（EG準備用）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -133,6 +135,7 @@ public class PlayerMovement : NetworkBehaviour
         _controller = GetComponent<CharacterController>();
         _stateMachine = GetComponent<CharacterStateMachine>();
         _comboSystem = GetComponent<ComboSystem>();
+        _egSystem = GetComponent<EGSystem>();
         if (_stateMachine == null)
         {
             Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterStateMachine が見つかりません");
@@ -217,6 +220,9 @@ public class PlayerMovement : NetworkBehaviour
         // チャージ攻撃（右クリック）も押した瞬間のみ true
         if (Input.GetMouseButtonDown(1))
             _chargePressed = true;
+
+        // チャージ長押し（EG準備用）
+        _chargeHeld = Input.GetMouseButton(1);
     }
 
     /// <summary>
@@ -360,6 +366,7 @@ public class PlayerMovement : NetworkBehaviour
             GuardHeld = _guardHeld,
             AttackPressed = _attackPressed,
             ChargePressed = _chargePressed,
+            ChargeHeld = _chargeHeld,
             MusouPressed = false,   // M2-8で実装
             Tick = _currentTick
         };
@@ -373,6 +380,7 @@ public class PlayerMovement : NetworkBehaviour
         {
             // --- ホスト（サーバー兼オーナー）---
             ProcessGuard(input, true);
+            if (_egSystem != null) _egSystem.ProcessEG(input.ChargeHeld, input.GuardHeld);
             ProcessJump(input, true);
             ProcessDashTracking(input);
             if (input.AttackPressed && _comboSystem != null)
@@ -706,6 +714,9 @@ public class PlayerMovement : NetworkBehaviour
     {
         // ガード処理（サーバー権威）
         ProcessGuard(input, true);
+
+        // EG 処理（サーバー権威）
+        if (_egSystem != null) _egSystem.ProcessEG(input.ChargeHeld, input.GuardHeld);
 
         // ジャンプ処理（サーバー権威）
         ProcessJump(input, true);

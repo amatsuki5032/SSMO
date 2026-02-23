@@ -13,6 +13,7 @@ public struct PlayerInput : INetworkSerializable
     public bool GuardHeld;          // L1（押しっぱなし）
     public bool AttackPressed;      // □（M2-3で使用）
     public bool ChargePressed;      // △（M2-4で使用）
+    public bool ChargeHeld;         // △ 長押し（EG準備用）
     public bool MusouPressed;       // ○（M2-8で使用）
     public uint Tick;               // ティック番号
 
@@ -23,6 +24,7 @@ public struct PlayerInput : INetworkSerializable
         serializer.SerializeValue(ref GuardHeld);
         serializer.SerializeValue(ref AttackPressed);
         serializer.SerializeValue(ref ChargePressed);
+        serializer.SerializeValue(ref ChargeHeld);
         serializer.SerializeValue(ref MusouPressed);
         serializer.SerializeValue(ref Tick);
     }

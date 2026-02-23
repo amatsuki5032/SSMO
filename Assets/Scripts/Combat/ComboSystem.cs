@@ -197,6 +197,11 @@ public class ComboSystem : NetworkBehaviour
         // 新しいチャージ攻撃の開始: CanAcceptInput で入力受付を判定
         if (!_stateMachine.CanAcceptInput(InputType.ChargeAttack)) return;
 
+        // ガード系ステートでは△はEG用（チャージ攻撃にはならない）
+        if (current == CharacterState.Guard || current == CharacterState.GuardMove
+            || current == CharacterState.EGPrepare || current == CharacterState.EGReady)
+            return;
+
         // チャージタイプ決定: _comboStep に応じて C1〜C5
         // _comboStep == 0 → C1（Idle/Move から直接）
         // _comboStep == 1 → C2（N1 から派生）

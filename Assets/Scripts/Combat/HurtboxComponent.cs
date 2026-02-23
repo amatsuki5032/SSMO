@@ -27,13 +27,17 @@ public class HurtboxComponent : NetworkBehaviour
     }
 
     /// <summary>
-    /// ガード中かどうか（Guard / GuardMove ステート）
+    /// ガード中かどうか（Guard / GuardMove / EGPrepare / EGReady）
+    /// EG準備中・完成中もガードは有効
     /// </summary>
     public bool IsGuarding()
     {
         if (_stateMachine == null) return false;
         var state = _stateMachine.CurrentState;
-        return state == CharacterState.Guard || state == CharacterState.GuardMove;
+        return state == CharacterState.Guard
+            || state == CharacterState.GuardMove
+            || state == CharacterState.EGPrepare
+            || state == CharacterState.EGReady;
     }
 
     /// <summary>

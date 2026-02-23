@@ -181,6 +181,16 @@ public class HitboxSystem : NetworkBehaviour
 
             if (isGuardSuccess)
             {
+                // EGReady 中にガード成功 → EGカウンター発動
+                var targetEG = hurtbox.GetComponent<EGSystem>();
+                if (targetEG != null && targetEG.IsEGReady)
+                {
+                    var attackerReaction = GetComponent<ReactionSystem>();
+                    targetEG.OnEGCounter(transform, attackerReaction);
+                    // EGカウンター時はダメージも無し（カウンターで反撃するため）
+                    continue;
+                }
+
                 Debug.Log($"[Guard] {hurtbox.gameObject.name} ガード成功（{gameObject.name} の攻撃）");
 
                 // ガード成功: リアクション無し（Guard ステート維持）+ ガードノックバック

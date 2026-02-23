@@ -32,6 +32,10 @@ public static class GameConfig
     public const float GUARD_DAMAGE_REDUCTION = 0.8f;  // ガード時ダメージカット率（80%カット = ×0.2）
     public const float GUARD_ANGLE = 180f;             // ガード有効角度（正面180度）
     public const float EG_CHARGE_SEC = 1.0f;           // エレメンタルガード準備時間（△押し込み）
+    public const float EG_MUSOU_DRAIN_RATE = 5f;         // EG維持中の無双ゲージ減少量/秒
+    public const float EG_COUNTER_MUSOU_COST = 20f;      // EGカウンター発動時の無双ゲージ消費量
+    public const float EG_COUNTER_KNOCKBACK = 8f;        // EGカウンター吹き飛ばし力
+    public const float EG_COUNTER_DURATION = 0.5f;       // EGカウンター持続時間（秒）
     public const float GUARD_MOVE_SPEED_MULTIPLIER = 0.5f; // ガード移動速度倍率（50%）
     public const float GUARD_KNOCKBACK_DISTANCE = 0.3f;    // ガード成功時のノックバック距離 (m)
 
