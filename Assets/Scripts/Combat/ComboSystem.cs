@@ -40,7 +40,8 @@ public class ComboSystem : NetworkBehaviour
     private int _comboStep;          // 現在のコンボ段数（0 = 非攻撃）
     private float _attackTimer;      // 現在の攻撃モーションの残り時間
     private bool _comboWindowOpen;   // コンボ受付ウィンドウが開いているか
-    private bool _bufferedAttack;    // 先行入力バッファ（ウィンドウ前の攻撃入力を保持）
+    private bool _hasBufferedAttack;    // 先行入力バッファに攻撃入力があるか
+    private float _inputBufferTimer;    // 先行入力の残り有効時間（INPUT_BUFFER_SEC で初期化、0 で無効）
     private int _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
 
     // ============================================================
@@ -95,8 +96,10 @@ public class ComboSystem : NetworkBehaviour
             }
             else if (!_comboWindowOpen && _comboStep < _maxComboStep)
             {
-                // ウィンドウ前: 先行入力バッファに保存
-                _bufferedAttack = true;
+                // ウィンドウ前: 先行入力バッファに保存（150ms 有効）
+                _hasBufferedAttack = true;
+                _inputBufferTimer = GameConfig.INPUT_BUFFER_SEC;
+                Debug.Log($"[Combo] {gameObject.name}: 先行入力バッファリング");
             }
             // _comboStep >= _maxComboStep: 最大段数なので受け付けない
         }
@@ -126,6 +129,17 @@ public class ComboSystem : NetworkBehaviour
 
         _attackTimer -= GameConfig.FIXED_DELTA_TIME;
 
+        // 先行入力バッファのタイムアウト処理（150ms 経過で破棄）
+        if (_hasBufferedAttack)
+        {
+            _inputBufferTimer -= GameConfig.FIXED_DELTA_TIME;
+            if (_inputBufferTimer <= 0f)
+            {
+                _hasBufferedAttack = false;
+                _inputBufferTimer = 0f;
+            }
+        }
+
         // コンボウィンドウ判定: モーション残りが持続時間の COMBO_WINDOW_RATIO 以下で開放
         if (!_comboWindowOpen)
         {
@@ -136,9 +150,11 @@ public class ComboSystem : NetworkBehaviour
                 _comboWindowOpen = true;
 
                 // 先行入力バッファを消費
-                if (_bufferedAttack && _comboStep < _maxComboStep)
+                if (_hasBufferedAttack && _comboStep < _maxComboStep)
                 {
-                    StartComboStep(_comboStep + 1);
+                    int nextStep = _comboStep + 1;
+                    Debug.Log($"[Combo] {gameObject.name}: バッファ消費 → N{nextStep}");
+                    StartComboStep(nextStep);
                     return;
                 }
             }
@@ -165,7 +181,8 @@ public class ComboSystem : NetworkBehaviour
         _comboStep = step;
         _attackTimer = GetAttackDuration(step);
         _comboWindowOpen = false;
-        _bufferedAttack = false;
+        _hasBufferedAttack = false;
+        _inputBufferTimer = 0f;
         _networkComboStep.Value = (byte)step;
         Debug.Log($"[Combo] {gameObject.name}: N{step} 開始");
     }
@@ -178,7 +195,8 @@ public class ComboSystem : NetworkBehaviour
         _comboStep = 0;
         _attackTimer = 0f;
         _comboWindowOpen = false;
-        _bufferedAttack = false;
+        _hasBufferedAttack = false;
+        _inputBufferTimer = 0f;
         _networkComboStep.Value = 0;
     }
 
