@@ -134,22 +134,26 @@ public class DebugTestHelper : NetworkBehaviour
         if (target == null) { _lastAction = "対象なし"; return; }
 
         var sm = target.GetComponent<CharacterStateMachine>();
-        if (sm == null) return;
+        var eg = target.GetComponent<EGSystem>();
+        if (sm == null || eg == null) return;
 
         if (sm.CurrentState == CharacterState.EGReady)
         {
+            // EG解除 + 強制維持フラグOFF
+            eg.DebugForceEG = false;
             sm.ForceState(CharacterState.Idle);
             _lastAction = "相手: EG展開 → Idle";
         }
         else
         {
-            // EG維持に無双ゲージが必要なため、先にゲージを満タンにする
+            // ゲージ補充 → EGReady 強制 → 強制維持フラグON
             var gauge = target.GetComponent<MusouGauge>();
             if (gauge != null)
                 gauge.AddGauge(GameConfig.MUSOU_GAUGE_MAX);
 
             sm.ForceState(CharacterState.EGReady);
-            _lastAction = "相手: → EG展開 (ゲージ補充済)";
+            eg.DebugForceEG = true;
+            _lastAction = "相手: → EG展開 (強制維持)";
         }
     }
 

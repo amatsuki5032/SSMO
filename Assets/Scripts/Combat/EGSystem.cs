@@ -36,6 +36,11 @@ public class EGSystem : NetworkBehaviour
     // EGカウンター持続タイマー
     private float _egCounterTimer;
 
+#if UNITY_EDITOR
+    /// <summary>デバッグ用: EG強制維持フラグ。true の間は入力・ゲージに関係なくEGReady を維持</summary>
+    public bool DebugForceEG { get; set; }
+#endif
+
     // ============================================================
     // 公開プロパティ
     // ============================================================
@@ -113,6 +118,15 @@ public class EGSystem : NetworkBehaviour
         // EGReady 中: 維持 or 解除
         if (state == CharacterState.EGReady)
         {
+#if UNITY_EDITOR
+            // デバッグ強制維持: 入力・ゲージ解除を無視し、ゲージを補充し続ける
+            if (DebugForceEG)
+            {
+                _musouGauge.AddGauge(GameConfig.EG_MUSOU_DRAIN_RATE * GameConfig.FIXED_DELTA_TIME);
+                return;
+            }
+#endif
+
             // 解除条件: ガード離し or △離し
             if (!guardHeld || !chargeHeld)
             {
