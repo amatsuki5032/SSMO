@@ -1,240 +1,283 @@
 # SSMO コードリファレンス
 
-> CLAUDE.md のファイル構成セクションと同じ順序で記載。
+> 自動生成ドキュメント。CLAUDE.md のファイル構成セクション順に記載。
 
 ---
 
-## Character/PlayerMovement.cs
+## Character/
 
-**クラス名**: `PlayerMovement` (NetworkBehaviour)
+### PlayerMovement.cs
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `bool IsDashing` | 連続移動時間が閾値を超えたらtrue（ダッシュ攻撃発動条件） |
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `PlayerMovement : NetworkBehaviour` |
 
-### NetworkVariable
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `bool IsDashing` | 連続移動時間が閾値超過でダッシュ状態か返す（プロパティ） |
+
+**NetworkVariable**
+
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_netPosition` | `NetworkVariable<Vector3>` | サーバー権威の位置（他プレイヤー表示用） |
 | `_netRotationY` | `NetworkVariable<float>` | サーバー権威のY回転（他プレイヤー表示用） |
 
-### ServerRpc
-| メソッド | 説明 |
-|---------|------|
-| `SubmitInputServerRpc(PlayerInput input)` | クライアント→サーバーへの統合入力送信 |
+**ServerRpc / ClientRpc**
 
-### ClientRpc
-| メソッド | 説明 |
-|---------|------|
-| `ConfirmStateClientRpc(uint tick, Vector3 pos, float rotY, float vVel)` | サーバー確定状態をオーナーに返送（リコンシリエーション用） |
+| メソッド名 | 種別 | 説明 |
+|-----------|------|------|
+| `SubmitInputServerRpc(PlayerInput)` | ServerRpc | クライアント→サーバーへ統合入力送信 |
+| `ConfirmStateClientRpc(uint, Vector3, float, float)` | ClientRpc | サーバー確定状態をオーナーに返送（リコンシリエーション用） |
 
-### 依存 (GetComponent)
-- `CharacterController`
-- `CharacterStateMachine`
-- `ComboSystem`
-- `EGSystem`
-- `MusouGauge`
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterController` | 物理移動 |
+| `CharacterStateMachine` | ステート判定・遷移 |
+| `ComboSystem` | 攻撃入力の委譲 |
+| `EGSystem` | EG入力処理の委譲 |
+| `MusouGauge` | 無双入力処理の委譲 |
 
 ---
 
-## Character/CharacterStateMachine.cs
+### CharacterStateMachine.cs
 
-**クラス名**: `CharacterStateMachine` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `CharacterStateMachine : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `CharacterState CurrentState` | 現在のステート（読み取り専用） |
-| `StatusEffect CurrentStatusEffects` | 現在の状態異常フラグ（読み取り専用） |
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `CharacterState CurrentState` | 現在のステート（読み取り専用プロパティ） |
+| `StatusEffect CurrentStatusEffects` | 現在の状態異常フラグ（読み取り専用プロパティ） |
 | `bool IsInvincible` | 現在無敵状態か |
-| `event Action<CharacterState,CharacterState> OnStateChanged` | ステート変更イベント（旧→新） |
-| `bool TryChangeState(CharacterState)` | ステート遷移を試行（サーバー側） |
-| `void ForceState(CharacterState)` | 強制ステート設定（バリデーションスキップ） |
-| `bool CanAcceptInput(InputType)` | 現在のステートで入力受付可能か判定 |
-| `bool CanMove()` | 移動可能かの簡易判定 |
-| `void SetHitstunDuration(float)` | 次のHitstun遷移で使う持続時間をオーバーライド |
+| `event Action<CharacterState, CharacterState> OnStateChanged` | ステート変更イベント（旧, 新） |
+| `bool TryChangeState(CharacterState)` | ステート遷移を試行する（サーバー側） |
+| `void ForceState(CharacterState)` | バリデーションをスキップして強制遷移（サーバー側） |
+| `bool CanAcceptInput(InputType)` | 現在のステートで入力が受付可能か判定 |
+| `bool CanMove()` | 移動可能か簡易判定 |
+| `void SetHitstunDuration(float)` | 次の Hitstun 遷移時の持続時間を設定 |
 | `void AddStatusEffect(StatusEffect)` | 状態異常フラグを付与（サーバー側） |
 | `void RemoveStatusEffect(StatusEffect)` | 状態異常フラグを解除（サーバー側） |
 | `bool HasStatusEffect(StatusEffect)` | 指定の状態異常フラグがあるか判定 |
 
-### NetworkVariable
+**NetworkVariable**
+
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_state` | `NetworkVariable<CharacterState>` | 現在のキャラクターステート |
 | `_statusEffects` | `NetworkVariable<StatusEffect>` | 状態異常ビットフラグ |
 
-### ServerRpc
-| メソッド | 説明 |
-|---------|------|
-| `RequestStateChangeServerRpc(CharacterState)` | クライアントからステート遷移をリクエスト |
+**ServerRpc / ClientRpc**
 
-### ClientRpc
-なし
+| メソッド名 | 種別 | 説明 |
+|-----------|------|------|
+| `RequestStateChangeServerRpc(CharacterState)` | ServerRpc | クライアントからステート遷移をリクエスト |
 
-### 依存 (GetComponent)
-なし（自身のみ）
+**依存（GetComponent）**
+
+なし（自己完結）
 
 ---
 
-## Shared/GameConfig.cs
+## Shared/
 
-**クラス名**: `GameConfig` (static class)
+### GameConfig.cs
 
-### public メソッド / プロパティ
-なし（全て `public const` 定数のみ）
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `GameConfig`（static クラス） |
 
-### 主要な定数カテゴリ
-| カテゴリ | 代表的な定数 |
+ゲーム全体の定数・設定値を定義する静的クラス。NetworkVariable / RPC / GetComponent なし。
+
+**主要定数グループ**
+
+| グループ | 代表的な定数 |
 |---------|-------------|
-| ネットワーク | `SERVER_TICK_RATE(60)`, `FIXED_DELTA_TIME`, `MAX_LAG_COMPENSATION_MS(150)` |
+| ネットワーク | `SERVER_TICK_RATE(60)`, `CLIENT_SEND_RATE(30)`, `FIXED_DELTA_TIME` |
+| ラグコンペンセーション | `MAX_LAG_COMPENSATION_MS(150)`, `SNAPSHOT_BUFFER_SIZE(128)` |
 | 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)` |
-| 移動 | `MOVE_SPEED(6)`, `ROTATION_SPEED(720)`, `JUMP_FORCE(8)`, `JUMP_GRAVITY(-20)` |
-| ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_MOVE_SPEED_MULTIPLIER(0.5)` |
-| 無双 | `MUSOU_GAUGE_MAX(100)`, `MUSOU_DURATION_SEC(4)`, `TRUE_MUSOU_HP_THRESHOLD(0.2)` |
-| HP・ダメージ | `DEFAULT_MAX_HP(1000)`, `DEFAULT_ATK(100)`, `CRITICAL_RATE(0.05)` |
-| 被弾リアクション | `HITSTUN_LIGHT_DURATION(0.3)`, `LAUNCH_HEIGHT(3.0)`, `KNOCKBACK_DISTANCE_H(4.0)` |
+| 戦闘 | `INPUT_BUFFER_SEC(0.15)`, `COMBO_WINDOW_RATIO(0.3)` |
+| ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_KNOCKBACK_DISTANCE(0.3)` |
+| ジャンプ | `JUMP_FORCE(8)`, `JUMP_GRAVITY(-20)` |
+| 無双ゲージ | `MUSOU_GAUGE_MAX(100)`, `MUSOU_DURATION_SEC(4)` |
+| HP・ダメージ | `DEFAULT_MAX_HP(1000)`, `DEFAULT_ATK(100)`, `DEFAULT_DEF(50)` |
 | コンボ | `MAX_COMBO_STEP_BASE(4)`, `N1〜N4_DURATION`, `C1〜C6_DURATION` |
-| 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)`, `SNAP_THRESHOLD(5)` |
-
-### NetworkVariable / ServerRpc / ClientRpc / 依存
-なし（static class）
+| リアクション | `HITSTUN_LIGHT_DURATION(0.3)`, `LAUNCH_HEIGHT(3.0)`, `KNOCKBACK_DISTANCE_H(4.0)` |
+| 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
 
 ---
 
-## Shared/DamageCalculator.cs
+### DamageCalculator.cs
 
-**クラス名**: `DamageCalculator` (static class)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `DamageCalculator`（static クラス） |
 
-### 内部構造体
-`DamageResult` — `HpDamage(int)`, `MusouDamage(int)`, `AttackerMusouCost(int)`, `IsCritical(bool)`
+**内部構造体**
 
-### public メソッド
-| メソッド | 説明 |
+| 名前 | 説明 |
+|------|------|
+| `DamageResult` | 計算結果（HpDamage, MusouDamage, AttackerMusouCost, IsCritical） |
+
+**主要 public メソッド**
+
+| 名前 | 説明 |
+|------|------|
+| `DamageResult Calculate(float, float, float, float, ElementType, int, bool)` | メインのダメージ計算（ATK×倍率→防御→空中→根性→斬保証→クリ） |
+| `float GetMotionMultiplier(int, int, bool, bool)` | 攻撃種別に応じたモーション倍率を返す |
+| `float GetElementDamageMultiplier(ElementType, int)` | 属性レベルに応じたダメージ倍率を返す |
+| `float GetGutsDivisor(float)` | HP帯による根性補正除数を返す |
+| `float GetSlashMinDamage(int)` | 斬属性のレベル別最低保証ダメージを返す |
+
+NetworkVariable / RPC / GetComponent なし。
+
+---
+
+### CharacterState.cs
+
+| 項目 | 内容 |
+|------|------|
+| ファイル種別 | enum 定義集（クラスなし） |
+
+**定義一覧**
+
+| enum 名 | 説明 |
 |---------|------|
-| `DamageResult Calculate(float atk, float motion, float def, float hpRatio, ...)` | メインのダメージ計算（属性・空中補正・根性補正・クリティカル含む） |
-| `float GetMotionMultiplier(int combo, int charge, bool isDash, bool isRush)` | 攻撃種別に応じたモーション倍率を返す |
-| `float GetElementDamageMultiplier(ElementType, int level)` | 属性レベルに応じたダメージ倍率を返す |
-| `float GetGutsDivisor(float hpRatio)` | HP帯による根性補正除数を返す |
-| `float GetSlashMinDamage(int level)` | 斬属性のレベル別最低保証ダメージ |
-
-### NetworkVariable / ServerRpc / ClientRpc / 依存
-なし（static class）
-
----
-
-## Shared/CharacterState.cs
-
-**定義**: enum / フラグ定義ファイル（クラスなし）
-
-### enum 一覧
-| enum名 | 基底型 | 説明 |
-|--------|-------|------|
-| `CharacterState` | `byte` | 行動ステート（Idle, Move, Attack, Guard, Musou, Hitstun, Dead 等） |
-| `StatusEffect` | `byte` [Flags] | 状態異常フラグ（Electrified, Burn, Slow） |
-| `AttackLevel` | `byte` | 攻撃レベル 4段階（Arrow, Normal, Charge, Musou） |
-| `ArmorLevel` | `byte` | アーマー段階 5段階（None〜HyperArmor） |
-| `DownType` | `byte` | ダウン種別（FaceDown, Crumble, Sprawl） |
-| `InputType` | `byte` | 入力種別（Move, NormalAttack, ChargeAttack, Jump, Musou, Guard 等） |
-| `HitReaction` | — | 被弾リアクション種別（Flinch, Launch, Knockback, Slam 等） |
-| `ElementType` | — | 属性種別（None, Fire, Ice, Thunder, Wind, Slash） |
-| `Team` | — | チーム識別（Red, Blue） |
-| `WeaponType` | — | 武器種（GreatSword, DualBlades, Spear, Halberd, Fists, Bow） |
+| `CharacterState : byte` | キャラクター行動ステート（Idle, Move, Attack, ... Dead） |
+| `StatusEffect : byte` | 状態異常ビットフラグ（Electrified, Burn, Slow） |
+| `AttackLevel : byte` | 攻撃レベル（Arrow=1, Normal=2, Charge=3, Musou=4） |
+| `ArmorLevel : byte` | アーマー段階（None=1 〜 HyperArmor=5） |
+| `DownType : byte` | ダウン種別（FaceDown, Crumble, Sprawl） |
+| `InputType : byte` | 入力種別（Move, NormalAttack, ChargeAttack, Jump, Musou, Guard 等） |
+| `HitReaction` | 被弾リアクション種別（Flinch, Launch, Slam, Knockback 等） |
+| `ElementType` | 属性種別（None, Fire, Ice, Thunder, Wind, Slash） |
+| `Team` | チーム識別（Red, Blue） |
+| `WeaponType` | 武器種（GreatSword, DualBlades, Spear, Halberd, Fists, Bow） |
 
 ---
 
-## Shared/PlayerInput.cs
+### PlayerInput.cs
 
-**構造体名**: `PlayerInput` (INetworkSerializable)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `PlayerInput`（struct, `INetworkSerializable`） |
 
-### フィールド
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
+**フィールド**
+
+| 名前 | 型 | 説明 |
+|------|-----|------|
 | `MoveInput` | `Vector2` | 移動方向 (H, V) |
 | `JumpPressed` | `bool` | ×ボタン（押した瞬間） |
 | `GuardHeld` | `bool` | L1（押しっぱなし） |
 | `AttackPressed` | `bool` | □（押した瞬間） |
 | `ChargePressed` | `bool` | △（押した瞬間） |
 | `ChargeHeld` | `bool` | △ 長押し（EG準備用） |
-| `MusouPressed` | `bool` | ○ 押した瞬間（無双発動） |
-| `MusouHeld` | `bool` | ○ 長押し（無双チャージ） |
+| `MusouPressed` | `bool` | ○（押した瞬間） |
+| `MusouHeld` | `bool` | ○ 長押し（無双チャージ用） |
 | `Tick` | `uint` | ティック番号 |
 
-### public メソッド
-| メソッド | 説明 |
-|---------|------|
-| `NetworkSerialize<T>(BufferSerializer<T>)` | INetworkSerializable 実装 |
+**主要 public メソッド**
 
-### NetworkVariable / ServerRpc / ClientRpc / 依存
-なし（構造体）
+| 名前 | 説明 |
+|------|------|
+| `NetworkSerialize<T>(BufferSerializer<T>)` | NGO シリアライズ実装 |
+
+依存なし。
 
 ---
 
-## Combat/ComboSystem.cs
+## Combat/
 
-**クラス名**: `ComboSystem` (NetworkBehaviour)
+### ComboSystem.cs
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `int ComboStep` | 現在のコンボ段数（0=非攻撃） |
-| `int AttackSequence` | 攻撃セグメント番号（HitboxSystem用、新攻撃ごとにインクリメント） |
-| `int ChargeType` | 現在のチャージ技番号（0=非チャージ、1=C1...） |
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `ComboSystem : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `int ComboStep` | 現在のコンボ段数（0=非攻撃、プロパティ） |
+| `int AttackSequence` | 攻撃セグメント番号（HitboxSystem用。新攻撃ごとにインクリメント） |
+| `int ChargeType` | 現在のチャージ技番号（0=非チャージ、1=C1…） |
 | `float SegmentElapsed` | 現在の攻撃セグメント経過時間（HitboxSystem用） |
 | `bool IsDashAttacking` | ダッシュ攻撃中か |
 | `bool IsRush` | ラッシュ中か（C3ラッシュ or ダッシュラッシュ） |
 | `void TryStartAttack()` | 通常攻撃入力を処理（サーバー権威） |
-| `void TryStartCharge(Vector2 moveInput)` | チャージ攻撃入力を処理（サーバー権威） |
+| `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
-| `static float GetAttackDuration(int step)` | コンボ段数に応じた通常攻撃持続時間を返す |
-| `static float GetChargeDuration(int chargeType)` | チャージ技番号に応じた持続時間を返す |
+| `static float GetAttackDuration(int)` | コンボ段数に応じた通常攻撃持続時間を返す |
+| `static float GetChargeDuration(int)` | チャージ技番号に応じた持続時間を返す |
 
-### NetworkVariable
+**NetworkVariable**
+
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_networkComboStep` | `NetworkVariable<byte>` | 現在のコンボ段数（UI・他プレイヤー表示用） |
 
-### ServerRpc / ClientRpc
+**ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent)
-- `CharacterStateMachine`
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | ステート判定・遷移 |
 
 ---
 
-## Combat/HitboxSystem.cs
+### HitboxSystem.cs
 
-**クラス名**: `HitboxSystem` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `HitboxSystem : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-なし（全てprivate。FixedUpdateで自動実行）
+**主要 public メソッド / プロパティ**
 
-### NetworkVariable
+なし（全て private。FixedUpdate で自動実行）
+
+**NetworkVariable**
+
 なし
 
-### ServerRpc
-なし
+**ServerRpc / ClientRpc**
 
-### ClientRpc
-| メソッド | 説明 |
-|---------|------|
-| `NotifyHitClientRpc(ulong attackerNetId, ulong targetNetId, Vector3 hitPos)` | ヒット確定を全クライアントに通知（エフェクト用） |
-| `NotifyDamageClientRpc(ulong targetNetId, int damage, bool isCritical)` | ダメージ確定を全クライアントに通知 |
+| メソッド名 | 種別 | 説明 |
+|-----------|------|------|
+| `NotifyHitClientRpc(ulong, ulong, Vector3)` | ClientRpc | ヒット確定を全クライアントに通知（エフェクト用） |
+| `NotifyDamageClientRpc(ulong, int, bool)` | ClientRpc | ダメージ確定を全クライアントに通知 |
 
-### 依存 (GetComponent)
-- `ComboSystem`
-- `CharacterStateMachine`
-- (ヒット対象から) `HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterController`, `ArmorSystem`（via `hurtbox.GetComponent`）
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `ComboSystem` | 攻撃状態・セグメント経過の参照 |
+| `CharacterStateMachine` | 無双ステート判定（攻撃レベル決定用） |
+
+※ ヒット対象（`hurtbox.GetComponent`）から以下も取得:
+`HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`
 
 ---
 
-## Combat/HitboxData.cs
+### HitboxData.cs
 
-**構造体名**: `HitboxData` (struct)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `HitboxData`（struct） |
 
-### フィールド
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
+**フィールド**
+
+| 名前 | 型 | 説明 |
+|------|-----|------|
 | `Radius` | `float` | 判定半径 |
 | `Length` | `float` | 判定長さ（前方方向） |
 | `Offset` | `Vector3` | キャラ中心からのオフセット（ローカル座標） |
@@ -243,237 +286,299 @@
 | `MultiHit` | `bool` | 多段ヒットか |
 | `MaxHitCount` | `int` | 多段の場合の最大ヒット数 |
 
-### public メソッド
-| メソッド | 説明 |
-|---------|------|
-| `static HitboxData GetHitboxData(int comboStep, int chargeType, bool isDash, bool isRush)` | 攻撃状態に応じたHitboxDataを返す |
+**主要 public メソッド**
 
-### NetworkVariable / ServerRpc / ClientRpc / 依存
-なし（純粋データ構造体）
+| 名前 | 説明 |
+|------|------|
+| `static HitboxData GetHitboxData(int, int, bool, bool)` | 攻撃状態に応じた HitboxData を返す |
+
+NetworkVariable / RPC / GetComponent なし。
 
 ---
 
-## Combat/HurtboxComponent.cs
+### HurtboxComponent.cs
 
-**クラス名**: `HurtboxComponent` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `HurtboxComponent : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
 | `bool IsInvincible()` | 現在無敵状態か（サーバー側判定用） |
 | `bool IsGuarding()` | ガード中か（Guard/GuardMove/EGPrepare/EGReady） |
-| `bool IsGuardingAgainst(Vector3 attackerPos)` | 攻撃者に対してガードが有効か（正面180度判定） |
+| `bool IsGuardingAgainst(Vector3)` | 攻撃者に対してガードが有効か（正面180度判定） |
 
-### NetworkVariable / ServerRpc / ClientRpc
+**NetworkVariable / ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent)
-- `CharacterStateMachine`
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | 無敵・ガードステート判定 |
 
 ---
 
-## Combat/HealthSystem.cs
+### HealthSystem.cs
 
-**クラス名**: `HealthSystem` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `HealthSystem : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `int CurrentHp` | 現在HP（読み取り専用） |
-| `int MaxHp` | 最大HP（読み取り専用） |
-| `void TakeDamage(int damage)` | ダメージを適用しHP減少、HP0でDead遷移（サーバー側） |
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `int CurrentHp` | 現在HP（読み取り専用プロパティ） |
+| `int MaxHp` | 最大HP（読み取り専用プロパティ） |
+| `void TakeDamage(int)` | ダメージ適用。HP0で Dead 遷移（サーバー側） |
 | `void FullHeal()` | HP全回復（デバッグ・リスポーン用、サーバー側） |
-| `float GetHpRatio()` | 現在HP/最大HP を返す（根性補正判定用） |
+| `float GetHpRatio()` | 現在HP / 最大HP を返す（根性補正判定用） |
 
-### NetworkVariable
+**NetworkVariable**
+
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_currentHp` | `NetworkVariable<int>` | 現在HP |
 | `_maxHp` | `NetworkVariable<int>` | 最大HP |
 
-### ServerRpc / ClientRpc
+**ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent)
-- `CharacterStateMachine`
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | Dead 遷移 |
 
 ---
 
-## Combat/ReactionSystem.cs
+### ReactionSystem.cs
 
-**クラス名**: `ReactionSystem` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `ReactionSystem : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `static HitReaction GetReactionType(int comboStep, int chargeType, bool isDash)` | 攻撃種別からリアクションタイプを決定 |
-| `void ApplyReaction(HitReaction, Vector3 attackerPos, int combo, int charge, AttackLevel)` | 被弾者にリアクションを適用（ステート遷移+物理速度設定、サーバー側） |
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static HitReaction GetReactionType(int, int, bool)` | 攻撃種別からリアクションタイプを決定 |
+| `void ApplyReaction(HitReaction, Vector3, int, int, AttackLevel)` | 被弾者にリアクション適用（ステート遷移+物理速度設定、サーバー側） |
 | `void ResetReactionPhysics()` | リアクション物理をリセット（リスポーン等） |
 | `bool IsAirborne()` | 被弾者が空中状態か判定 |
 
-### NetworkVariable / ServerRpc / ClientRpc
+**NetworkVariable / ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent)
-- `CharacterStateMachine`
-- `CharacterController`
-- `ArmorSystem`
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | ステート遷移・空中判定 |
+| `CharacterController` | リアクション物理移動 |
+| `ArmorSystem` | のけぞり判定（アーマー比較） |
 
 ---
 
-## Combat/ArmorSystem.cs
+### ArmorSystem.cs
 
-**クラス名**: `ArmorSystem` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `ArmorSystem : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `ArmorLevel CurrentArmorLevel` | 現在のアーマー段階（読み取り専用） |
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `ArmorLevel CurrentArmorLevel` | 現在のアーマー段階（読み取り専用プロパティ） |
 | `void SetArmorLevel(ArmorLevel)` | アーマー段階を設定（サーバー側） |
 | `bool ShouldFlinch(AttackLevel)` | 攻撃を受けた時にのけぞるか判定（サーバー側） |
 
-### NetworkVariable
+**NetworkVariable**
+
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_armorLevel` | `NetworkVariable<byte>` | 現在のアーマー段階 |
 
-### ServerRpc / ClientRpc
+**ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent)
+**依存（GetComponent）**
+
 なし
 
 ---
 
-## Combat/EGSystem.cs
+### EGSystem.cs
 
-**クラス名**: `EGSystem` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `EGSystem : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `bool IsEGReady` | EG準備完了状態か（EGReadyステート） |
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `bool IsEGReady` | EG準備完了状態か（EGReady ステート） |
 | `bool IsInEGState` | EG関連ステートか（EGPrepare/EGReady/EGCounter） |
 | `bool DebugForceEG` | デバッグ用EG強制維持フラグ（Editor限定） |
-| `void ProcessEG(bool chargeHeld, bool guardHeld)` | 毎ティックのEG入力処理（サーバー側） |
-| `void OnEGCounter(Transform attackerTransform, ReactionSystem attackerReaction)` | EGカウンター発動（攻撃者を吹き飛ばし、サーバー側） |
+| `void ProcessEG(bool, bool)` | 毎ティックのEG入力処理（chargeHeld, guardHeld。サーバー側） |
+| `void OnEGCounter(Transform, ReactionSystem)` | EGカウンター発動（攻撃者を吹き飛ばし。サーバー側） |
 
-### NetworkVariable
+**NetworkVariable / ServerRpc / ClientRpc**
+
 なし
 
-### ServerRpc / ClientRpc
-なし
+**依存（GetComponent）**
 
-### 依存 (GetComponent)
-- `CharacterStateMachine`
-- `MusouGauge`
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | ステート判定・遷移 |
+| `MusouGauge` | ゲージ消費（EG維持・カウンター） |
 
 ---
 
-## Combat/MusouGauge.cs
+### MusouGauge.cs
 
-**クラス名**: `MusouGauge` (NetworkBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `MusouGauge : NetworkBehaviour` |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
-| `float CurrentGauge` | 現在のゲージ量（読み取り専用） |
-| `float MaxGauge` | 最大ゲージ量 |
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `float CurrentGauge` | 現在のゲージ量（読み取り専用プロパティ） |
+| `float MaxGauge` | 最大ゲージ量（= MUSOU_GAUGE_MAX） |
 | `bool IsMusouActive` | 無双発動中か |
 | `bool IsGaugeFull` | ゲージMAXか |
-| `void AddGauge(float amount)` | ゲージを加算（攻撃ヒット・被弾等、サーバー側） |
-| `void ConsumeGauge(float amount)` | ゲージを消費（EGカウンター・EG維持等、サーバー側） |
+| `void AddGauge(float)` | ゲージを加算（攻撃ヒット・被弾等、サーバー側） |
+| `void ConsumeGauge(float)` | ゲージを消費（EGカウンター・EG維持等、サーバー側） |
 | `bool TryActivateMusou()` | 無双乱舞の発動を試みる（サーバー側） |
-| `void ProcessMusouCharge(bool musouHeld)` | 無双チャージ処理（○長押し、サーバー側） |
+| `void ProcessMusouCharge(bool)` | 無双チャージ処理（○長押し中に毎ティック、サーバー側） |
 
-### NetworkVariable
+**NetworkVariable**
+
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_currentGauge` | `NetworkVariable<float>` | 現在のゲージ量 |
 | `_isMusouActive` | `NetworkVariable<bool>` | 無双発動中フラグ |
 
-### ServerRpc / ClientRpc
+**ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent)
-- `CharacterStateMachine`
-- `HealthSystem`
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | ステート判定・遷移 |
+| `HealthSystem` | 真・無双判定（HP比率取得） |
 
 ---
 
-## Netcode/LagCompensationManager.cs
+## Netcode/
 
-**クラス名**: `LagCompensationManager` (MonoBehaviour, シングルトン)
+### LagCompensationManager.cs
 
-### 内部構造体
-`RewindScope` (readonly struct, IDisposable) — usingブロックで巻き戻し→自動復元
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `LagCompensationManager : MonoBehaviour`（シングルトン） |
 
-### public メソッド / プロパティ
-| メソッド / プロパティ | 説明 |
-|----------------------|------|
+**内部構造体**
+
+| 名前 | 説明 |
+|------|------|
+| `RewindScope` | readonly struct, IDisposable。using ブロックで巻き戻し→自動復元 |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
 | `static LagCompensationManager Instance` | 遅延初期化シングルトン |
-| `void RegisterPlayer(ulong clientId, Transform)` | プレイヤーをラグ補正対象に登録 |
-| `void UnregisterPlayer(ulong clientId)` | プレイヤーをラグ補正対象から解除 |
-| `RewindScope Rewind(double timestamp)` | 指定時刻まで全プレイヤーを巻き戻す（usingスコープ） |
-| `double EstimateViewTime(double clientReportedTime)` | 攻撃者の推定表示時刻を計算 |
-| `int RewindOverlapSphere(double ts, Vector3 origin, float radius, Collider[] results, int layer)` | 巻き戻し状態でスフィアオーバーラップ実行 |
+| `void RegisterPlayer(ulong, Transform)` | プレイヤーをラグ補正対象に登録 |
+| `void UnregisterPlayer(ulong)` | プレイヤーをラグ補正対象から解除 |
+| `RewindScope Rewind(double)` | 指定時刻まで全プレイヤーを巻き戻す（usingスコープ） |
+| `double EstimateViewTime(double)` | 攻撃者の推定表示時刻を計算 |
+| `int RewindOverlapSphere(double, Vector3, float, Collider[], int)` | 巻き戻し状態でスフィアオーバーラップ実行 |
 
-### NetworkVariable / ServerRpc / ClientRpc
-なし（MonoBehaviour。NetworkBehaviourではない）
+**NetworkVariable / ServerRpc / ClientRpc**
 
-### 依存 (GetComponent)
-なし（シングルトン。外部からTransformを受け取る）
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
+なし（シングルトン。外部から Transform を受け取る）
 
 ---
 
-## Netcode/HelloNetwork.cs
+### HelloNetwork.cs
 
-**クラス名**: `HelloNetwork` (MonoBehaviour)
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `HelloNetwork : MonoBehaviour` |
 
-### public メソッド / プロパティ
-なし（全てprivate。OnGUIで接続UIを表示）
+**主要 public メソッド / プロパティ**
 
-### 主な機能
-- Host / Client / Dedicated Server の接続ボタン表示
-- 接続中のクライアント数・ローカルID・トランスポート名を表示
-- Disconnectボタン
+なし（全て private。OnGUI で Host/Client/Server 接続UI を表示）
 
-### NetworkVariable / ServerRpc / ClientRpc
-なし（MonoBehaviour。NetworkBehaviourではない）
+**NetworkVariable / ServerRpc / ClientRpc**
 
-### 依存 (GetComponent)
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
 なし（`NetworkManager.Singleton` を直接参照）
 
 ---
 
-## UI/NetworkStatsHUD.cs
+## UI/
 
-**クラス名**: `NetworkStatsHUD` (MonoBehaviour)
+### NetworkStatsHUD.cs
 
-### public メソッド / プロパティ
-なし（全てprivate。OnGUIでRTT・PacketLossを表示）
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `NetworkStatsHUD : MonoBehaviour` |
 
-### 主な機能
-- 画面左上にRTT(ms)とPacketLoss(%)を表示
-- 更新頻度0.5秒おき（パフォーマンス配慮）
+**主要 public メソッド / プロパティ**
+
+なし（全て private。OnGUI で RTT・PacketLoss を画面左上に表示）
+
+**主な機能**
+- 0.5秒間隔で RTT(ms) / PacketLoss(%) を更新表示
 - 半透明黒背景で視認性確保
 
-### NetworkVariable / ServerRpc / ClientRpc
-なし（MonoBehaviour。NetworkBehaviourではない）
+**NetworkVariable / ServerRpc / ClientRpc**
 
-### 依存 (GetComponent)
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
 なし（`NetworkManager.Singleton` を直接参照）
 
 ---
 
-## Debug/DebugTestHelper.cs
+## Debug/
 
-**クラス名**: `DebugTestHelper` (NetworkBehaviour, `#if UNITY_EDITOR` 限定)
+### DebugTestHelper.cs
 
-### public メソッド / プロパティ
-なし（全てprivate。Host自プレイヤー上でのみ動作）
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `DebugTestHelper : NetworkBehaviour`（`#if UNITY_EDITOR` 限定） |
 
-### デバッグキー操作
+**主要 public メソッド / プロパティ**
+
+なし（全て private。Host の自プレイヤー上でのみ動作）
+
+**デバッグキー操作**
+
 | キー | 機能 |
 |------|------|
 | F1 | 相手を Hitstun トグル |
@@ -483,16 +588,20 @@
 | F5 | 相手を自分の正面2mに瞬間移動 |
 | F6 | 相手にガード状態を強制トグル |
 | F9 | 全員のHP全回復 + Dead復活 |
-| F10 | 相手のアーマー段階を1上げる（ループ） |
+| F10 | 相手のアーマー段階を+1（ループ） |
 | F12 | GUI表示トグル |
 
-### NetworkVariable / ServerRpc / ClientRpc
+**NetworkVariable / ServerRpc / ClientRpc**
+
 なし
 
-### 依存 (GetComponent — 対象プレイヤーから取得)
-- `CharacterStateMachine`
-- `HealthSystem`
-- `MusouGauge`
-- `EGSystem`
-- `ArmorSystem`
-- `CharacterController`
+**依存（GetComponent — 対象プレイヤーから取得）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | ステート強制遷移 |
+| `HealthSystem` | HP全回復 |
+| `MusouGauge` | ゲージMAX・EG用ゲージ補充 |
+| `EGSystem` | EG強制維持フラグ設定 |
+| `ArmorSystem` | アーマー段階変更 |
+| `CharacterController` | テレポート時の一時無効化 |
