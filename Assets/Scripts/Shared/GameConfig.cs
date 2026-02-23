@@ -32,6 +32,7 @@ public static class GameConfig
     public const float GUARD_DAMAGE_REDUCTION = 0.8f;  // ガード時ダメージカット率（80%カット = ×0.2）
     public const float GUARD_ANGLE = 180f;             // ガード有効角度（正面180度）
     public const float EG_CHARGE_SEC = 1.0f;           // エレメンタルガード準備時間（△押し込み）
+    public const float GUARD_MOVE_SPEED_MULTIPLIER = 0.5f; // ガード移動速度倍率（50%）
 
     // === ジャンプ ===
     public const float JUMP_FORCE = 8f;                // ジャンプ初速 (m/s)

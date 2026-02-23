@@ -32,6 +32,9 @@ public class PlayerMovement : NetworkBehaviour
         public float VerticalVelocity;
         public bool IsJumping;          // リコンシリエーションリプレイ用
         public Vector3 JumpLaunchDir;   // リコンシリエーションリプレイ用
+        public bool IsGuarding;         // ガード予測用
+        public float GuardRotationY;    // ガード方向固定用
+        public float MoveTime;          // ダッシュ判定用
     }
 
     /// <summary>
@@ -73,6 +76,20 @@ public class PlayerMovement : NetworkBehaviour
     // --- ジャンプ ---
     private Vector3 _jumpLaunchDir;  // 離陸時の水平方向（ジャンプ中維持、方向転換不可）
     private bool _isJumping;         // ジャンプ中フラグ（クライアント予測 + サーバー権威）
+
+    // --- ダッシュ判定 ---
+    private float _moveTime;        // 連続移動時間（サーバー管理、クライアント予測用）
+    private bool _wasDashing;       // ダッシュログ1回出力用
+
+    /// <summary>
+    /// ダッシュ状態か。連続移動時間が閾値を超えたら true
+    /// M2-4b でダッシュ攻撃発動の条件として使う
+    /// </summary>
+    public bool IsDashing => _moveTime >= GameConfig.DASH_ATTACK_MOVE_TIME;
+
+    // --- ガード ---
+    private bool _isGuarding;       // ガード中フラグ（クライアント予測 + サーバー権威）
+    private float _guardRotationY;  // ガード開始時の向き（ガード中は固定）
 
     // --- ティックカウンター ---
     // NGO の ServerTime.Tick ではなく自前カウンターを使う理由:
@@ -341,10 +358,13 @@ public class PlayerMovement : NetworkBehaviour
         if (IsServer)
         {
             // --- ホスト（サーバー兼オーナー）---
+            ProcessGuard(input, true);
             ProcessJump(input, true);
+            ProcessDashTracking(input);
             Vector2 move = GetEffectiveMove(input);
-            if (!_isJumping) UpdateMoveState(move.x, move.y);
-            ApplyMovement(move.x, move.y);
+            float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+            if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
+            ApplyMovement(move.x, move.y, speedMul);
             CheckLanding(true);
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
@@ -355,10 +375,13 @@ public class PlayerMovement : NetworkBehaviour
             // サーバーに生入力を送信
             SubmitInputServerRpc(input);
 
-            // クライアント予測: ローカルでも即座にジャンプ実行
+            // クライアント予測: ローカルで即座にガード・ジャンプ・ダッシュ判定を実行
+            ProcessGuard(input, false);
             ProcessJump(input, false);
+            ProcessDashTracking(input);
             Vector2 move = GetEffectiveMove(input);
-            ApplyMovement(move.x, move.y);
+            float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+            ApplyMovement(move.x, move.y, speedMul);
             CheckLanding(false);
 
             int idx = (int)(_currentTick % GameConfig.PREDICTION_BUFFER_SIZE);
@@ -369,7 +392,10 @@ public class PlayerMovement : NetworkBehaviour
                 RotationY = transform.eulerAngles.y,
                 VerticalVelocity = _verticalVelocity,
                 IsJumping = _isJumping,
-                JumpLaunchDir = _jumpLaunchDir
+                JumpLaunchDir = _jumpLaunchDir,
+                IsGuarding = _isGuarding,
+                GuardRotationY = _guardRotationY,
+                MoveTime = _moveTime
             };
         }
 
@@ -407,7 +433,8 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void ProcessJump(PlayerInput input, bool isServerAuthority)
     {
-        if (!input.JumpPressed || _isJumping) return;
+        // ガード中はジャンプ不可（CanAcceptInput でも弾かれるが、予測精度のため早期リターン）
+        if (!input.JumpPressed || _isJumping || _isGuarding) return;
 
         bool canJump = _stateMachine != null
             && _stateMachine.CanAcceptInput(InputType.Jump);
@@ -426,12 +453,18 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     /// <summary>
-    /// ジャンプ中は離陸時の方向を使い、地上では通常の入力を使う
+    /// 有効な移動入力を返す
+    /// ジャンプ中は離陸時方向、ガード中は生入力（速度倍率は ApplyMovement で適用）、
+    /// それ以外はステートに応じた入力フィルタリング
     /// </summary>
     private Vector2 GetEffectiveMove(PlayerInput input)
     {
         if (_isJumping)
             return new Vector2(_jumpLaunchDir.x, _jumpLaunchDir.z);
+
+        // ガード中は移動入力をそのまま返す（Guard → GuardMove 遷移はサーバーが管理）
+        if (_isGuarding)
+            return input.MoveInput;
 
         bool canMove = _stateMachine == null || _stateMachine.CanMove();
         return canMove ? input.MoveInput : Vector2.zero;
@@ -454,6 +487,88 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     // ============================================================
+    // ガード処理
+    // ============================================================
+
+    /// <summary>
+    /// ガード状態の開始・維持・解除を処理する
+    /// サーバー権威でステート遷移、クライアントは予測フラグのみ更新
+    /// ガード中は向き固定（_guardRotationY を保持）
+    /// </summary>
+    private void ProcessGuard(PlayerInput input, bool isServerAuthority)
+    {
+        bool hasMove = input.MoveInput.sqrMagnitude > 0.01f;
+
+        if (input.GuardHeld && !_isJumping)
+        {
+            if (!_isGuarding)
+            {
+                // ガード開始: Idle/Move からのみ受付
+                bool canGuard = _stateMachine == null
+                    || _stateMachine.CanAcceptInput(InputType.Guard);
+                if (!canGuard) return;
+
+                _isGuarding = true;
+                _guardRotationY = transform.eulerAngles.y;
+
+                if (isServerAuthority)
+                    _stateMachine.TryChangeState(CharacterState.Guard);
+            }
+            else if (isServerAuthority)
+            {
+                // ガード中: Guard ↔ GuardMove 切替
+                CharacterState current = _stateMachine.CurrentState;
+                if (hasMove && current == CharacterState.Guard)
+                    _stateMachine.TryChangeState(CharacterState.GuardMove);
+                else if (!hasMove && current == CharacterState.GuardMove)
+                    _stateMachine.TryChangeState(CharacterState.Guard);
+            }
+        }
+        else if (_isGuarding)
+        {
+            // ガード解除
+            _isGuarding = false;
+
+            if (isServerAuthority)
+            {
+                CharacterState current = _stateMachine.CurrentState;
+                if (current == CharacterState.Guard || current == CharacterState.GuardMove)
+                    _stateMachine.TryChangeState(CharacterState.Idle);
+            }
+        }
+    }
+
+    // ============================================================
+    // ダッシュ判定
+    // ============================================================
+
+    /// <summary>
+    /// 連続移動時間をトラッキングする
+    /// DASH_ATTACK_MOVE_TIME 以上移動し続けるとダッシュ状態（IsDashing == true）
+    /// ダッシュ攻撃の発動自体は M2-4b で実装。ここではトラッキングのみ
+    /// </summary>
+    private void ProcessDashTracking(PlayerInput input)
+    {
+        bool hasMove = input.MoveInput.sqrMagnitude > 0.01f;
+
+        if (hasMove && !_isGuarding && !_isJumping)
+        {
+            _moveTime += GameConfig.FIXED_DELTA_TIME;
+
+            if (IsDashing && !_wasDashing)
+            {
+                Debug.Log($"[Dash] {gameObject.name}: ダッシュ状態");
+                _wasDashing = true;
+            }
+        }
+        else
+        {
+            _moveTime = 0f;
+            _wasDashing = false;
+        }
+    }
+
+    // ============================================================
     // 共通移動計算
     // ============================================================
 
@@ -463,7 +578,8 @@ public class PlayerMovement : NetworkBehaviour
     /// 同じ入力 → 同じ結果を返すことが予測精度の鍵
     /// deltaTime は GameConfig.FIXED_DELTA_TIME を固定使用（決定論的シミュレーション）
     /// </summary>
-    private void ApplyMovement(float horizontal, float vertical)
+    /// <param name="speedMultiplier">速度倍率。ガード移動時は 0.5</param>
+    private void ApplyMovement(float horizontal, float vertical, float speedMultiplier = 1f)
     {
         // 入力バリデーション（クライアント値を信用しない）
         horizontal = Mathf.Clamp(horizontal, -1f, 1f);
@@ -489,14 +605,19 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         // 移動（固定デルタタイム使用で決定論的）
-        Vector3 velocity = inputDir * GameConfig.MOVE_SPEED;
+        Vector3 velocity = inputDir * (GameConfig.MOVE_SPEED * speedMultiplier);
         velocity.y = _verticalVelocity;
         _controller.Move(velocity * GameConfig.FIXED_DELTA_TIME);
 
-        // 回転（入力方向に向かって滑らかに回転）
-        // ジャンプ中は方向転換不可（離陸時の向きを維持）
-        if (!_isJumping && inputDir.sqrMagnitude > 0.01f)
+        // 回転
+        if (_isGuarding)
         {
+            // ガード中は向き固定（ガード開始時の Y 回転を維持）
+            transform.rotation = Quaternion.Euler(0f, _guardRotationY, 0f);
+        }
+        else if (!_isJumping && inputDir.sqrMagnitude > 0.01f)
+        {
+            // 通常: 入力方向に向かって滑らかに回転
             float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg;
             float currentY = transform.eulerAngles.y;
             float newY = Mathf.MoveTowardsAngle(
@@ -518,17 +639,24 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc]
     private void SubmitInputServerRpc(PlayerInput input)
     {
+        // ガード処理（サーバー権威）
+        ProcessGuard(input, true);
+
         // ジャンプ処理（サーバー権威）
         ProcessJump(input, true);
 
-        // 移動入力の決定（ジャンプ中は離陸方向を使用）
-        Vector2 move = GetEffectiveMove(input);
+        // ダッシュ判定トラッキング
+        ProcessDashTracking(input);
 
-        // Idle ↔ Move ステート遷移（ジャンプ中は不要）
-        if (!_isJumping) UpdateMoveState(move.x, move.y);
+        // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
+        Vector2 move = GetEffectiveMove(input);
+        float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+
+        // Idle ↔ Move ステート遷移（ジャンプ中・ガード中は不要）
+        if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
 
         // サーバー権威で移動計算
-        ApplyMovement(move.x, move.y);
+        ApplyMovement(move.x, move.y, speedMul);
 
         // 着地判定
         CheckLanding(true);
@@ -587,13 +715,17 @@ public class PlayerMovement : NetworkBehaviour
         transform.rotation = Quaternion.Euler(0f, serverRotationY, 0f);
         _verticalVelocity = serverVerticalVelocity;
 
-        // ジャンプ状態を復元（確定ティックのバッファから取得）
+        // ジャンプ・ガード・ダッシュ状態を復元（確定ティックのバッファから取得）
         _isJumping = _stateBuffer[idx].IsJumping;
         _jumpLaunchDir = _stateBuffer[idx].JumpLaunchDir;
+        _isGuarding = _stateBuffer[idx].IsGuarding;
+        _guardRotationY = _stateBuffer[idx].GuardRotationY;
+        _moveTime = _stateBuffer[idx].MoveTime;
+        _wasDashing = IsDashing;
 
         // --- 再シミュレーション（Replay）---
         // 確定ティック以降の保存済み入力を順番に再適用
-        // ジャンプ開始・着地も含めて完全にリプレイする
+        // ジャンプ・ガード・ダッシュ判定も含めて完全にリプレイする
         uint replayTick = tick + 1;
         while (replayTick < _currentTick)
         {
@@ -603,9 +735,12 @@ public class PlayerMovement : NetworkBehaviour
             if (_inputBuffer[replayIdx].Tick != replayTick) break;
 
             PlayerInput replayInput = _inputBuffer[replayIdx];
+            ProcessGuard(replayInput, false);
             ProcessJump(replayInput, false);
+            ProcessDashTracking(replayInput);
             Vector2 move = GetEffectiveMove(replayInput);
-            ApplyMovement(move.x, move.y);
+            float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+            ApplyMovement(move.x, move.y, speedMul);
             CheckLanding(false);
 
             // リプレイ結果でバッファを更新（次回のリコンシリエーションに備える）
@@ -615,7 +750,10 @@ public class PlayerMovement : NetworkBehaviour
                 RotationY = transform.eulerAngles.y,
                 VerticalVelocity = _verticalVelocity,
                 IsJumping = _isJumping,
-                JumpLaunchDir = _jumpLaunchDir
+                JumpLaunchDir = _jumpLaunchDir,
+                IsGuarding = _isGuarding,
+                GuardRotationY = _guardRotationY,
+                MoveTime = _moveTime
             };
 
             replayTick++;

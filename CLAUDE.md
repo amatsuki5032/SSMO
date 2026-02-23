@@ -213,6 +213,19 @@ C:\dev\SSMO/
 - **投射物 (弓矢等) の衝突判定もサーバーで実行**
 - **アーマー・属性・状態異常の管理はサーバー権威**
 
+## 作業見積もり
+
+タスク指示を受けたとき、コードを書き始める前に以下を提示すること：
+
+| 項目 | 内容 |
+|------|------|
+| CC作業時間（予想） | 例: 25〜35分 |
+| 変更ファイル数 | 例: 3ファイル（新規1 + 修正2） |
+| 変更規模 | ★〜★★★★★（5段階） |
+| テスト含む合計 | 例: 40分（コンパイル確認 + ParrelSync テスト含む） |
+
+これにより開発者が待ち時間を有効活用できる。
+
 ## 参考リソース
 - [Gabriel Gambetta: Fast-Paced Multiplayer](https://www.gabrielgambetta.com/client-server-game-architecture.html) - ネットコードの必読資料
 - [Unity NGO Documentation](https://docs-multiplayer.unity3d.com/netcode/current/about/) - 公式ドキュメント
