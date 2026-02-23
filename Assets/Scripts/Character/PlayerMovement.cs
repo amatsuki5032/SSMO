@@ -376,7 +376,19 @@ public class PlayerMovement : NetworkBehaviour
             ProcessJump(input, true);
             ProcessDashTracking(input);
             if (input.AttackPressed && _comboSystem != null)
-                _comboSystem.TryStartAttack();
+            {
+                // ダッシュ状態 or ダッシュ攻撃中 → ダッシュ攻撃/ラッシュ優先
+                if (IsDashing || _comboSystem.IsDashAttacking)
+                {
+                    _comboSystem.TryStartDashAttack();
+                    _moveTime = 0f;
+                    _wasDashing = false;
+                }
+                else
+                {
+                    _comboSystem.TryStartAttack();
+                }
+            }
             if (input.ChargePressed && _comboSystem != null)
                 _comboSystem.TryStartCharge(input.MoveInput);
             Vector2 move = GetEffectiveMove(input);
@@ -703,7 +715,19 @@ public class PlayerMovement : NetworkBehaviour
 
         // 攻撃入力 → コンボシステムに委譲（サーバー権威）
         if (input.AttackPressed && _comboSystem != null)
-            _comboSystem.TryStartAttack();
+        {
+            // ダッシュ状態 or ダッシュ攻撃中 → ダッシュ攻撃/ラッシュ優先
+            if (IsDashing || _comboSystem.IsDashAttacking)
+            {
+                _comboSystem.TryStartDashAttack();
+                _moveTime = 0f;
+                _wasDashing = false;
+            }
+            else
+            {
+                _comboSystem.TryStartAttack();
+            }
+        }
         if (input.ChargePressed && _comboSystem != null)
             _comboSystem.TryStartCharge(input.MoveInput);
 

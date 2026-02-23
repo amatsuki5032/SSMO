@@ -64,6 +64,9 @@ public static class GameConfig
 
     // === ダッシュ攻撃 ===
     public const float DASH_ATTACK_MOVE_TIME = 1.5f;  // ダッシュ攻撃発動に必要な連続移動時間 (秒、仮値)
+    public const float DASH_ATTACK_DURATION = 0.6f;   // D 持続時間（仮値）
+    public const float DASH_RUSH_DURATION = 0.25f;    // Dラッシュ追加ヒット間隔
+    public const int DASH_RUSH_MAX_HITS = 6;          // Dラッシュ最大追加ヒット数
 
     // === M1: Movement ===
     public const float MOVE_SPEED = 6f;               // 移動速度 (m/s)

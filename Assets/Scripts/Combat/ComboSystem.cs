@@ -15,6 +15,11 @@ using UnityEngine;
 /// 3. C3 は△連打でラッシュ追加ヒット
 /// 4. チャージ終了後は必ず Idle に戻る
 ///
+/// ダッシュ攻撃（D）:
+/// 1. 1.5秒以上移動（ダッシュ状態）で□ → TryStartDashAttack() で D 開始
+/// 2. D 中に□連打でダッシュラッシュ（追加ヒット）
+/// 3. D/ラッシュ終了後は必ず Idle に戻る
+///
 /// コンボウィンドウ: 各攻撃モーションの最後 30% の区間
 /// 先行入力: ウィンドウ前に押された攻撃入力をバッファし、ウィンドウ到達時に自動消費（150ms）
 /// </summary>
@@ -59,6 +64,17 @@ public class ComboSystem : NetworkBehaviour
     private int _rushHitCount;     // C3 ラッシュの追加ヒット数
 
     // ============================================================
+    // サーバー側管理データ — ダッシュ攻撃
+    // ============================================================
+
+    private bool _isDashAttacking;      // ダッシュ攻撃中フラグ
+    private float _dashAttackTimer;     // ダッシュ攻撃モーションの残り時間
+    private int _dashRushHitCount;      // ダッシュラッシュの追加ヒット数
+
+    /// <summary>ダッシュ攻撃中か（PlayerMovement からの参照用）</summary>
+    public bool IsDashAttacking => _isDashAttacking;
+
+    // ============================================================
     // ライフサイクル
     // ============================================================
 
@@ -68,7 +84,7 @@ public class ComboSystem : NetworkBehaviour
     }
 
     /// <summary>
-    /// サーバーのみ: 毎 FixedUpdate でコンボ・チャージタイマーを更新
+    /// サーバーのみ: 毎 FixedUpdate でコンボ・チャージ・ダッシュ攻撃タイマーを更新
     /// PlayerMovement とは独立してタイマーを進める（60Hz で安定動作）
     /// </summary>
     private void FixedUpdate()
@@ -76,6 +92,7 @@ public class ComboSystem : NetworkBehaviour
         if (!IsServer) return;
         UpdateCombo();
         UpdateCharge();
+        UpdateDashAttack();
     }
 
     // ============================================================
@@ -257,6 +274,76 @@ public class ComboSystem : NetworkBehaviour
     }
 
     // ============================================================
+    // ダッシュ攻撃入力処理（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// ダッシュ攻撃入力を処理する。サーバー権威
+    /// - ダッシュ状態で□ → D 開始
+    /// - DashAttack 中に□ → ダッシュラッシュ追加ヒット
+    /// </summary>
+    public void TryStartDashAttack()
+    {
+        if (!IsServer) return;
+
+        CharacterState current = _stateMachine.CurrentState;
+
+        // ダッシュラッシュ継続: DashAttack 中に□で追加ヒット
+        if (_isDashAttacking && current == CharacterState.DashAttack)
+        {
+            if (_dashRushHitCount < GameConfig.DASH_RUSH_MAX_HITS)
+            {
+                _dashRushHitCount++;
+                _dashAttackTimer = GameConfig.DASH_RUSH_DURATION;
+                Debug.Log($"[Combo] {gameObject.name}: Dラッシュ {_dashRushHitCount}hit");
+            }
+            return;
+        }
+
+        // 新規ダッシュ攻撃開始
+        if (!_stateMachine.CanAcceptInput(InputType.NormalAttack)) return;
+
+        // N コンボをリセット（ダッシュ攻撃は N コンボとは別系統）
+        ResetCombo();
+
+        _isDashAttacking = true;
+        _dashAttackTimer = GameConfig.DASH_ATTACK_DURATION;
+        _dashRushHitCount = 0;
+
+        _stateMachine.TryChangeState(CharacterState.DashAttack);
+        Debug.Log($"[Combo] {gameObject.name}: D（ダッシュ攻撃）開始");
+    }
+
+    // ============================================================
+    // ダッシュ攻撃更新（★サーバー側 FixedUpdate★）
+    // ============================================================
+
+    /// <summary>
+    /// ダッシュ攻撃タイマーを毎 FixedUpdate で更新する
+    /// タイマー満了で Idle に遷移
+    /// </summary>
+    private void UpdateDashAttack()
+    {
+        if (!_isDashAttacking) return;
+
+        // 外部要因で DashAttack から離脱した場合（被弾等）→ リセット
+        if (_stateMachine.CurrentState != CharacterState.DashAttack)
+        {
+            ResetDashAttack();
+            return;
+        }
+
+        _dashAttackTimer -= GameConfig.FIXED_DELTA_TIME;
+
+        if (_dashAttackTimer <= 0f)
+        {
+            Debug.Log($"[Combo] {gameObject.name}: D 終了");
+            ResetDashAttack();
+            _stateMachine.TryChangeState(CharacterState.Idle);
+        }
+    }
+
+    // ============================================================
     // 内部ヘルパー — 通常攻撃
     // ============================================================
 
@@ -327,6 +414,20 @@ public class ComboSystem : NetworkBehaviour
         _chargeType = 0;
         _chargeTimer = 0f;
         _rushHitCount = 0;
+    }
+
+    // ============================================================
+    // 内部ヘルパー — ダッシュ攻撃
+    // ============================================================
+
+    /// <summary>
+    /// ダッシュ攻撃状態をリセットする
+    /// </summary>
+    private void ResetDashAttack()
+    {
+        _isDashAttacking = false;
+        _dashAttackTimer = 0f;
+        _dashRushHitCount = 0;
     }
 
     // ============================================================
