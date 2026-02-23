@@ -103,6 +103,20 @@ public class HealthSystem : NetworkBehaviour
         _currentHp.Value = _maxHp.Value;
     }
 
+    /// <summary>
+    /// 指定量だけHPを回復する（拠点回復等で使用）
+    /// 最大HPを超えない
+    /// </summary>
+    /// <param name="amount">回復量（正の値）</param>
+    public void Heal(int amount)
+    {
+        if (!IsServer) return;
+        if (amount <= 0) return;
+        if (_stateMachine.CurrentState == CharacterState.Dead) return;
+
+        _currentHp.Value = Mathf.Min(_currentHp.Value + amount, _maxHp.Value);
+    }
+
     // ============================================================
     // HP比率（根性補正判定用）
     // ============================================================

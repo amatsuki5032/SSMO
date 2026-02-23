@@ -49,6 +49,12 @@ public static class GameConfig
         BASE_POS_BLUE_2,
     };
 
+    // === 拠点システム ===
+    public const int BASE_COUNT = 5;                       // 拠点数
+    public const float BASE_CAPTURE_TIME = 10f;            // 制圧に必要な秒数
+    public const float BASE_CAPTURE_RADIUS = 5f;           // 制圧エリア半径 (m)
+    public const float BASE_HP_REGEN_RATE = 20f;           // 味方拠点内HP回復量/秒
+
     // === スポーン座標（マップ配置に連動）===
     // 赤軍: 西側拠点の後方、青軍: 東側拠点の後方
     public static readonly Vector3 TEAM_RED_SPAWN_POS_1  = new Vector3(-40f, 1f, -15f);

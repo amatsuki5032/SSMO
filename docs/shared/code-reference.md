@@ -137,6 +137,7 @@
 | リアクション | `HITSTUN_LIGHT_DURATION(0.3)`, `LAUNCH_HEIGHT(3.0)`, `KNOCKBACK_DISTANCE_H(4.0)` |
 | カメラ | `CAMERA_DISTANCE(3.0)`, `CAMERA_HEIGHT(2.0)`, `CAMERA_SENSITIVITY(2.0)`, `CAMERA_MIN/MAX_PITCH(-10/60)` |
 | 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
+| 拠点システム | `BASE_COUNT(5)`, `BASE_CAPTURE_TIME(10)`, `BASE_CAPTURE_RADIUS(5)`, `BASE_HP_REGEN_RATE(20)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -186,6 +187,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `HitReaction` | 被弾リアクション種別（Flinch, Launch, Slam, Knockback 等） |
 | `ElementType` | 属性種別（None, Fire, Ice, Thunder, Wind, Slash） |
 | `Team` | チーム識別（Red, Blue） |
+| `BaseStatus : byte` | 拠点の所属チーム状態（Neutral=0, Red=1, Blue=2） |
 | `WeaponType` | 武器種（GreatSword, DualBlades, Spear, Halberd, Fists, Bow） |
 
 ---
@@ -364,6 +366,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `int MaxHp` | 最大HP（読み取り専用プロパティ） |
 | `void TakeDamage(int)` | ダメージ適用。HP0で Dead 遷移（サーバー側） |
 | `void FullHeal()` | HP全回復（デバッグ・リスポーン用、サーバー側） |
+| `void Heal(int)` | 指定量HP回復（拠点回復等、サーバー側） |
 | `float GetHpRatio()` | 現在HP / 最大HP を返す（根性補正判定用） |
 
 **NetworkVariable**
@@ -688,6 +691,44 @@ NetworkVariable / RPC / GetComponent なし。
 **依存（GetComponent）**
 
 なし（GameConfig の定数を参照）
+
+---
+
+### BasePoint.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `BasePoint : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `BaseStatus Status` | 拠点の所属チーム（読み取り専用プロパティ） |
+| `float CaptureProgress` | 制圧ゲージ（-1〜1。正=Red、負=Blue） |
+| `int BaseIndex` | 拠点番号（0-4） |
+| `void SetBaseIndex(int)` | 拠点番号を設定（MapGenerator から呼ばれる） |
+| `void SetInitialStatus(BaseStatus)` | 拠点の初期所属を設定（サーバー専用） |
+
+**NetworkVariable**
+
+| 変数名 | 型 | 説明 |
+|--------|-----|------|
+| `_status` | `NetworkVariable<BaseStatus>` | 拠点の所属チーム |
+| `_captureProgress` | `NetworkVariable<float>` | 制圧ゲージ（-1〜1） |
+
+**ServerRpc / ClientRpc**
+
+なし（FixedUpdate + OnTriggerStay でサーバー側処理）
+
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `SphereCollider` | エリア検出（OnTriggerStay） |
+| `TeamManager.Instance` | プレイヤーのチーム判定 |
+| `HealthSystem`（対象プレイヤー） | HP回復 |
+| `CharacterStateMachine`（対象プレイヤー） | 死亡判定 |
 
 ---
 

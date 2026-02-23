@@ -162,6 +162,17 @@ public enum Team
 }
 
 /// <summary>
+/// 拠点の所属チーム状態
+/// Neutral = どちらにも属していない、Red/Blue = 制圧済み
+/// </summary>
+public enum BaseStatus : byte
+{
+    Neutral = 0,
+    Red = 1,
+    Blue = 2,
+}
+
+/// <summary>
 /// 武器種
 /// </summary>
 public enum WeaponType
