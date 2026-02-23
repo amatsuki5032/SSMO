@@ -25,6 +25,7 @@ public class ReactionSystem : NetworkBehaviour
 
     private CharacterStateMachine _stateMachine;
     private CharacterController _characterController;
+    private ArmorSystem _armorSystem;
 
     // ============================================================
     // 物理状態（サーバーのみ）
@@ -44,6 +45,7 @@ public class ReactionSystem : NetworkBehaviour
     {
         _stateMachine = GetComponent<CharacterStateMachine>();
         _characterController = GetComponent<CharacterController>();
+        _armorSystem = GetComponent<ArmorSystem>();
     }
 
     /// <summary>
@@ -102,9 +104,16 @@ public class ReactionSystem : NetworkBehaviour
     /// <param name="attackerPosition">攻撃者の位置（吹き飛ばし方向の計算用）</param>
     /// <param name="comboStep">攻撃のコンボ段数（のけぞり時間の判定用）</param>
     /// <param name="chargeType">チャージ技番号（のけぞり時間の判定用）</param>
-    public void ApplyReaction(HitReaction reaction, Vector3 attackerPosition, int comboStep, int chargeType)
+    public void ApplyReaction(HitReaction reaction, Vector3 attackerPosition, int comboStep, int chargeType, AttackLevel attackLevel = AttackLevel.Normal)
     {
         if (!IsServer) return;
+
+        // アーマー判定: のけぞらない場合はリアクションをスキップ（ダメージは別途適用済み）
+        if (_armorSystem != null && !_armorSystem.ShouldFlinch(attackLevel))
+        {
+            Debug.Log($"[Armor] {gameObject.name} アーマーでのけぞり無効 (Armor={_armorSystem.CurrentArmorLevel}, AtkLv={attackLevel})");
+            return;
+        }
 
         switch (reaction)
         {

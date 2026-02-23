@@ -28,6 +28,7 @@ public class HitboxSystem : NetworkBehaviour
     // ============================================================
 
     private ComboSystem _comboSystem;
+    private CharacterStateMachine _stateMachine;
 
     // ============================================================
     // ヒット管理
@@ -49,6 +50,7 @@ public class HitboxSystem : NetworkBehaviour
     private void Awake()
     {
         _comboSystem = GetComponent<ComboSystem>();
+        _stateMachine = GetComponent<CharacterStateMachine>();
     }
 
     /// <summary>
@@ -208,7 +210,8 @@ public class HitboxSystem : NetworkBehaviour
                 if (targetReaction != null)
                 {
                     HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
-                    targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType);
+                    AttackLevel attackLevel = GetAttackLevel(comboStep, chargeType);
+                    targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType, attackLevel);
                 }
             }
 
@@ -252,6 +255,29 @@ public class HitboxSystem : NetworkBehaviour
                     targetGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_DAMAGE);
             }
         }
+    }
+
+    // ============================================================
+    // 攻撃レベル判定
+    // ============================================================
+
+    /// <summary>
+    /// 攻撃種別に応じた攻撃レベルを返す（アーマー判定用）
+    /// 無双中は Musou、チャージは Charge、それ以外は Normal
+    /// </summary>
+    private AttackLevel GetAttackLevel(int comboStep, int chargeType)
+    {
+        // 無双中は攻撃レベル4（最高）
+        var state = _stateMachine.CurrentState;
+        if (state == CharacterState.Musou || state == CharacterState.TrueMusou)
+            return AttackLevel.Musou;
+
+        // チャージ攻撃は攻撃レベル3
+        if (chargeType > 0)
+            return AttackLevel.Charge;
+
+        // 通常攻撃・ダッシュ攻撃は攻撃レベル2
+        return AttackLevel.Normal;
     }
 
     // ============================================================

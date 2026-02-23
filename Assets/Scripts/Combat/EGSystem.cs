@@ -167,10 +167,12 @@ public class EGSystem : NetworkBehaviour
         // 攻撃者に吹き飛ばしリアクション適用
         if (attackerReaction != null)
         {
+            // EGカウンターは最高攻撃レベル（アーマー貫通）
             attackerReaction.ApplyReaction(
                 HitReaction.Knockback,
                 transform.position,
-                0, 0
+                0, 0,
+                AttackLevel.Musou
             );
         }
     }

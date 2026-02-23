@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 4332280896199368995}
   - component: {fileID: 8723572835665815572}
   - component: {fileID: -7744957426483096189}
+  - component: {fileID: 5351545034836221652}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -55,7 +56,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4048734005
+  GlobalObjectIdHash: 3054504524
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -183,6 +184,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 448447f8cef795b4eacd7617ef509ec0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EGSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &5351545034836221652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ae2bbb433043b1409752bc3783e7911, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MusouGauge
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2542845171839978957
 GameObject:
