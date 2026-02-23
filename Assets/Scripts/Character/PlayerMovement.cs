@@ -210,32 +210,6 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    /// <summary>
-    /// オーナー専用: 3人称カメラを生成して初期化する
-    /// Main Camera が既にあればそれを使い、なければ新規生成する
-    /// </summary>
-    private void SetupCamera()
-    {
-        // 既存の Main Camera を探す
-        Camera mainCam = Camera.main;
-        if (mainCam != null)
-        {
-            // 既存カメラに CameraController を追加
-            _cameraController = mainCam.gameObject.GetComponent<CameraController>();
-            if (_cameraController == null)
-                _cameraController = mainCam.gameObject.AddComponent<CameraController>();
-        }
-        else
-        {
-            // 新規カメラを生成
-            var camObj = new GameObject("PlayerCamera");
-            camObj.AddComponent<Camera>();
-            camObj.AddComponent<AudioListener>();
-            _cameraController = camObj.AddComponent<CameraController>();
-        }
-
-        _cameraController.Initialize(transform);
-    }
 
     /// <summary>
     /// Update: 入力取得（可変FPS）
@@ -624,8 +598,10 @@ public class PlayerMovement : NetworkBehaviour
         Camera mainCam = Camera.main;
         if (mainCam != null)
         {
-            // 既存 MainCamera に CameraController を追加
-            _cameraController = mainCam.gameObject.AddComponent<CameraController>();
+            // 既存 MainCamera に CameraController を追加（重複防止チェック）
+            _cameraController = mainCam.gameObject.GetComponent<CameraController>();
+            if (_cameraController == null)
+                _cameraController = mainCam.gameObject.AddComponent<CameraController>();
         }
         else
         {

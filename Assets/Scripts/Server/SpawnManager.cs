@@ -79,10 +79,11 @@ public class SpawnManager : NetworkBehaviour
         }
     }
 
-    private void OnDestroy()
+    protected override void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
+        base.OnDestroy();
     }
 
     // ============================================================
