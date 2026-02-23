@@ -375,6 +375,7 @@ public class CharacterStateMachine : NetworkBehaviour
         _stateTimer = state switch
         {
             CharacterState.Hitstun => _hitstunOverride > 0f ? _hitstunOverride : GameConfig.HITSTUN_DURATION,
+            CharacterState.AirHitstun => GameConfig.HITSTUN_LIGHT_DURATION,
             CharacterState.Launch => GameConfig.LAUNCH_DURATION,
             CharacterState.FaceDownDown => GameConfig.FACEDOWN_DOWN_DURATION,
             CharacterState.CrumbleDown => GameConfig.CRUMBLE_DOWN_DURATION,
@@ -407,6 +408,11 @@ public class CharacterStateMachine : NetworkBehaviour
             // のけぞり → Idle（立ち復帰）
             case CharacterState.Hitstun:
                 TryChangeState(CharacterState.Idle);
+                break;
+
+            // 空中ヒット → SprawlDown（タイマー満了フォールバック。通常は着地判定で遷移）
+            case CharacterState.AirHitstun:
+                TryChangeState(CharacterState.SprawlDown);
                 break;
 
             // 打ち上げ → ダウン（受け身不能時間終了後に着地判定で遷移するが、

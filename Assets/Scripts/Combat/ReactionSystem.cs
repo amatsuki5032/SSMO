@@ -115,10 +115,18 @@ public class ReactionSystem : NetworkBehaviour
             return;
         }
 
+        // 空中被弾: Flinch は AirHitstun に変換（打ち上げ・吹き飛ばしはそのまま）
+        if (IsAirborne() && reaction == HitReaction.Flinch)
+        {
+            ApplyAirHitstun(attackerPosition);
+            Debug.Log($"[Reaction] {gameObject.name} → AirHitstun (空中Flinch変換)");
+            return;
+        }
+
         switch (reaction)
         {
             case HitReaction.Flinch:
-                ApplyFlinch(chargeType);
+                ApplyFlinch(chargeType, attackerPosition);
                 break;
 
             case HitReaction.Launch:
@@ -158,10 +166,10 @@ public class ReactionSystem : NetworkBehaviour
     // ============================================================
 
     /// <summary>
-    /// のけぞり（Flinch）: 短時間の行動不能
+    /// のけぞり（Flinch）: 短時間の行動不能 + 後方0.5mノックバック
     /// チャージ攻撃（C1等）は重いのけぞり、通常攻撃は軽いのけぞり
     /// </summary>
-    private void ApplyFlinch(int chargeType)
+    private void ApplyFlinch(int chargeType, Vector3 attackerPosition)
     {
         // チャージ攻撃は重いのけぞり、通常攻撃は軽いのけぞり
         float duration = chargeType > 0
@@ -171,9 +179,11 @@ public class ReactionSystem : NetworkBehaviour
         _stateMachine.SetHitstunDuration(duration);
         _stateMachine.TryChangeState(CharacterState.Hitstun);
 
-        // のけぞりで物理はリセット
-        _isReactionPhysicsActive = false;
-        _reactionVelocity = Vector3.zero;
+        // 後方ノックバック: のけぞり持続時間中に距離を移動しきる速度を計算
+        Vector3 knockDir = GetKnockbackDirection(attackerPosition);
+        float speed = GameConfig.FLINCH_KNOCKBACK_DISTANCE / duration;
+        _reactionVelocity = knockDir * speed;
+        _isReactionPhysicsActive = true;
     }
 
     /// <summary>
@@ -191,24 +201,25 @@ public class ReactionSystem : NetworkBehaviour
     }
 
     /// <summary>
-    /// 吹き飛ばし（Knockback）: 攻撃者の反対方向に水平移動 + のけぞり
+    /// 吹き飛ばし（Knockback）: 放物線で飛ぶ（後方4m + 上1m）
+    /// Launch ステートを使い、着地で SprawlDown に遷移する
     /// </summary>
     private void ApplyKnockback(Vector3 attackerPosition)
     {
-        // 攻撃者から被弾者への方向（水平のみ）
-        Vector3 knockDir = transform.position - attackerPosition;
-        knockDir.y = 0f;
-        if (knockDir.sqrMagnitude < 0.001f)
-        {
-            // 攻撃者と重なっている場合: 攻撃者の正面方向にフォールバック
-            knockDir = -transform.forward;
-        }
-        knockDir.Normalize();
+        Vector3 knockDir = GetKnockbackDirection(attackerPosition);
 
-        _stateMachine.SetHitstunDuration(GameConfig.HITSTUN_HEAVY_DURATION);
-        _stateMachine.TryChangeState(CharacterState.Hitstun);
+        // Launch ステートに遷移（放物線軌道 → 着地で SprawlDown）
+        _stateMachine.TryChangeState(CharacterState.Launch);
 
-        _reactionVelocity = knockDir * GameConfig.KNOCKBACK_FORCE;
+        // 放物線の初速を計算:
+        // 垂直: v_y = sqrt(2 * |g| * height) で目標高さに到達
+        // 水平: v_h = distance / totalAirTime で目標距離を移動
+        float launchSpeedY = Mathf.Sqrt(2f * Mathf.Abs(GameConfig.JUMP_GRAVITY) * GameConfig.KNOCKBACK_HEIGHT);
+        // 滞空時間 = 2 * v_y / |g|（上昇 + 下降）
+        float airTime = 2f * launchSpeedY / Mathf.Abs(GameConfig.JUMP_GRAVITY);
+        float horizontalSpeed = GameConfig.KNOCKBACK_DISTANCE_H / airTime;
+
+        _reactionVelocity = knockDir * horizontalSpeed + Vector3.up * launchSpeedY;
         _isReactionPhysicsActive = true;
     }
 
@@ -229,7 +240,7 @@ public class ReactionSystem : NetworkBehaviour
     // ============================================================
 
     /// <summary>
-    /// リアクション中の物理を更新する（打ち上げの重力・吹き飛ばしの減速）
+    /// リアクション中の物理を更新する（打ち上げの重力・のけぞりの減速・吹き飛ばし等）
     /// </summary>
     private void UpdateReactionPhysics()
     {
@@ -238,6 +249,7 @@ public class ReactionSystem : NetworkBehaviour
         // リアクションステートを抜けたら物理を停止
         bool isReactionState = state == CharacterState.Launch
                             || state == CharacterState.Hitstun
+                            || state == CharacterState.AirHitstun
                             || state == CharacterState.Slam;
 
         if (!isReactionState)
@@ -247,13 +259,13 @@ public class ReactionSystem : NetworkBehaviour
             return;
         }
 
-        // 重力適用（Launch / Slam）
-        if (state == CharacterState.Launch || state == CharacterState.Slam)
+        // 重力適用（Launch / Slam / AirHitstun）
+        if (state == CharacterState.Launch || state == CharacterState.Slam || state == CharacterState.AirHitstun)
         {
             _reactionVelocity.y += GameConfig.JUMP_GRAVITY * GameConfig.FIXED_DELTA_TIME;
         }
 
-        // 水平減速（Knockback 時のみ: 摩擦で徐々に停止）
+        // のけぞり(Hitstun)の水平減速: 摩擦で徐々に停止
         if (state == CharacterState.Hitstun)
         {
             float decel = 10f * GameConfig.FIXED_DELTA_TIME;
@@ -265,13 +277,22 @@ public class ReactionSystem : NetworkBehaviour
         Vector3 motion = _reactionVelocity * GameConfig.FIXED_DELTA_TIME;
         _characterController.Move(motion);
 
-        // Launch 中に着地したら SprawlDown に遷移
+        // Launch 中に着地したら SprawlDown に遷移（打ち上げ・吹き飛ばし共通）
         if (state == CharacterState.Launch && _characterController.isGrounded && _reactionVelocity.y <= 0f)
         {
             _isReactionPhysicsActive = false;
             _reactionVelocity = Vector3.zero;
             _stateMachine.TryChangeState(CharacterState.SprawlDown);
             Debug.Log($"[Reaction] {gameObject.name}: Launch 着地 → SprawlDown");
+        }
+
+        // AirHitstun 中に着地したら SprawlDown に遷移
+        if (state == CharacterState.AirHitstun && _characterController.isGrounded && _reactionVelocity.y <= 0f)
+        {
+            _isReactionPhysicsActive = false;
+            _reactionVelocity = Vector3.zero;
+            _stateMachine.TryChangeState(CharacterState.SprawlDown);
+            Debug.Log($"[Reaction] {gameObject.name}: AirHitstun 着地 → SprawlDown");
         }
 
         // Slam 中に着地したら FaceDownDown に遷移
@@ -285,6 +306,50 @@ public class ReactionSystem : NetworkBehaviour
     }
 
     // ============================================================
+    // 空中ヒットリアクション
+    // ============================================================
+
+    /// <summary>
+    /// 空中ヒット（AirHitstun）: 空中で仰け反る（後方0.3m + 上0.5m）
+    /// 被弾者が空中（Launch/AirHitstun/AirRecover/Jump等）の場合に使用
+    /// </summary>
+    private void ApplyAirHitstun(Vector3 attackerPosition)
+    {
+        _stateMachine.TryChangeState(CharacterState.AirHitstun);
+
+        Vector3 knockDir = GetKnockbackDirection(attackerPosition);
+
+        // 上方向の初速: v_y = sqrt(2 * |g| * h) で 0.5m 上昇
+        float upSpeed = Mathf.Sqrt(2f * Mathf.Abs(GameConfig.JUMP_GRAVITY) * GameConfig.AIR_HITSTUN_KNOCKBACK_V);
+        // 水平方向: 滞空時間中に 0.3m 移動
+        float airTime = 2f * upSpeed / Mathf.Abs(GameConfig.JUMP_GRAVITY);
+        float hSpeed = GameConfig.AIR_HITSTUN_KNOCKBACK_H / Mathf.Max(airTime, 0.01f);
+
+        _reactionVelocity = knockDir * hSpeed + Vector3.up * upSpeed;
+        _isReactionPhysicsActive = true;
+    }
+
+    // ============================================================
+    // ヘルパー
+    // ============================================================
+
+    /// <summary>
+    /// 攻撃者→被弾者方向のノックバック方向ベクトルを返す（水平・正規化済み）
+    /// </summary>
+    private Vector3 GetKnockbackDirection(Vector3 attackerPosition)
+    {
+        Vector3 dir = transform.position - attackerPosition;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.001f)
+        {
+            // 攻撃者と重なっている場合: 被弾者の背面方向にフォールバック
+            dir = -transform.forward;
+        }
+        dir.Normalize();
+        return dir;
+    }
+
+    // ============================================================
     // 外部ヘルパー
     // ============================================================
 
@@ -295,5 +360,18 @@ public class ReactionSystem : NetworkBehaviour
     {
         _isReactionPhysicsActive = false;
         _reactionVelocity = Vector3.zero;
+    }
+
+    /// <summary>
+    /// 被弾者が空中状態かを判定する（空中ヒット判定に使用）
+    /// </summary>
+    public bool IsAirborne()
+    {
+        CharacterState state = _stateMachine.CurrentState;
+        return state == CharacterState.Launch
+            || state == CharacterState.AirHitstun
+            || state == CharacterState.AirRecover
+            || state == CharacterState.Jump
+            || state == CharacterState.JumpAttack;
     }
 }

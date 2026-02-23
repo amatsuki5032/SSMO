@@ -105,12 +105,21 @@ public static class GameConfig
     public const float HITSTUN_LIGHT_DURATION = 0.3f;    // のけぞり（軽）: N攻撃
     public const float HITSTUN_HEAVY_DURATION = 0.5f;    // のけぞり（重）: C1等
 
+    // のけぞりノックバック
+    public const float FLINCH_KNOCKBACK_DISTANCE = 0.5f; // のけぞり時の後方移動距離 (m)
+
     // 打ち上げ
-    public const float LAUNCH_HEIGHT = 4f;               // 打ち上げ高さ (m)
+    public const float LAUNCH_HEIGHT = 3.0f;             // 打ち上げ高さ (m)
     public const float LAUNCH_DURATION = 1.0f;           // 打ち上げ受け身不能時間 (秒)
 
-    // 吹き飛ばし
-    public const float KNOCKBACK_FORCE = 5f;             // 吹き飛ばし力 (m/s)
+    // 空中ヒット
+    public const float AIR_HITSTUN_KNOCKBACK_H = 0.3f;   // 空中ヒット 水平ノックバック距離 (m)
+    public const float AIR_HITSTUN_KNOCKBACK_V = 0.5f;   // 空中ヒット 上方ノックバック距離 (m)
+
+    // 吹き飛ばし（C4等: 放物線で飛ぶ）
+    public const float KNOCKBACK_DISTANCE_H = 4.0f;      // 吹き飛ばし 水平距離 (m)
+    public const float KNOCKBACK_HEIGHT = 1.0f;           // 吹き飛ばし 上昇高さ (m)
+    public const float KNOCKBACK_FORCE = 5f;             // 吹き飛ばし力 (m/s)（レガシー互換用）
 
     // ダウン持続時間（秒）
     public const float FACEDOWN_DOWN_DURATION = 0.8f;
