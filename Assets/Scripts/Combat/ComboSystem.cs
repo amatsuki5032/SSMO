@@ -75,6 +75,31 @@ public class ComboSystem : NetworkBehaviour
     public bool IsDashAttacking => _isDashAttacking;
 
     // ============================================================
+    // HitboxSystem 向け公開プロパティ
+    // ============================================================
+
+    // 攻撃セグメント番号: 新しい攻撃（段・ラッシュヒット含む）ごとにインクリメント
+    // HitboxSystem がこの値の変化を検知してヒット済みリストをリセットする
+    private int _attackSequence;
+
+    // 現在の攻撃セグメントの経過時間（秒）
+    // HitboxSystem がアクティブフレーム判定に使用
+    private float _segmentElapsed;
+
+    /// <summary>攻撃セグメント番号（HitboxSystem 用）</summary>
+    public int AttackSequence => _attackSequence;
+
+    /// <summary>現在のチャージ技番号（HitboxSystem 用）</summary>
+    public int ChargeType => _chargeType;
+
+    /// <summary>現在の攻撃セグメント経過時間（HitboxSystem 用）</summary>
+    public float SegmentElapsed => _segmentElapsed;
+
+    /// <summary>ラッシュ中か（C3ラッシュ or ダッシュラッシュ）</summary>
+    public bool IsRush => (_chargeType == 3 && _rushHitCount > 0)
+                       || (_isDashAttacking && _dashRushHitCount > 0);
+
+    // ============================================================
     // ライフサイクル
     // ============================================================
 
@@ -93,6 +118,7 @@ public class ComboSystem : NetworkBehaviour
         UpdateCombo();
         UpdateCharge();
         UpdateDashAttack();
+        UpdateSegmentTimer();
     }
 
     // ============================================================
@@ -161,6 +187,8 @@ public class ComboSystem : NetworkBehaviour
             {
                 _rushHitCount++;
                 _chargeTimer = GameConfig.C3_RUSH_DURATION;
+                _attackSequence++;
+                _segmentElapsed = 0f;
                 Debug.Log($"[Combo] {gameObject.name}: C3 ラッシュ {_rushHitCount}hit");
             }
             return;
@@ -295,6 +323,8 @@ public class ComboSystem : NetworkBehaviour
             {
                 _dashRushHitCount++;
                 _dashAttackTimer = GameConfig.DASH_RUSH_DURATION;
+                _attackSequence++;
+                _segmentElapsed = 0f;
                 Debug.Log($"[Combo] {gameObject.name}: Dラッシュ {_dashRushHitCount}hit");
             }
             return;
@@ -309,6 +339,8 @@ public class ComboSystem : NetworkBehaviour
         _isDashAttacking = true;
         _dashAttackTimer = GameConfig.DASH_ATTACK_DURATION;
         _dashRushHitCount = 0;
+        _attackSequence++;
+        _segmentElapsed = 0f;
 
         _stateMachine.TryChangeState(CharacterState.DashAttack);
         Debug.Log($"[Combo] {gameObject.name}: D（ダッシュ攻撃）開始");
@@ -358,6 +390,8 @@ public class ComboSystem : NetworkBehaviour
         _hasBufferedAttack = false;
         _inputBufferTimer = 0f;
         _networkComboStep.Value = (byte)step;
+        _attackSequence++;
+        _segmentElapsed = 0f;
         Debug.Log($"[Combo] {gameObject.name}: N{step} 開始");
     }
 
@@ -391,6 +425,8 @@ public class ComboSystem : NetworkBehaviour
         _chargeType = chargeType;
         _chargeTimer = GetChargeDuration(chargeType);
         _rushHitCount = 0;
+        _attackSequence++;
+        _segmentElapsed = 0f;
 
         // ステートを Charge に遷移
         _stateMachine.TryChangeState(CharacterState.Charge);
@@ -428,6 +464,21 @@ public class ComboSystem : NetworkBehaviour
         _isDashAttacking = false;
         _dashAttackTimer = 0f;
         _dashRushHitCount = 0;
+    }
+
+    // ============================================================
+    // セグメント経過時間更新
+    // ============================================================
+
+    /// <summary>
+    /// 攻撃中であればセグメント経過時間を進める（HitboxSystem のアクティブフレーム判定用）
+    /// </summary>
+    private void UpdateSegmentTimer()
+    {
+        if (_comboStep > 0 || _chargeType > 0 || _isDashAttacking)
+        {
+            _segmentElapsed += GameConfig.FIXED_DELTA_TIME;
+        }
     }
 
     // ============================================================

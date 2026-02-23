@@ -122,6 +122,13 @@ public static class GameConfig
     // コンボ受付ウィンドウ（モーション末尾の割合）
     public const float COMBO_WINDOW_RATIO = 0.3f;
 
+    // === M2-5a: ヒット判定 ===
+    public const float DEFAULT_HITBOX_RADIUS = 0.5f;     // デフォルト Hitbox 半径
+    public const float DEFAULT_HITBOX_LENGTH = 1.5f;     // デフォルト Hitbox 長さ（カプセル）
+    public const float DEFAULT_HURTBOX_RADIUS = 0.4f;    // デフォルト Hurtbox 半径
+    public const float DEFAULT_HURTBOX_HEIGHT = 1.8f;    // デフォルト Hurtbox 高さ
+    public const int MAX_HIT_TARGETS_PER_FRAME = 30;     // 1フレームあたり最大ヒット数
+
     // === M2-3a: 通常攻撃コンボ ===
     public const int MAX_COMBO_STEP_BASE = 4;    // 無強化での最大コンボ段数（N1〜N4）
 
