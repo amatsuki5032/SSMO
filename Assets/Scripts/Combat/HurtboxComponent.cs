@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using UnityEngine;
 
 /// <summary>
 /// 被弾判定コンポーネント
