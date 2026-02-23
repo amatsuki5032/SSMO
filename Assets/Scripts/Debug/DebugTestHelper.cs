@@ -12,7 +12,7 @@ using UnityEngine;
 ///   F1:  相手を Hitstun トグル
 ///   F2:  相手を Launch トグル
 ///   F3:  自分の無双ゲージ MAX
-///   F4:  自分を EG Ready 状態にする
+///   F4:  相手を EG Ready トグル（ゲージ補充付き）
 ///   F5:  相手を自分の正面2mに瞬間移動
 ///   F6:  相手にガード状態を強制トグル
 ///   F9:  全員のHP全回復 + Dead 復活
@@ -40,7 +40,7 @@ public class DebugTestHelper : NetworkBehaviour
         if (Input.GetKeyDown(KeyCode.F1))  DoToggleHitstun();
         if (Input.GetKeyDown(KeyCode.F2))  DoToggleLaunch();
         if (Input.GetKeyDown(KeyCode.F3))  DoFillMusou();
-        if (Input.GetKeyDown(KeyCode.F4))  DoForceEGReady();
+        if (Input.GetKeyDown(KeyCode.F4))  DoToggleTargetEGReady();
         if (Input.GetKeyDown(KeyCode.F5))  DoTeleportTarget();
         if (Input.GetKeyDown(KeyCode.F6))  DoToggleGuard();
         if (Input.GetKeyDown(KeyCode.F9))  DoHealAll();
@@ -125,21 +125,32 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F4: 自分を EG Ready 状態にする
+    // F4: 相手を EG Ready 状態にする（トグル）
     // ============================================================
 
-    private void DoForceEGReady()
+    private void DoToggleTargetEGReady()
     {
-        var sm = GetComponent<CharacterStateMachine>();
+        var target = GetFirstOtherPlayer();
+        if (target == null) { _lastAction = "対象なし"; return; }
+
+        var sm = target.GetComponent<CharacterStateMachine>();
         if (sm == null) return;
 
-        // 無双ゲージがないと EG 維持できないため、先にゲージを満タンにする
-        var gauge = GetComponent<MusouGauge>();
-        if (gauge != null)
-            gauge.AddGauge(GameConfig.MUSOU_GAUGE_MAX);
+        if (sm.CurrentState == CharacterState.EGReady)
+        {
+            sm.ForceState(CharacterState.Idle);
+            _lastAction = "相手: EGReady → Idle";
+        }
+        else
+        {
+            // EG維持に無双ゲージが必要なため、先にゲージを満タンにする
+            var gauge = target.GetComponent<MusouGauge>();
+            if (gauge != null)
+                gauge.AddGauge(GameConfig.MUSOU_GAUGE_MAX);
 
-        sm.ForceState(CharacterState.EGReady);
-        _lastAction = "自分: → EGReady (ゲージ補充済)";
+            sm.ForceState(CharacterState.EGReady);
+            _lastAction = "相手: → EGReady (ゲージ補充済)";
+        }
     }
 
     // ============================================================
@@ -274,7 +285,7 @@ public class DebugTestHelper : NetworkBehaviour
             "F1 : 相手 Hitstun トグル",
             "F2 : 相手 Launch トグル",
             "F3 : 自分 無双ゲージ MAX",
-            "F4 : 自分 EG Ready",
+            "F4 : 相手 EG Ready トグル",
             "F5 : 相手を正面2mに移動",
             "F6 : 相手 ガード トグル",
             "F9 : 全員HP全回復 + 復活",
