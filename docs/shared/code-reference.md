@@ -126,6 +126,7 @@
 | ネットワーク | `SERVER_TICK_RATE(60)`, `CLIENT_SEND_RATE(30)`, `FIXED_DELTA_TIME` |
 | ラグコンペンセーション | `MAX_LAG_COMPENSATION_MS(150)`, `SNAPSHOT_BUFFER_SIZE(128)` |
 | 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)`, `SPAWN_POINTS_PER_TEAM(2)`, `RESPAWN_DELAY(0)` |
+| マップ | `MAP_SIZE(100)`, `MAP_HALF(50)`, `WALL_HEIGHT(10)`, `BASE_SIZE(3)`, `BASE_POSITIONS[5]` (readonly Vector3[]) |
 | スポーン座標 | `TEAM_RED_SPAWN_POS_1/2` (readonly Vector3), `TEAM_BLUE_SPAWN_POS_1/2` (readonly Vector3) |
 | 戦闘 | `INPUT_BUFFER_SEC(0.15)`, `COMBO_WINDOW_RATIO(0.3)` |
 | ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_KNOCKBACK_DISTANCE(0.3)` |
@@ -660,6 +661,33 @@ NetworkVariable / RPC / GetComponent なし。
 | `MusouGauge` | 無双ゲージMAX |
 | `ReactionSystem` | リアクション物理リセット |
 | `TeamManager.Instance` | チーム情報取得 |
+
+---
+
+### MapGenerator.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `MapGenerator : MonoBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+なし（全て private。Awake でマップ全体を自動生成）
+
+**主な機能**
+- 100m × 100m の地面（Plane）生成
+- 外壁 4辺（見えない壁。Renderer 無効化）
+- 拠点 5箇所（中央1 + 赤2 + 青2。色分け立方体 + Trigger Collider）
+- 障害物 7個（カメラ壁貫通テスト用の箱）
+- 全オブジェクトは MapRoot 配下にヒエラルキー整理
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。ネットワーク非依存）
+
+**依存（GetComponent）**
+
+なし（GameConfig の定数を参照）
 
 ---
 

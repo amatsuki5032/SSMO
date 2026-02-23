@@ -25,12 +25,36 @@ public static class GameConfig
     public const float RESPAWN_DELAY = 0f;            // リスポーン遅延（0 = 即復活）
     public const int SPAWN_POINTS_PER_TEAM = 2;      // チームごとのスポーンポイント数
 
-    // === スポーン座標（仮値。マップ完成後に調整）===
-    // 赤軍: マップ西側、青軍: マップ東側
-    public static readonly Vector3 TEAM_RED_SPAWN_POS_1  = new Vector3(-20f, 1f, 0f);
-    public static readonly Vector3 TEAM_RED_SPAWN_POS_2  = new Vector3(-20f, 1f, 10f);
-    public static readonly Vector3 TEAM_BLUE_SPAWN_POS_1 = new Vector3( 20f, 1f, 0f);
-    public static readonly Vector3 TEAM_BLUE_SPAWN_POS_2 = new Vector3( 20f, 1f, 10f);
+    // === マップ ===
+    public const float MAP_SIZE = 100f;                  // マップサイズ (m)。100×100の正方形
+    public const float MAP_HALF = MAP_SIZE / 2f;         // マップ半分 (端の座標)
+    public const float WALL_HEIGHT = 10f;                // 外壁の高さ (m)
+    public const float BASE_SIZE = 3f;                   // 拠点キューブのサイズ (m)
+
+    // 拠点座標 5箇所（中央1 + 赤側2 + 青側2）
+    // 赤軍: マップ西側 (X負方向)、青軍: マップ東側 (X正方向)
+    public static readonly Vector3 BASE_POS_CENTER    = new Vector3(  0f, 0f,   0f);
+    public static readonly Vector3 BASE_POS_RED_1     = new Vector3(-35f, 0f, -15f);
+    public static readonly Vector3 BASE_POS_RED_2     = new Vector3(-35f, 0f,  15f);
+    public static readonly Vector3 BASE_POS_BLUE_1    = new Vector3( 35f, 0f, -15f);
+    public static readonly Vector3 BASE_POS_BLUE_2    = new Vector3( 35f, 0f,  15f);
+
+    // 拠点座標配列（MapGenerator で一括参照用）
+    public static readonly Vector3[] BASE_POSITIONS = new Vector3[]
+    {
+        BASE_POS_CENTER,
+        BASE_POS_RED_1,
+        BASE_POS_RED_2,
+        BASE_POS_BLUE_1,
+        BASE_POS_BLUE_2,
+    };
+
+    // === スポーン座標（マップ配置に連動）===
+    // 赤軍: 西側拠点の後方、青軍: 東側拠点の後方
+    public static readonly Vector3 TEAM_RED_SPAWN_POS_1  = new Vector3(-40f, 1f, -15f);
+    public static readonly Vector3 TEAM_RED_SPAWN_POS_2  = new Vector3(-40f, 1f,  15f);
+    public static readonly Vector3 TEAM_BLUE_SPAWN_POS_1 = new Vector3( 40f, 1f, -15f);
+    public static readonly Vector3 TEAM_BLUE_SPAWN_POS_2 = new Vector3( 40f, 1f,  15f);
 
     // === 戦闘 ===
     // ※ ヒットストップなし（常時戦闘が流れるスピード感を重視）

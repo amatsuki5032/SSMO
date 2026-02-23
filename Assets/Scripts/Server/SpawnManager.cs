@@ -49,7 +49,8 @@ public class SpawnManager : NetworkBehaviour
         }
         Instance = this;
 
-        // GameConfig の仮座標でスポーンポイントを初期化
+        // GameConfig のマップ連動スポーン座標で初期化
+        // 各チーム拠点の後方 (X方向に5m奥) に配置
         _redSpawnPoints = new Vector3[]
         {
             GameConfig.TEAM_RED_SPAWN_POS_1,
