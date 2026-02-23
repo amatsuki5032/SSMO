@@ -87,11 +87,11 @@ public class TeamManager : NetworkBehaviour
         if (IsServer)
         {
             // サーバー: 接続・切断コールバックを登録
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectedCallback += OnClientDisconnected;
+            // NGO 2.x では OnConnectionEvent に統合されている
+            NetworkManager.Singleton.OnConnectionEvent += OnConnectionEvent;
 
             // ホスト自身が既に接続済みの場合を処理
-            // （OnClientConnectedCallback はホスト起動時に発火しない場合がある）
+            // （OnConnectionEvent はホスト起動時に発火しない場合がある）
             if (NetworkManager.Singleton.LocalClientId == NetworkManager.ServerClientId)
             {
                 AssignTeam(NetworkManager.Singleton.LocalClientId);
@@ -106,8 +106,7 @@ public class TeamManager : NetworkBehaviour
     {
         if (IsServer && NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectedCallback -= OnClientDisconnected;
+            NetworkManager.Singleton.OnConnectionEvent -= OnConnectionEvent;
         }
 
         _teamAssignments.OnListChanged -= OnTeamAssignmentsChanged;
@@ -124,12 +123,29 @@ public class TeamManager : NetworkBehaviour
     // ============================================================
 
     /// <summary>
+    /// NGO 2.x 統合接続イベントハンドラ
+    /// Connected / Disconnected を EventType で振り分ける
+    /// </summary>
+    private void OnConnectionEvent(NetworkManager networkManager, ConnectionEventData eventData)
+    {
+        if (!IsServer) return;
+
+        switch (eventData.EventType)
+        {
+            case ConnectionEvent.ClientConnected:
+                OnClientConnected(eventData.ClientId);
+                break;
+            case ConnectionEvent.ClientDisconnected:
+                OnClientDisconnected(eventData.ClientId);
+                break;
+        }
+    }
+
+    /// <summary>
     /// プレイヤー接続時: チームを自動振り分け
     /// </summary>
     private void OnClientConnected(ulong clientId)
     {
-        if (!IsServer) return;
-
         // 最大人数チェック
         if (_teamCache.Count >= GameConfig.MAX_PLAYERS)
         {
@@ -146,8 +162,6 @@ public class TeamManager : NetworkBehaviour
     /// </summary>
     private void OnClientDisconnected(ulong clientId)
     {
-        if (!IsServer) return;
-
         // NetworkList から該当エントリを削除
         for (int i = 0; i < _teamAssignments.Count; i++)
         {
