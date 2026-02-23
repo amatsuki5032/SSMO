@@ -383,7 +383,7 @@ public class CharacterStateMachine : NetworkBehaviour
             CharacterState.Stun => GameConfig.STUN_DURATION,
             CharacterState.Freeze => GameConfig.FREEZE_DURATION,
             CharacterState.Musou => GameConfig.MUSOU_DURATION_SEC,
-            CharacterState.TrueMusou => GameConfig.MUSOU_DURATION_SEC,
+            CharacterState.TrueMusou => GameConfig.TRUE_MUSOU_DURATION_SEC,
             _ => 0f,
         };
     }

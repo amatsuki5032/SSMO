@@ -52,9 +52,12 @@ public static class GameConfig
 
     // === 無双ゲージ ===
     public const float MUSOU_GAUGE_MAX = 100f;
-    public const float MUSOU_GAIN_ON_HIT = 2f;       // 攻撃ヒット時の獲得量（倍率依存、仮値）
-    public const float MUSOU_GAIN_ON_DAMAGE = 5f;    // 被ダメージ時の獲得量（倍率依存、仮値）
+    public const float MUSOU_GAIN_ON_HIT = 3f;       // 攻撃ヒット時のゲージ増加
+    public const float MUSOU_GAIN_ON_DAMAGE = 5f;    // 被ダメージ時のゲージ増加
+    public const float MUSOU_CHARGE_RATE = 15f;       // ○長押しチャージ速度/秒
     public const float MUSOU_DURATION_SEC = 4f;       // 無双乱舞持続時間
+    public const float TRUE_MUSOU_DURATION_SEC = 5f;  // 真・無双乱舞持続時間
+    public const float TRUE_MUSOU_HP_THRESHOLD = 0.2f; // 真無双発動HP閾値（20%以下）
     // 無双ゲージ初期値: 戦闘開始時 0 / リスポーン時 MAX
 
     // === 根性補正（HP帯によるダメージ軽減）===

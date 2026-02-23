@@ -73,6 +73,7 @@ public class PlayerMovement : NetworkBehaviour
     private CharacterStateMachine _stateMachine;
     private ComboSystem _comboSystem;
     private EGSystem _egSystem;
+    private MusouGauge _musouGauge;
     private float _verticalVelocity;
 
     // --- ジャンプ ---
@@ -109,6 +110,8 @@ public class PlayerMovement : NetworkBehaviour
     private bool _attackPressed;    // 攻撃（押した瞬間のみ、消費後リセット）
     private bool _chargePressed;   // チャージ攻撃（押した瞬間のみ、消費後リセット）
     private bool _chargeHeld;      // チャージ長押し（EG準備用）
+    private bool _musouPressed;    // 無双（押した瞬間のみ、消費後リセット）
+    private bool _musouHeld;       // 無双長押し（MusouCharge用）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -136,6 +139,7 @@ public class PlayerMovement : NetworkBehaviour
         _stateMachine = GetComponent<CharacterStateMachine>();
         _comboSystem = GetComponent<ComboSystem>();
         _egSystem = GetComponent<EGSystem>();
+        _musouGauge = GetComponent<MusouGauge>();
         if (_stateMachine == null)
         {
             Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterStateMachine が見つかりません");
@@ -223,6 +227,13 @@ public class PlayerMovement : NetworkBehaviour
 
         // チャージ長押し（EG準備用）
         _chargeHeld = Input.GetMouseButton(1);
+
+        // 無双（Q or 中クリック）: 押した瞬間
+        if (Input.GetKeyDown(KeyCode.Q) || Input.GetMouseButtonDown(2))
+            _musouPressed = true;
+
+        // 無双長押し（MusouCharge 用）
+        _musouHeld = Input.GetKey(KeyCode.Q) || Input.GetMouseButton(2);
     }
 
     /// <summary>
@@ -367,7 +378,8 @@ public class PlayerMovement : NetworkBehaviour
             AttackPressed = _attackPressed,
             ChargePressed = _chargePressed,
             ChargeHeld = _chargeHeld,
-            MusouPressed = false,   // M2-8で実装
+            MusouPressed = _musouPressed,
+            MusouHeld = _musouHeld,
             Tick = _currentTick
         };
 
@@ -375,6 +387,7 @@ public class PlayerMovement : NetworkBehaviour
         _jumpPressed = false;
         _attackPressed = false;
         _chargePressed = false;
+        _musouPressed = false;
 
         if (IsServer)
         {
@@ -399,6 +412,12 @@ public class PlayerMovement : NetworkBehaviour
             }
             if (input.ChargePressed && _comboSystem != null)
                 _comboSystem.TryStartCharge(input.MoveInput);
+            // 無双入力処理
+            if (_musouGauge != null)
+            {
+                if (input.MusouPressed) _musouGauge.TryActivateMusou();
+                _musouGauge.ProcessMusouCharge(input.MusouHeld);
+            }
             Vector2 move = GetEffectiveMove(input);
             float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
             if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
@@ -741,6 +760,13 @@ public class PlayerMovement : NetworkBehaviour
         }
         if (input.ChargePressed && _comboSystem != null)
             _comboSystem.TryStartCharge(input.MoveInput);
+
+        // 無双入力処理（サーバー権威）
+        if (_musouGauge != null)
+        {
+            if (input.MusouPressed) _musouGauge.TryActivateMusou();
+            _musouGauge.ProcessMusouCharge(input.MusouHeld);
+        }
 
         // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
         Vector2 move = GetEffectiveMove(input);

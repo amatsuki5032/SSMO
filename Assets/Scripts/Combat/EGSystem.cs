@@ -16,6 +16,7 @@ using UnityEngine;
 ///   解除条件: ガード解除 / △離し / 無双ゲージ0
 /// </summary>
 [RequireComponent(typeof(CharacterStateMachine))]
+[RequireComponent(typeof(MusouGauge))]
 public class EGSystem : NetworkBehaviour
 {
     // ============================================================
@@ -23,6 +24,7 @@ public class EGSystem : NetworkBehaviour
     // ============================================================
 
     private CharacterStateMachine _stateMachine;
+    private MusouGauge _musouGauge;
 
     // ============================================================
     // サーバー側フィールド
@@ -33,9 +35,6 @@ public class EGSystem : NetworkBehaviour
 
     // EGカウンター持続タイマー
     private float _egCounterTimer;
-
-    // 仮の無双ゲージ（M2-8 で MusouGauge に置き換え予定）
-    private float _musouGauge = GameConfig.MUSOU_GAUGE_MAX;
 
     // ============================================================
     // 公開プロパティ
@@ -65,6 +64,7 @@ public class EGSystem : NetworkBehaviour
     private void Awake()
     {
         _stateMachine = GetComponent<CharacterStateMachine>();
+        _musouGauge = GetComponent<MusouGauge>();
     }
 
     private void FixedUpdate()
@@ -120,11 +120,10 @@ public class EGSystem : NetworkBehaviour
                 return;
             }
 
-            // 無双ゲージ消費（仮実装）
-            _musouGauge -= GameConfig.EG_MUSOU_DRAIN_RATE * GameConfig.FIXED_DELTA_TIME;
-            if (_musouGauge <= 0f)
+            // 無双ゲージ消費
+            _musouGauge.ConsumeGauge(GameConfig.EG_MUSOU_DRAIN_RATE * GameConfig.FIXED_DELTA_TIME);
+            if (_musouGauge.CurrentGauge <= 0f)
             {
-                _musouGauge = 0f;
                 Debug.Log($"[EG] {gameObject.name} 無双ゲージ切れ → EG解除");
                 CancelEG();
                 return;
@@ -158,9 +157,8 @@ public class EGSystem : NetworkBehaviour
 
         Debug.Log($"[EG] {gameObject.name} カウンター発動！ → {attackerTransform.name}");
 
-        // 無双ゲージ消費（仮実装）
-        _musouGauge -= GameConfig.EG_COUNTER_MUSOU_COST;
-        if (_musouGauge < 0f) _musouGauge = 0f;
+        // 無双ゲージ消費
+        _musouGauge.ConsumeGauge(GameConfig.EG_COUNTER_MUSOU_COST);
 
         // EGCounter ステートに遷移
         _egCounterTimer = GameConfig.EG_COUNTER_DURATION;

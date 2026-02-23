@@ -165,7 +165,7 @@ const PROGRESS_DATA = {
   milestones: {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
-    m2: { progress: 41, status: "active" },
+    m2: { progress: 50, status: "active" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
@@ -402,11 +402,16 @@ const PROGRESS_DATA = {
     {
       id: "m2-8",
       title: "無双乱舞 & 覚醒",
-      status: "todo",
+      status: "inprogress",
       desc: "ゲージMAXで発動。無敵+連撃+フィニッシュ",
       details: [
-        { text: "無双ゲージ管理（サーバー権威）", done: false },
-        { text: "無双発動（衝撃波+無敵+連撃+フィニッシュ）", done: false },
+        { text: "MusouGauge.cs（ゲージ管理・NetworkVariable同期）", done: true },
+        { text: "無双乱舞発動（ゲージMAX→無敵+タイマー）", done: true },
+        { text: "真・無双乱舞（HP20%以下で持続延長）", done: true },
+        { text: "MusouCharge（○長押しゲージ溜め）", done: true },
+        { text: "のけぞり無双脱出", done: true },
+        { text: "ヒット/被弾でゲージ増加", done: true },
+        { text: "EGSystem を MusouGauge 連携に移行", done: true },
         { text: "覚醒（ATK+30% / DEF+20% / SPD+15% / 30秒）", done: false },
         { text: "覚醒無双（強化版）", done: false },
       ],

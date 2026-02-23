@@ -241,6 +241,15 @@ public class HitboxSystem : NetworkBehaviour
 
                 // ダメージ通知（クリティカル情報を含む）
                 NotifyDamageClientRpc(hurtbox.NetworkObjectId, damageResult.HpDamage, damageResult.IsCritical);
+
+                // 無双ゲージ増加: 攻撃者ヒット + 被弾者ダメージ
+                var attackerGauge = GetComponent<MusouGauge>();
+                if (attackerGauge != null)
+                    attackerGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
+
+                var targetGauge = hurtbox.GetComponent<MusouGauge>();
+                if (targetGauge != null)
+                    targetGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_DAMAGE);
             }
         }
     }
