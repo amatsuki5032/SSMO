@@ -111,6 +111,7 @@
 | コンボ | `MAX_COMBO_STEP_BASE(4)`, `N1〜N4_DURATION`, `C1〜C6_DURATION` |
 | リアクション | `HITSTUN_LIGHT_DURATION(0.3)`, `LAUNCH_HEIGHT(3.0)`, `KNOCKBACK_DISTANCE_H(4.0)` |
 | 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
+| 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
 
@@ -262,6 +263,7 @@ NetworkVariable / RPC / GetComponent なし。
 |--------|------|
 | `ComboSystem` | 攻撃状態・セグメント経過の参照 |
 | `CharacterStateMachine` | 無双ステート判定（攻撃レベル決定用） |
+| `CharacterController` | 攻撃前進移動 |
 
 ※ ヒット対象（`hurtbox.GetComponent`）から以下も取得:
 `HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`

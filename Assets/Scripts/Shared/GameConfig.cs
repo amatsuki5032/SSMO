@@ -180,4 +180,18 @@ public static class GameConfig
     public const float C4_DURATION = 0.8f;           // C4 吹き飛ばし
     public const float C5_DURATION = 0.7f;           // C5 チャージシュート
     public const float C6_DURATION = 1.0f;           // C6 最大技
+
+    // === M2-Visual-B: 攻撃前進距離 (m) ===
+    // アクティブフレーム中にキャラ前方へ移動する合計距離
+    public const float ADVANCE_N1 = 0.3f;
+    public const float ADVANCE_N2 = 0.3f;
+    public const float ADVANCE_N3 = 0.3f;
+    public const float ADVANCE_N4 = 0.3f;
+    public const float ADVANCE_C1 = 0.5f;
+    public const float ADVANCE_C2 = 0.3f;
+    public const float ADVANCE_C3_RUSH = 0.1f;       // C3 ラッシュ各ヒット
+    public const float ADVANCE_C4 = 1.0f;
+    public const float ADVANCE_C5 = 0.3f;
+    public const float ADVANCE_DASH_ATTACK = 1.5f;
+    public const float ADVANCE_MUSOU_HIT = 0.15f;    // 無双乱舞各ヒット
 }

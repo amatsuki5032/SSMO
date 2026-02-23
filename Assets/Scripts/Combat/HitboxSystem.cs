@@ -29,6 +29,7 @@ public class HitboxSystem : NetworkBehaviour
 
     private ComboSystem _comboSystem;
     private CharacterStateMachine _stateMachine;
+    private CharacterController _characterController;
 
     // ============================================================
     // ヒット管理
@@ -51,15 +52,17 @@ public class HitboxSystem : NetworkBehaviour
     {
         _comboSystem = GetComponent<ComboSystem>();
         _stateMachine = GetComponent<CharacterStateMachine>();
+        _characterController = GetComponent<CharacterController>();
     }
 
     /// <summary>
-    /// サーバーのみ: 毎 FixedUpdate でヒット判定
+    /// サーバーのみ: 毎 FixedUpdate でヒット判定 + 無双前進移動
     /// </summary>
     private void FixedUpdate()
     {
         if (!IsServer) return;
         CheckHitbox();
+        ApplyMusouAdvance();
     }
 
     // ============================================================
@@ -98,6 +101,10 @@ public class HitboxSystem : NetworkBehaviour
 
         // アクティブフレーム外ならスキップ
         if (currentFrame < hitbox.ActiveStartFrame || currentFrame > hitbox.ActiveEndFrame) return;
+
+        // 攻撃前進移動: アクティブフレーム中にキャラ前方へ移動
+        // 合計距離をアクティブフレーム数で按分し、毎フレーム均等に移動する
+        ApplyAttackAdvance(comboStep, chargeType, isDash, isRush, hitbox);
 
         // ラグコンペンセーション: 攻撃者のビュータイムを計算
         // ホスト（サーバー兼クライアント）は巻き戻し不要（RTT=0）
@@ -340,5 +347,83 @@ public class HitboxSystem : NetworkBehaviour
     {
         string critText = isCritical ? " ★CRITICAL★" : "";
         Debug.Log($"[Damage-Client] target={targetNetId} damage={damage}{critText}");
+    }
+
+    // ============================================================
+    // 攻撃前進移動（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// アクティブフレーム中にキャラ前方へ前進移動を適用する
+    /// 合計距離をアクティブフレーム数で按分し、毎フレーム均等に移動
+    /// CheckHitbox のアクティブフレーム判定通過後に呼ばれる
+    /// </summary>
+    private void ApplyAttackAdvance(int comboStep, int chargeType, bool isDash, bool isRush, HitboxData hitbox)
+    {
+        if (_characterController == null) return;
+
+        float totalDistance = GetAdvanceDistance(comboStep, chargeType, isDash, isRush);
+        if (totalDistance <= 0f) return;
+
+        int activeFrames = hitbox.ActiveEndFrame - hitbox.ActiveStartFrame + 1;
+        if (activeFrames <= 0) return;
+
+        // 毎フレームの移動量 = 合計距離 / アクティブフレーム数
+        float perFrameDistance = totalDistance / activeFrames;
+        _characterController.Move(transform.forward * perFrameDistance);
+    }
+
+    /// <summary>
+    /// 無双乱舞中の前進移動（毎FixedUpdate）
+    /// 無双はComboSystemを経由しないため独立して処理する
+    /// </summary>
+    private void ApplyMusouAdvance()
+    {
+        if (_characterController == null) return;
+
+        var state = _stateMachine.CurrentState;
+        if (state != CharacterState.Musou && state != CharacterState.TrueMusou) return;
+
+        // 無双中は毎フレーム一定量ずつ前進（各ヒット0.15mを60Hzで按分）
+        // 仮のヒット間隔: 6フレーム（≒0.1秒に1ヒット）
+        float perFrameDistance = GameConfig.ADVANCE_MUSOU_HIT / 6f;
+        _characterController.Move(transform.forward * perFrameDistance);
+    }
+
+    /// <summary>
+    /// 攻撃種別に応じた前進距離を返す
+    /// </summary>
+    private static float GetAdvanceDistance(int comboStep, int chargeType, bool isDash, bool isRush)
+    {
+        // ダッシュ攻撃（ラッシュ追加ヒットも同じ距離）
+        if (isDash)
+            return isRush ? GameConfig.ADVANCE_DASH_ATTACK * 0.3f : GameConfig.ADVANCE_DASH_ATTACK;
+
+        // チャージ攻撃
+        if (chargeType > 0)
+        {
+            if (chargeType == 3 && isRush)
+                return GameConfig.ADVANCE_C3_RUSH;
+
+            return chargeType switch
+            {
+                1 => GameConfig.ADVANCE_C1,
+                2 => GameConfig.ADVANCE_C2,
+                3 => GameConfig.ADVANCE_C3_RUSH, // C3 初段もラッシュと同じ
+                4 => GameConfig.ADVANCE_C4,
+                5 => GameConfig.ADVANCE_C5,
+                _ => 0f,
+            };
+        }
+
+        // 通常攻撃
+        return comboStep switch
+        {
+            1 => GameConfig.ADVANCE_N1,
+            2 => GameConfig.ADVANCE_N2,
+            3 => GameConfig.ADVANCE_N3,
+            4 => GameConfig.ADVANCE_N4,
+            _ => 0f,
+        };
     }
 }
