@@ -184,7 +184,39 @@ public class HitboxSystem : NetworkBehaviour
                 targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType);
             }
 
-            // TODO: DamageSystem でダメージ計算・HP減少（M2-6a で実装）
+            // ダメージ計算・HP減少
+            var targetHealth = hurtbox.GetComponent<HealthSystem>();
+            if (targetHealth != null)
+            {
+                bool isRush = _comboSystem.IsRush;
+                float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
+
+                // 被弾者のステートからガード中・空中かを判定
+                var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
+                bool isGuarding = targetStateMachine != null &&
+                    (targetStateMachine.CurrentState == CharacterState.Guard ||
+                     targetStateMachine.CurrentState == CharacterState.GuardMove);
+                bool isAirborne = targetStateMachine != null &&
+                    (targetStateMachine.CurrentState == CharacterState.Launch ||
+                     targetStateMachine.CurrentState == CharacterState.AirHitstun ||
+                     targetStateMachine.CurrentState == CharacterState.AirRecover ||
+                     targetStateMachine.CurrentState == CharacterState.JumpAttack ||
+                     targetStateMachine.CurrentState == CharacterState.Jump);
+
+                var damageResult = DamageCalculator.Calculate(
+                    GameConfig.DEFAULT_ATK,
+                    motionMultiplier,
+                    GameConfig.DEFAULT_DEF,
+                    targetHealth.GetHpRatio(),
+                    isAirborne: isAirborne,
+                    isGuarding: isGuarding
+                );
+
+                targetHealth.TakeDamage(damageResult.HpDamage);
+
+                // ダメージ通知（クリティカル情報を含む）
+                NotifyDamageClientRpc(hurtbox.NetworkObjectId, damageResult.HpDamage, damageResult.IsCritical);
+            }
         }
     }
 
@@ -205,5 +237,16 @@ public class HitboxSystem : NetworkBehaviour
         // TODO: ヒットエフェクト・SE の再生（M2-6 以降で実装）
         Debug.Log($"[Hit-Client] ヒット通知受信: attacker={attackerNetId} → target={targetNetId}" +
                   $" pos={hitPosition}");
+    }
+
+    /// <summary>
+    /// ダメージ確定を全クライアントに通知する
+    /// クライアント側でダメージ数値表示等に使用
+    /// </summary>
+    [ClientRpc]
+    private void NotifyDamageClientRpc(ulong targetNetId, int damage, bool isCritical)
+    {
+        string critText = isCritical ? " ★CRITICAL★" : "";
+        Debug.Log($"[Damage-Client] target={targetNetId} damage={damage}{critText}");
     }
 }

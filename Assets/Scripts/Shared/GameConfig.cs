@@ -59,6 +59,13 @@ public static class GameConfig
     public const float GUTS_YELLOW_DIVISOR = 1.5f;
     public const float GUTS_RED_DIVISOR = 2f;
 
+    // === HP・ダメージ ===
+    public const int DEFAULT_MAX_HP = 1000;            // デフォルト最大HP（仮値）
+    public const int DEFAULT_ATK = 100;                // デフォルト攻撃力（仮値）
+    public const int DEFAULT_DEF = 50;                 // デフォルト防御力（仮値）
+    public const float CRITICAL_RATE = 0.05f;          // クリティカル率 5%
+    public const float CRITICAL_MULTIPLIER = 1.5f;     // クリティカル倍率
+
     // === 空中補正 ===
     public const float AIR_DAMAGE_DIVISOR = 2f;       // 空中被弾ダメージ ÷2
 

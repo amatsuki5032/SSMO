@@ -85,10 +85,10 @@ public static class DamageCalculator
             damage = Mathf.Max(damage, slashMinDamage);
         }
 
-        // --- 8. クリティカル判定 (5%確率で×1.5) ---
-        if (Random.value < 0.05f)
+        // --- 8. クリティカル判定 ---
+        if (Random.value < GameConfig.CRITICAL_RATE)
         {
-            damage *= 1.5f;
+            damage *= GameConfig.CRITICAL_MULTIPLIER;
             result.IsCritical = true;
         }
 
@@ -103,6 +103,48 @@ public static class DamageCalculator
         }
 
         return result;
+    }
+
+    // ============================================================
+    // モーション倍率
+    // ============================================================
+
+    /// <summary>
+    /// 攻撃の種類に応じたモーション倍率を返す
+    /// 将来は武器種ごとに異なるテーブルに拡張予定。現在は大剣ベースの仮値
+    /// </summary>
+    public static float GetMotionMultiplier(int comboStep, int chargeType, bool isDash, bool isRush)
+    {
+        // ダッシュ攻撃
+        if (isDash)
+            return isRush ? 0.6f : 1.2f;
+
+        // チャージ攻撃（combat-spec.md セクション4 準拠）
+        if (chargeType > 0)
+        {
+            return chargeType switch
+            {
+                1 => 2.0f,
+                2 => 1.5f,
+                3 => isRush ? 0.4f : 0.4f, // C3 ラッシュ: 各ヒット 0.4
+                4 => 1.8f,
+                5 => 1.3f,
+                6 => 3.0f,
+                _ => 1.0f,
+            };
+        }
+
+        // 通常攻撃（combat-spec.md セクション3 準拠）
+        return comboStep switch
+        {
+            1 => 0.8f,
+            2 => 0.9f,
+            3 => 1.0f,
+            4 => 1.1f,
+            5 => 1.2f,
+            6 => 1.5f,
+            _ => 1.0f,
+        };
     }
 
     // ============================================================

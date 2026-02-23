@@ -1,0 +1,106 @@
+using Unity.Netcode;
+using UnityEngine;
+
+/// <summary>
+/// HP管理（サーバー権威型）
+///
+/// - NetworkVariable で HP を全クライアントに同期
+/// - ダメージ適用はサーバー側でのみ実行
+/// - HP 0 で Dead ステートに遷移
+/// </summary>
+[RequireComponent(typeof(CharacterStateMachine))]
+public class HealthSystem : NetworkBehaviour
+{
+    // ============================================================
+    // 同期変数（サーバー書き込み、全員読み取り）
+    // ============================================================
+
+    private readonly NetworkVariable<int> _currentHp = new(
+        readPerm: NetworkVariableReadPermission.Everyone,
+        writePerm: NetworkVariableWritePermission.Server
+    );
+
+    private readonly NetworkVariable<int> _maxHp = new(
+        readPerm: NetworkVariableReadPermission.Everyone,
+        writePerm: NetworkVariableWritePermission.Server
+    );
+
+    // ============================================================
+    // 公開プロパティ
+    // ============================================================
+
+    public int CurrentHp => _currentHp.Value;
+    public int MaxHp => _maxHp.Value;
+
+    // ============================================================
+    // 参照
+    // ============================================================
+
+    private CharacterStateMachine _stateMachine;
+
+    // ============================================================
+    // ライフサイクル
+    // ============================================================
+
+    private void Awake()
+    {
+        _stateMachine = GetComponent<CharacterStateMachine>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            _maxHp.Value = GameConfig.DEFAULT_MAX_HP;
+            _currentHp.Value = GameConfig.DEFAULT_MAX_HP;
+        }
+    }
+
+    // ============================================================
+    // ダメージ適用（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// ダメージを適用してHPを減少させる
+    /// HP が 0 以下になったら Dead ステートに遷移する
+    /// </summary>
+    /// <param name="damage">適用するダメージ量（正の値）</param>
+    public void TakeDamage(int damage)
+    {
+        if (!IsServer)
+        {
+            Debug.LogWarning("[HP] TakeDamage はサーバー側でのみ実行可能");
+            return;
+        }
+
+        if (damage <= 0) return;
+
+        // 既に死亡済みならスキップ
+        if (_stateMachine.CurrentState == CharacterState.Dead) return;
+
+        _currentHp.Value = Mathf.Max(0, _currentHp.Value - damage);
+
+        Debug.Log($"[HP] {gameObject.name} が {damage} ダメージ → 残HP: {_currentHp.Value}/{_maxHp.Value}");
+
+        // HP 0 → 死亡
+        if (_currentHp.Value <= 0)
+        {
+            Debug.Log($"[HP] {gameObject.name} 死亡");
+            _stateMachine.TryChangeState(CharacterState.Dead);
+        }
+    }
+
+    // ============================================================
+    // HP比率（根性補正判定用）
+    // ============================================================
+
+    /// <summary>
+    /// 現在HP / 最大HP を返す（0.0〜1.0）
+    /// 根性補正の判定に使用する
+    /// </summary>
+    public float GetHpRatio()
+    {
+        if (_maxHp.Value <= 0) return 0f;
+        return (float)_currentHp.Value / _maxHp.Value;
+    }
+}
