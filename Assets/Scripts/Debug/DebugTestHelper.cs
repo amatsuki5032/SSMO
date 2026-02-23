@@ -12,7 +12,7 @@ using UnityEngine;
 ///   F1:  相手を Hitstun トグル
 ///   F2:  相手を Launch トグル
 ///   F3:  自分の無双ゲージ MAX
-///   F4:  相手を EG完成トグル（ゲージ補充付き、EG維持用）
+///   F4:  相手を EG展開トグル（ゲージ補充付き、EG維持用）
 ///   F5:  相手を自分の正面2mに瞬間移動
 ///   F6:  相手にガード状態を強制トグル
 ///   F9:  全員のHP全回復 + Dead 復活
@@ -125,7 +125,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F4: 相手を EG完成状態にする（トグル）
+    // F4: 相手を EG展開状態にする（トグル）
     // ============================================================
 
     private void DoToggleTargetEGReady()
@@ -139,7 +139,7 @@ public class DebugTestHelper : NetworkBehaviour
         if (sm.CurrentState == CharacterState.EGReady)
         {
             sm.ForceState(CharacterState.Idle);
-            _lastAction = "相手: EG完成 → Idle";
+            _lastAction = "相手: EG展開 → Idle";
         }
         else
         {
@@ -149,7 +149,7 @@ public class DebugTestHelper : NetworkBehaviour
                 gauge.AddGauge(GameConfig.MUSOU_GAUGE_MAX);
 
             sm.ForceState(CharacterState.EGReady);
-            _lastAction = "相手: → EG完成 (ゲージ補充済)";
+            _lastAction = "相手: → EG展開 (ゲージ補充済)";
         }
     }
 
@@ -285,7 +285,7 @@ public class DebugTestHelper : NetworkBehaviour
             "F1 : 相手 Hitstun トグル",
             "F2 : 相手 Launch トグル",
             "F3 : 自分 無双ゲージ MAX",
-            "F4 : 相手 EG完成 トグル",
+            "F4 : 相手 EG展開 トグル",
             "F5 : 相手を正面2mに移動",
             "F6 : 相手 ガード トグル",
             "F9 : 全員HP全回復 + 復活",
@@ -314,7 +314,7 @@ public class DebugTestHelper : NetworkBehaviour
             "左クリック : 通常攻撃 (□)",
             "右クリック : チャージ攻撃 (△)",
             "LShift     : ガード (L1)",
-            "LShift+右長押し : EG準備 → EG完成",
+            "LShift+右長押し : EG準備 → EG展開",
             "Q / 中クリック  : 無双 (○)",
         };
         foreach (string ctrl in controls)
