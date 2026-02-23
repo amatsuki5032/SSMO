@@ -176,12 +176,30 @@ public class HitboxSystem : NetworkBehaviour
             Vector3 hitPoint = hurtbox.transform.position;
             NotifyHitClientRpc(NetworkObjectId, hurtbox.NetworkObjectId, hitPoint);
 
-            // リアクション適用: 被弾者のステートを変更
-            var targetReaction = hurtbox.GetComponent<ReactionSystem>();
-            if (targetReaction != null)
+            // ガード方向判定: 正面180度以内ならガード成功、背面はめくり
+            bool isGuardSuccess = hurtbox.IsGuardingAgainst(transform.position);
+
+            if (isGuardSuccess)
             {
-                HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
-                targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType);
+                Debug.Log($"[Guard] {hurtbox.gameObject.name} ガード成功（{gameObject.name} の攻撃）");
+
+                // ガード成功: リアクション無し（Guard ステート維持）+ ガードノックバック
+                ApplyGuardKnockback(hurtbox.transform, transform.position);
+            }
+            else
+            {
+                // ガード失敗（めくり）or 非ガード: 通常リアクション適用
+                if (hurtbox.IsGuarding())
+                {
+                    Debug.Log($"[Guard] めくり！ {hurtbox.gameObject.name} のガードを貫通");
+                }
+
+                var targetReaction = hurtbox.GetComponent<ReactionSystem>();
+                if (targetReaction != null)
+                {
+                    HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
+                    targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType);
+                }
             }
 
             // ダメージ計算・HP減少
@@ -191,11 +209,8 @@ public class HitboxSystem : NetworkBehaviour
                 bool isRush = _comboSystem.IsRush;
                 float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
 
-                // 被弾者のステートからガード中・空中かを判定
+                // 被弾者のステートから空中かを判定
                 var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
-                bool isGuarding = targetStateMachine != null &&
-                    (targetStateMachine.CurrentState == CharacterState.Guard ||
-                     targetStateMachine.CurrentState == CharacterState.GuardMove);
                 bool isAirborne = targetStateMachine != null &&
                     (targetStateMachine.CurrentState == CharacterState.Launch ||
                      targetStateMachine.CurrentState == CharacterState.AirHitstun ||
@@ -209,7 +224,7 @@ public class HitboxSystem : NetworkBehaviour
                     GameConfig.DEFAULT_DEF,
                     targetHealth.GetHpRatio(),
                     isAirborne: isAirborne,
-                    isGuarding: isGuarding
+                    isGuarding: isGuardSuccess
                 );
 
                 targetHealth.TakeDamage(damageResult.HpDamage);
@@ -217,6 +232,29 @@ public class HitboxSystem : NetworkBehaviour
                 // ダメージ通知（クリティカル情報を含む）
                 NotifyDamageClientRpc(hurtbox.NetworkObjectId, damageResult.HpDamage, damageResult.IsCritical);
             }
+        }
+    }
+
+    // ============================================================
+    // ガードノックバック
+    // ============================================================
+
+    /// <summary>
+    /// ガード成功時にわずかに後退させる（CharacterController.Move）
+    /// 攻撃者の反対方向に GUARD_KNOCKBACK_DISTANCE 分だけ押す
+    /// </summary>
+    private void ApplyGuardKnockback(Transform defenderTransform, Vector3 attackerPosition)
+    {
+        Vector3 knockDir = defenderTransform.position - attackerPosition;
+        knockDir.y = 0f;
+        if (knockDir.sqrMagnitude < 0.001f)
+            knockDir = -defenderTransform.forward;
+        knockDir.Normalize();
+
+        var cc = defenderTransform.GetComponent<CharacterController>();
+        if (cc != null)
+        {
+            cc.Move(knockDir * GameConfig.GUARD_KNOCKBACK_DISTANCE);
         }
     }
 

@@ -165,7 +165,7 @@ const PROGRESS_DATA = {
   milestones: {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
-    m2: { progress: 33, status: "active" },
+    m2: { progress: 37, status: "active" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
@@ -384,7 +384,7 @@ const PROGRESS_DATA = {
     {
       id: "m2-7",
       title: "ダメージシステム",
-      status: "inprogress",
+      status: "done",
       desc: "DamageSystem + ダメージ計算 + HP管理 + ガード判定",
       details: [
         { text: "HealthSystem.cs（HP管理 + NetworkVariable同期）", done: true },
@@ -392,7 +392,8 @@ const PROGRESS_DATA = {
         { text: "HitboxSystemからダメージ計算・HP減少連携", done: true },
         { text: "根性補正・空中補正・ガード補正", done: true },
         { text: "HP0で Dead ステート遷移", done: true },
-        { text: "ガード判定（正面180度・めくり）", done: false },
+        { text: "ガード判定（正面180度・めくり）", done: true },
+        { text: "ガード成功時のけぞり無し + ノックバック", done: true },
       ],
     },
     {
