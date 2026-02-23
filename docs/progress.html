@@ -165,7 +165,7 @@ const PROGRESS_DATA = {
   milestones: {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
-    m2: { progress: 0, status: "active" },
+    m2: { progress: 14, status: "active" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
@@ -301,15 +301,19 @@ const PROGRESS_DATA = {
   m2Tasks: [
     {
       id: "m2-1",
-      title: "通常攻撃コンボ (N1→N6)",
-      status: "todo",
-      desc: "コンボステートマシン + 先行入力バッファ",
+      title: "キャラクターステートマシン",
+      status: "done",
+      desc: "サーバー権威型ステートマシン + 入力受付判定 + 自動遷移タイマー",
       details: [
-        { text: "コンボステートマシン実装", done: false },
-        { text: "モーション毎の攻撃範囲・威力設定", done: false },
-        { text: "入力受付ウィンドウ (250ms)", done: false },
-        { text: "先行入力バッファ (150ms)", done: false },
-        { text: "サーバーでコンボカウンター管理", done: false },
+        { text: "CharacterStateMachine.cs 新規作成（NetworkBehaviour）", done: true },
+        { text: "NetworkVariable<CharacterState> でステート同期", done: true },
+        { text: "NetworkVariable<StatusEffect> で状態異常同期", done: true },
+        { text: "TryChangeState: サーバー権威の遷移バリデーション", done: true },
+        { text: "CanAcceptInput: 全ステートの入力受付判定", done: true },
+        { text: "ステートタイマー自動遷移（のけぞり/ダウン/気絶/凍結/無双）", done: true },
+        { text: "無敵管理（Musou/Getup/Jump離陸/受け身）", done: true },
+        { text: "PlayerMovement.cs にステートチェック統合", done: true },
+        { text: "GameConfig.cs に M2 戦闘パラメータ追加", done: true },
       ],
     },
     {

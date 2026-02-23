@@ -80,6 +80,7 @@ public class PlayerMovement : NetworkBehaviour
     // ============================================================
 
     private CharacterController _controller;
+    private CharacterStateMachine _stateMachine;
     private float _verticalVelocity;
 
     // --- ティックカウンター ---
@@ -117,6 +118,7 @@ public class PlayerMovement : NetworkBehaviour
     private void Awake()
     {
         _controller = GetComponent<CharacterController>();
+        _stateMachine = GetComponent<CharacterStateMachine>();
     }
 
     public override void OnNetworkSpawn()
@@ -317,18 +319,25 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void ProcessOwnerTick()
     {
+        // ステートマシンが移動を許可しない場合は入力をゼロにする
+        // （ステートチェックは予測にも使われるのでクライアント側でも実行）
+        bool canMove = _stateMachine == null || _stateMachine.CanMove();
+        float h = canMove ? _inputH : 0f;
+        float v = canMove ? _inputV : 0f;
+
         MoveInput input = new MoveInput
         {
             Tick = _currentTick,
-            Horizontal = _inputH,
-            Vertical = _inputV
+            Horizontal = h,
+            Vertical = v
         };
 
         if (IsServer)
         {
             // --- ホスト（サーバー兼オーナー）---
-            // サーバーが直接計算するので予測もリコンシリエーションも不要
-            // 自分自身が権威なのでズレが発生しない
+            // Idle ↔ Move ステート遷移（サーバー権威）
+            UpdateMoveState(h, v);
+
             ApplyMovement(input.Horizontal, input.Vertical);
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
@@ -336,15 +345,9 @@ public class PlayerMovement : NetworkBehaviour
         else
         {
             // --- リモートクライアント ---
-            // Step 1: サーバーに入力を送信
             SubmitMoveInputServerRpc(input);
-
-            // Step 2: サーバーの応答を待たずにローカルで即座に移動計算（予測）
-            //         これによりRTT分の入力遅延を隠蔽する
             ApplyMovement(input.Horizontal, input.Vertical);
 
-            // Step 3: 入力と予測結果をリングバッファに保存
-            //         リコンシリエーション時にリプレイするために必要
             int idx = (int)(_currentTick % GameConfig.PREDICTION_BUFFER_SIZE);
             _inputBuffer[idx] = input;
             _stateBuffer[idx] = new MoveState
@@ -356,6 +359,27 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         _currentTick++;
+    }
+
+    /// <summary>
+    /// Idle ↔ Move のステート遷移を管理する（サーバーのみ）
+    /// 入力がある → Move、入力がない → Idle
+    /// </summary>
+    private void UpdateMoveState(float horizontal, float vertical)
+    {
+        if (_stateMachine == null) return;
+
+        bool hasInput = (horizontal * horizontal + vertical * vertical) > 0.01f;
+        CharacterState current = _stateMachine.CurrentState;
+
+        if (hasInput && current == CharacterState.Idle)
+        {
+            _stateMachine.TryChangeState(CharacterState.Move);
+        }
+        else if (!hasInput && current == CharacterState.Move)
+        {
+            _stateMachine.TryChangeState(CharacterState.Idle);
+        }
     }
 
     // ============================================================
@@ -421,6 +445,17 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc]
     private void SubmitMoveInputServerRpc(MoveInput input)
     {
+        // ステートマシンによる移動制限（サーバー権威で再チェック）
+        bool canMove = _stateMachine == null || _stateMachine.CanMove();
+        if (!canMove)
+        {
+            input.Horizontal = 0f;
+            input.Vertical = 0f;
+        }
+
+        // Idle ↔ Move ステート遷移（サーバー権威）
+        UpdateMoveState(input.Horizontal, input.Vertical);
+
         // サーバー権威で移動計算
         ApplyMovement(input.Horizontal, input.Vertical);
 

@@ -76,4 +76,43 @@ public static class GameConfig
     public const float INTERPOLATION_DELAY = 0.1f;         // 補間遅延 (秒)。表示時刻を100ms遅らせる
     public const float SNAP_THRESHOLD = 5f;                // スナップ閾値 (m)。これ以上離れたら補間せず瞬間移動
     public const int INTERPOLATION_BUFFER_SIZE = 32;       // 補間用リングバッファサイズ（約1秒分 @30Hz）
+
+    // === M2-1: 戦闘パラメータ ===
+
+    // のけぞり持続時間（秒）
+    public const float HITSTUN_DURATION = 0.4f;
+
+    // ダウン持続時間（秒）
+    public const float FACEDOWN_DOWN_DURATION = 0.8f;
+    public const float CRUMBLE_DOWN_DURATION = 1.2f;
+    public const float SPRAWL_DOWN_DURATION = 0.5f;
+
+    // 起き上がりモーション時間（秒）
+    public const float GETUP_DURATION = 0.5f;
+
+    // 気絶持続時間（秒）
+    public const float STUN_DURATION = 3.0f;
+
+    // 凍結持続時間（秒）
+    public const float FREEZE_DURATION = 2.0f;
+
+    // 感電持続時間（攻撃なしの場合、秒）
+    public const float ELECTRIFIED_DURATION = 2.0f;
+
+    // 感電解除コンボ数
+    public const int ELECTRIFIED_MAX_COMBO = 10;
+
+    // ジャンプ離陸無敵フレーム数
+    public const int JUMP_INVINCIBLE_FRAMES = 4;
+
+    // 受け身後の無敵フレーム数
+    public const int AIR_RECOVER_INVINCIBLE_FRAMES = 6;
+
+    // 起き上がり中は全フレーム無敵（GETUP_DURATION 全体）
+
+    // EG準備時間（秒）— EG_CHARGE_SEC と同値だが意味を明確にするため別名
+    public const float EG_PREPARE_TIME = 1.0f;
+
+    // コンボ受付ウィンドウ（モーション末尾の割合）
+    public const float COMBO_WINDOW_RATIO = 0.3f;
 }
