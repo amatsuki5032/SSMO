@@ -307,6 +307,10 @@ docs/
 - status は "done" / "inprogress" / "todo" のいずれか
 - コミット時に progress.html の更新も含めること
 
+## コードリファレンス更新ルール
+- public メソッド追加・変更、NetworkVariable 追加、新規ファイル作成時は `docs/code-reference.md` も更新すること
+- コミット時に code-reference.md の更新も含めること
+
 ## コミットルール
 - タスク完了時は自動で `git add -A && git commit && git push` まで実行すること
 - コミットメッセージ形式: "M[番号]-[サブ番号]: [タスク名]"
