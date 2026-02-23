@@ -181,13 +181,6 @@ public class HitboxSystem : NetworkBehaviour
             // ガード方向判定: 正面180度以内ならガード成功、背面はめくり
             bool isGuardSuccess = hurtbox.IsGuardingAgainst(transform.position);
 
-            // ガード不可技判定: C1・無双乱舞はガードを貫通する
-            if (isGuardSuccess && IsUnguardable(chargeType))
-            {
-                Debug.Log($"[Guard] ガード不可技！ C{chargeType} が {hurtbox.gameObject.name} のガードを貫通");
-                isGuardSuccess = false;
-            }
-
             if (isGuardSuccess)
             {
                 // EGReady 中にガード成功 → EGカウンター発動
@@ -294,27 +287,6 @@ public class HitboxSystem : NetworkBehaviour
 
         // 通常攻撃・ダッシュ攻撃は攻撃レベル2
         return AttackLevel.Normal;
-    }
-
-    // ============================================================
-    // ガード不可技判定
-    // ============================================================
-
-    /// <summary>
-    /// ガード不可技かを判定する
-    /// C1（ガードブレイク相当）と無双乱舞はガードを貫通する
-    /// </summary>
-    private bool IsUnguardable(int chargeType)
-    {
-        // C1 はガード不可
-        if (chargeType == 1) return true;
-
-        // 無双乱舞中の攻撃はガード不可
-        var state = _stateMachine.CurrentState;
-        if (state == CharacterState.Musou || state == CharacterState.TrueMusou)
-            return true;
-
-        return false;
     }
 
     // ============================================================
