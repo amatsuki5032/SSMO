@@ -75,11 +75,27 @@ Assets/Scripts/
 ├── Character/      # 移動・ステートマシン・アニメーション
 ├── UI/             # HUD・メニュー・ロビー
 ├── Shared/         # 定数・計算式・データ定義（サーバー/クライアント共有）
-└── Server/         # サーバー専用ロジック・AI
+├── Server/         # サーバー専用ロジック・AI
+└── Debug/          # デバッグ専用（Editor限定）
 ```
 
 - 新しいスクリプトは必ず上記いずれかのフォルダに配置する
 - 配置先が不明な場合は確認すること
+
+### ドキュメント構成
+
+```
+docs/
+├── shared/                     # claude.ai プロジェクトナレッジと同期するファイル
+│   ├── combat-spec.md          # ★ 戦闘仕様の正（Single Source of Truth）
+│   ├── code-reference.md       # コードAPI参照
+│   └── ssmo-system-prompt.md   # 仕様収集用プロンプト
+├── design/                     # 設計メモ（参考用）
+│   ├── combat-design.md
+│   └── netcode-design.md
+├── archive/m2/                 # M2指示書アーカイブ（参照用）
+└── progress.html               # 進捗トラッカー（PROGRESS_DATA）
+```
 
 ---
 
@@ -158,22 +174,48 @@ Assets/Scripts/
 ## 🗺 現在の開発状況
 
 ### M0: 完了 ✅
-
 - Unity 6.3 LTS プロジェクト作成済み
 - NGO 2.9.2 / Multiplayer Tools / ParrelSync 導入済み
-- NetworkManager + Unity Transport (Tick Rate: 60) 設定済み
-- HelloNetwork.cs で Host 接続確認済み
-- GameConfig.cs / CharacterState.cs / DamageCalculator.cs 作成済み
-- Fixed Timestep: 0.01667 (60Hz) 設定済み
 
-### M1: ネットワーク同期基盤 ← 現在
+### M1: ネットワーク同期基盤 完了 ✅
+- サーバー権威型 移動同期 + クライアント予測 + 補間 + ラグコンペンセーション
 
-1. NetworkPlayer Prefab（NetworkObject + CharacterController。NetworkTransformは使わない→自前同期）
-2. サーバー権威型の移動同期
-3. クライアント予測 + リコンシリエーション
-4. 他プレイヤーの補間表示
-5. ラグコンペンセーション基盤
-6. ネットワーク統計HUD (Ping / PacketLoss)
+### M2: 戦闘アクション 完了 ✅
+- コンボ (N1-N4 + C1-C5 + ダッシュ攻撃)
+- Hitbox/Hurtbox サーバー権威ヒット判定
+- 被弾リアクション（のけぞり・打ち上げ・吹き飛ばし・ダウン4種）
+- ダメージシステム（HP管理・ガード判定・EGカウンター）
+- 無双乱舞 + 真無双 + 無双ゲージ管理
+- アーマーシステム（5段階）
+- ガードシステム本家準拠（完全カット・めくりのみ・EGノックバックなし）
+
+### M3: 4v4 対戦モード ← 次
+
+---
+
+## 📋 CC指示書のルール
+
+### 1指示 = 1タスク
+- コード実装とドキュメント更新は別の指示で投げる
+- 「ついでに○○も」は禁止
+
+### 読むファイルは明示的に指定（最大5ファイル）
+- ❌「★実装前に関連ファイルを確認」（曖昧→Exploreが走り詰まる）
+- ✅「読むファイル: ComboSystem.cs, GameConfig.cs, PlayerMovement.cs」
+
+### 変更対象ファイルも明示
+- ❌「追加してください」
+- ✅「ComboSystem.cs と GameConfig.cs に追加」
+
+### 指示書テンプレート
+```
+読むファイル: [最大5ファイル列挙]
+変更ファイル: [変更対象列挙]
+
+[やること（具体的に）]
+
+git commit -m "[コミットメッセージ]"
+```
 
 ---
 
@@ -198,5 +240,4 @@ Assets/Scripts/
 
 - サーバー権威が一貫して守られた、チート耐性のあるネットコード
 - Ping 80ms でも快適にプレイできるクライアント予測とラグ補正
-- 将来 M2（戦闘アクション）に移行しても破綻しない設計
 - 動くものを最速で作る。見た目は箱人間で十分

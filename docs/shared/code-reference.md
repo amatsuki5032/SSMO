@@ -102,7 +102,7 @@
 |---------|-------------|
 | ネットワーク | `SERVER_TICK_RATE(60)`, `CLIENT_SEND_RATE(30)`, `FIXED_DELTA_TIME` |
 | ラグコンペンセーション | `MAX_LAG_COMPENSATION_MS(150)`, `SNAPSHOT_BUFFER_SIZE(128)` |
-| 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)` |
+| 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)`, `SPAWN_POINTS_PER_TEAM(2)` |
 | 戦闘 | `INPUT_BUFFER_SEC(0.15)`, `COMBO_WINDOW_RATIO(0.3)` |
 | ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_KNOCKBACK_DISTANCE(0.3)` |
 | ジャンプ | `JUMP_FORCE(8)`, `JUMP_GRAVITY(-20)` |
@@ -560,6 +560,46 @@ NetworkVariable / RPC / GetComponent なし。
 **NetworkVariable / ServerRpc / ClientRpc**
 
 なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
+なし（`NetworkManager.Singleton` を直接参照）
+
+---
+
+## Server/
+
+### TeamManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `TeamManager : NetworkBehaviour`（シングルトン） |
+
+**内部構造体**
+
+| 名前 | 説明 |
+|------|------|
+| `TeamAssignment` | struct, `INetworkSerializable`。ClientId + TeamId のペア |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static TeamManager Instance` | シングルトン |
+| `Team GetPlayerTeam(ulong)` | 指定プレイヤーのチームを取得 |
+| `List<ulong> GetTeamMembers(Team)` | 指定チームのメンバー一覧を取得（コピー） |
+| `int GetTeamCount(Team)` | 指定チームの現在の人数を取得 |
+| `bool IsSameTeam(ulong, ulong)` | 2プレイヤーが同チームか判定（フレンドリーファイア防止用） |
+
+**NetworkVariable**
+
+| 変数名 | 型 | 説明 |
+|--------|-----|------|
+| `_teamAssignments` | `NetworkList<TeamAssignment>` | 全プレイヤーのチーム割り当て（サーバーのみ書き込み可） |
+
+**ServerRpc / ClientRpc**
+
+なし（OnClientConnected / OnClientDisconnected コールバックでサーバー側処理）
 
 **依存（GetComponent）**
 

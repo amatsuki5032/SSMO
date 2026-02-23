@@ -22,6 +22,7 @@ public static class GameConfig
     public const int MAX_PLAYERS = TEAM_SIZE * 2;    // 最大プレイヤー数 (4v4)
     public const float MATCH_TIME_SECONDS = 300f;    // 試合時間 (5分)
     public const int RESPAWN_TIME_SECONDS = 5;       // リスポーン時間
+    public const int SPAWN_POINTS_PER_TEAM = 2;      // チームごとのスポーンポイント数
 
     // === 戦闘 ===
     // ※ ヒットストップなし（常時戦闘が流れるスピード感を重視）

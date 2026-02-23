@@ -48,6 +48,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Netcode/LagCompensationManager.cs` | LagCompensationManager | ラグコンペンセーション（ワールドスナップショット・Rewindスコープ） |
 | `Netcode/HelloNetwork.cs` | HelloNetwork | 接続確認用（M0で作成） |
 | `UI/NetworkStatsHUD.cs` | NetworkStatsHUD | ネットワーク統計表示（RTT・PacketLoss） |
+| `Server/TeamManager.cs` | TeamManager | チーム管理（サーバー権威・自動振り分け・NetworkList同期） |
 | `Debug/DebugTestHelper.cs` | DebugTestHelper | デバッグ用テストヘルパー（Editor限定・F1-F10キー操作） |
 
 ### NetworkPlayer Prefab コンポーネント一覧（追加順）

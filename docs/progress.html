@@ -166,7 +166,7 @@ const PROGRESS_DATA = {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
     m2: { progress: 100, status: "done" },
-    m3: { progress: 0, status: "active" },
+    m3: { progress: 5, status: "active" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
     m6: { progress: 0, status: "locked" },
@@ -460,9 +460,10 @@ const PROGRESS_DATA = {
     {
       id: "m3-1",
       title: "マッチメイキング & ロビー",
-      status: "todo",
+      status: "inprogress",
       desc: "ルーム作成/参加/Ready → カウントダウン開始",
       details: [
+        { text: "TeamManager（チーム自動振り分け・NetworkList同期）", done: true },
         { text: "ルーム作成 / 参加 / 準備完了", done: false },
         { text: "Firestore ルーム管理", done: false },
         { text: "クイックマッチ（自動マッチング）", done: false },
