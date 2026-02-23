@@ -31,6 +31,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | パス | クラス名 | 役割 |
 |------|---------|------|
 | `Character/PlayerMovement.cs` | PlayerMovement | 入力収集・サーバー権威移動・クライアント予測・リコンシリエーション |
+| `Character/CameraController.cs` | CameraController | 3人称カメラ（MonoBehaviour・オーナー専用・壁衝突回避） |
 | `Character/CharacterStateMachine.cs` | CharacterStateMachine | サーバー権威ステートマシン（NetworkVariable同期・遷移バリデーション・無敵管理） |
 | `Combat/ComboSystem.cs` | ComboSystem | コンボ管理（N1-N4・C1-C5派生・先行入力バッファ・ダッシュ攻撃） |
 | `Combat/HitboxSystem.cs` | HitboxSystem | サーバー権威ヒット判定（OverlapCapsule・ラグコンペンセーション・ガード判定） |

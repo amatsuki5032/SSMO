@@ -6,6 +6,29 @@
 
 ## Character/
 
+### CameraController.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `CameraController : MonoBehaviour`（ネットワーク同期なし） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `float Yaw` | カメラの水平回転角（PlayerMovement がカメラ基準移動方向を計算するために使用） |
+| `void Initialize(Transform)` | 追従対象を設定しカーソルロック |
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。オーナー専用のローカルカメラ）
+
+**依存（GetComponent）**
+
+なし（PlayerMovement から動的に生成・Initialize される）
+
+---
+
 ### PlayerMovement.cs
 
 | 項目 | 内容 |
@@ -111,6 +134,7 @@
 | HP・ダメージ | `DEFAULT_MAX_HP(1000)`, `DEFAULT_ATK(100)`, `DEFAULT_DEF(50)` |
 | コンボ | `MAX_COMBO_STEP_BASE(4)`, `N1〜N4_DURATION`, `C1〜C6_DURATION` |
 | リアクション | `HITSTUN_LIGHT_DURATION(0.3)`, `LAUNCH_HEIGHT(3.0)`, `KNOCKBACK_DISTANCE_H(4.0)` |
+| カメラ | `CAMERA_DISTANCE(3.0)`, `CAMERA_HEIGHT(2.0)`, `CAMERA_SENSITIVITY(2.0)`, `CAMERA_MIN/MAX_PITCH(-10/60)` |
 | 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 

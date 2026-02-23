@@ -74,6 +74,7 @@ public class PlayerMovement : NetworkBehaviour
     private ComboSystem _comboSystem;
     private EGSystem _egSystem;
     private MusouGauge _musouGauge;
+    private CameraController _cameraController; // オーナーのみ使用（カメラ基準移動用）
     private float _verticalVelocity;
 
     // --- ジャンプ ---
@@ -162,6 +163,9 @@ public class PlayerMovement : NetworkBehaviour
         {
             _inputBuffer = new PlayerInput[GameConfig.PREDICTION_BUFFER_SIZE];
             _stateBuffer = new MoveState[GameConfig.PREDICTION_BUFFER_SIZE];
+
+            // 3人称カメラを生成してアタッチ（オーナー専用）
+            SetupCamera();
         }
 
         // リモートクライアント上の他プレイヤー: 補間バッファを初期化
@@ -192,11 +196,45 @@ public class PlayerMovement : NetworkBehaviour
             LagCompensationManager.Instance.UnregisterPlayer(OwnerClientId);
         }
 
+        // オーナー: カメラ破棄
+        if (IsOwner && _cameraController != null)
+        {
+            Destroy(_cameraController.gameObject);
+            _cameraController = null;
+        }
+
         // コールバック解除（メモリリーク防止）
         if (!IsOwner && !IsServer)
         {
             _netPosition.OnValueChanged -= OnNetPositionChanged;
         }
+    }
+
+    /// <summary>
+    /// オーナー専用: 3人称カメラを生成して初期化する
+    /// Main Camera が既にあればそれを使い、なければ新規生成する
+    /// </summary>
+    private void SetupCamera()
+    {
+        // 既存の Main Camera を探す
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            // 既存カメラに CameraController を追加
+            _cameraController = mainCam.gameObject.GetComponent<CameraController>();
+            if (_cameraController == null)
+                _cameraController = mainCam.gameObject.AddComponent<CameraController>();
+        }
+        else
+        {
+            // 新規カメラを生成
+            var camObj = new GameObject("PlayerCamera");
+            camObj.AddComponent<Camera>();
+            camObj.AddComponent<AudioListener>();
+            _cameraController = camObj.AddComponent<CameraController>();
+        }
+
+        _cameraController.Initialize(transform);
     }
 
     /// <summary>
@@ -369,10 +407,14 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void ProcessOwnerTick()
     {
+        // WASD 入力をカメラの forward/right 基準のワールド方向に変換
+        // サーバーはこのワールド方向をそのまま ApplyMovement で使う
+        Vector2 moveInput = ConvertToCameraRelative(_inputH, _inputV);
+
         // 全入力を生のまま構造体に格納（フィルタリングはサーバーが行う）
         PlayerInput input = new PlayerInput
         {
-            MoveInput = new Vector2(_inputH, _inputV),
+            MoveInput = moveInput,
             JumpPressed = _jumpPressed,
             GuardHeld = _guardHeld,
             AttackPressed = _attackPressed,
@@ -567,6 +609,68 @@ public class PlayerMovement : NetworkBehaviour
 
         if (isServerAuthority)
             _stateMachine.TryChangeState(CharacterState.Idle);
+    }
+
+    // ============================================================
+    // カメラ
+    // ============================================================
+
+    /// <summary>
+    /// 3人称カメラを生成し、CameraController を初期化する（オーナー専用）
+    /// MainCamera が既にあればそれを流用し、なければ新規作成する
+    /// </summary>
+    private void SetupCamera()
+    {
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            // 既存 MainCamera に CameraController を追加
+            _cameraController = mainCam.gameObject.AddComponent<CameraController>();
+        }
+        else
+        {
+            // MainCamera がない場合は新規作成
+            var camObj = new GameObject("PlayerCamera");
+            camObj.tag = "MainCamera";
+            camObj.AddComponent<Camera>();
+            camObj.AddComponent<AudioListener>();
+            _cameraController = camObj.AddComponent<CameraController>();
+        }
+        _cameraController.Initialize(transform);
+    }
+
+    /// <summary>
+    /// WASD 生入力をカメラの forward/right 基準のワールド方向に変換する
+    /// カメラがない場合（サーバー等）は生入力をそのまま返す
+    ///
+    /// 変換後の Vector2 は (worldX, worldZ) であり、
+    /// ApplyMovement で new Vector3(x, 0, z) としてそのまま使われる
+    /// </summary>
+    private Vector2 ConvertToCameraRelative(float rawH, float rawV)
+    {
+        // カメラがない場合（ホストサーバー等の特殊ケース）は生入力をそのまま使用
+        if (_cameraController == null)
+            return new Vector2(rawH, rawV);
+
+        // 入力がない場合は早期リターン
+        if (rawH * rawH + rawV * rawV < 0.001f)
+            return Vector2.zero;
+
+        // カメラの Yaw からワールド方向の forward/right を計算（Y成分を除去）
+        float yawRad = _cameraController.Yaw * Mathf.Deg2Rad;
+        // forward = (sin(yaw), 0, cos(yaw))
+        Vector3 camForward = new Vector3(Mathf.Sin(yawRad), 0f, Mathf.Cos(yawRad));
+        // right = (cos(yaw), 0, -sin(yaw))
+        Vector3 camRight = new Vector3(Mathf.Cos(yawRad), 0f, -Mathf.Sin(yawRad));
+
+        // カメラ基準のワールド方向を計算
+        Vector3 worldDir = camForward * rawV + camRight * rawH;
+
+        // 正規化（斜め入力で速度が√2倍にならないように）
+        if (worldDir.sqrMagnitude > 1f)
+            worldDir.Normalize();
+
+        return new Vector2(worldDir.x, worldDir.z);
     }
 
     // ============================================================

@@ -92,6 +92,15 @@ public static class GameConfig
     public const float DASH_RUSH_DURATION = 0.25f;    // Dラッシュ追加ヒット間隔
     public const int DASH_RUSH_MAX_HITS = 6;          // Dラッシュ最大追加ヒット数
 
+    // === カメラ ===
+    public const float CAMERA_DISTANCE = 3.0f;           // カメラ距離（後方 m）
+    public const float CAMERA_HEIGHT = 2.0f;             // カメラ高さ（上方 m）
+    public const float CAMERA_SENSITIVITY = 2.0f;        // マウス感度
+    public const float CAMERA_MIN_PITCH = -10f;          // 垂直回転下限（度）
+    public const float CAMERA_MAX_PITCH = 60f;           // 垂直回転上限（度）
+    public const float CAMERA_COLLISION_RADIUS = 0.2f;   // 壁衝突検出の SphereCast 半径
+    public const float CAMERA_MIN_DISTANCE = 0.5f;       // 壁衝突時の最小距離
+
     // === M1: Movement ===
     public const float MOVE_SPEED = 6f;               // 移動速度 (m/s)
     public const float ROTATION_SPEED = 720f;          // 回転速度 (deg/s)

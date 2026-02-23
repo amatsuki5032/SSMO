@@ -166,7 +166,7 @@ const PROGRESS_DATA = {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
     m2: { progress: 100, status: "done" },
-    m3: { progress: 5, status: "active" },
+    m3: { progress: 10, status: "active" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
     m6: { progress: 0, status: "locked" },
@@ -470,6 +470,18 @@ const PROGRESS_DATA = {
         { text: "クイックマッチ（自動マッチング）", done: false },
         { text: "チーム選択（赤/青）", done: false },
         { text: "全員Ready → カウントダウン → 開始", done: false },
+      ],
+    },
+    {
+      id: "m3-camera",
+      title: "3人称カメラシステム",
+      status: "done",
+      desc: "マウスで回転・後方追従・壁衝突回避・カメラ基準移動",
+      details: [
+        { text: "CameraController.cs（MonoBehaviour・オーナー専用）", done: true },
+        { text: "マウス回転（水平360度・垂直-10〜60度）", done: true },
+        { text: "壁衝突検出（SphereCast でカメラを手前に寄せる）", done: true },
+        { text: "PlayerMovement カメラ基準移動方向変換", done: true },
       ],
     },
     {
