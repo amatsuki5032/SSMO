@@ -118,4 +118,13 @@ public static class GameConfig
 
     // コンボ受付ウィンドウ（モーション末尾の割合）
     public const float COMBO_WINDOW_RATIO = 0.3f;
+
+    // === M2-3a: 通常攻撃コンボ ===
+    public const int MAX_COMBO_STEP_BASE = 4;    // 無強化での最大コンボ段数（N1〜N4）
+
+    // 各コンボ段の持続時間（秒）※仮値。将来アニメーションに合わせて調整
+    public const float N1_DURATION = 0.5f;
+    public const float N2_DURATION = 0.5f;
+    public const float N3_DURATION = 0.55f;
+    public const float N4_DURATION = 0.65f;
 }

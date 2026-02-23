@@ -71,6 +71,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private CharacterController _controller;
     private CharacterStateMachine _stateMachine;
+    private ComboSystem _comboSystem;
     private float _verticalVelocity;
 
     // --- ジャンプ ---
@@ -104,6 +105,7 @@ public class PlayerMovement : NetworkBehaviour
     private float _inputV;
     private bool _jumpPressed;      // ジャンプ（押した瞬間のみ、消費後リセット）
     private bool _guardHeld;        // ガード（押しっぱなし）
+    private bool _attackPressed;    // 攻撃（押した瞬間のみ、消費後リセット）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -129,6 +131,7 @@ public class PlayerMovement : NetworkBehaviour
     {
         _controller = GetComponent<CharacterController>();
         _stateMachine = GetComponent<CharacterStateMachine>();
+        _comboSystem = GetComponent<ComboSystem>();
         if (_stateMachine == null)
         {
             Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterStateMachine が見つかりません");
@@ -205,6 +208,10 @@ public class PlayerMovement : NetworkBehaviour
 
         // ガードは押しっぱなしで true
         _guardHeld = Input.GetKey(KeyCode.LeftShift);
+
+        // 攻撃は押した瞬間のみ true（FixedUpdate で消費されるまで保持）
+        if (Input.GetMouseButtonDown(0))
+            _attackPressed = true;
     }
 
     /// <summary>
@@ -346,14 +353,15 @@ public class PlayerMovement : NetworkBehaviour
             MoveInput = new Vector2(_inputH, _inputV),
             JumpPressed = _jumpPressed,
             GuardHeld = _guardHeld,
-            AttackPressed = false,  // M2-3で実装
+            AttackPressed = _attackPressed,
             ChargePressed = false,  // M2-4で実装
             MusouPressed = false,   // M2-8で実装
             Tick = _currentTick
         };
 
-        // ジャンプ入力は消費後リセット（1ティックのみ有効）
+        // 瞬間入力は消費後リセット（1ティックのみ有効）
         _jumpPressed = false;
+        _attackPressed = false;
 
         if (IsServer)
         {
@@ -361,10 +369,13 @@ public class PlayerMovement : NetworkBehaviour
             ProcessGuard(input, true);
             ProcessJump(input, true);
             ProcessDashTracking(input);
+            if (input.AttackPressed && _comboSystem != null)
+                _comboSystem.TryStartAttack();
             Vector2 move = GetEffectiveMove(input);
             float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
             if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
             ApplyMovement(move.x, move.y, speedMul);
+            ApplyAttackRotation(input);
             CheckLanding(true);
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
@@ -421,6 +432,31 @@ public class PlayerMovement : NetworkBehaviour
         {
             _stateMachine.TryChangeState(CharacterState.Idle);
         }
+    }
+
+    // ============================================================
+    // 攻撃中の向き調整
+    // ============================================================
+
+    /// <summary>
+    /// Attack ステート中に移動入力がある場合、位置は動かさず向き（Y回転）だけ変更する
+    /// サーバー側で実行し、回転は NetworkVariable 経由でクライアントに同期される
+    /// </summary>
+    private void ApplyAttackRotation(PlayerInput input)
+    {
+        if (_stateMachine == null || _stateMachine.CurrentState != CharacterState.Attack) return;
+        if (input.MoveInput.sqrMagnitude <= 0.01f) return;
+
+        Vector3 dir = new Vector3(input.MoveInput.x, 0f, input.MoveInput.y);
+        if (dir.sqrMagnitude > 1f) dir.Normalize();
+
+        float targetAngle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+        float currentY = transform.eulerAngles.y;
+        float newY = Mathf.MoveTowardsAngle(
+            currentY, targetAngle,
+            GameConfig.ROTATION_SPEED * GameConfig.FIXED_DELTA_TIME
+        );
+        transform.rotation = Quaternion.Euler(0f, newY, 0f);
     }
 
     // ============================================================
@@ -593,6 +629,15 @@ public class PlayerMovement : NetworkBehaviour
             inputDir.Normalize();
         }
 
+        // ガード中はキャラクターのローカル座標基準で移動方向を変換
+        // W = キャラ正面、S = 背面、A = 左、D = 右
+        // TODO: ガード開始時にカメラをキャラクター正面にスナップ（カメラシステム実装後）
+        if (_isGuarding)
+        {
+            Quaternion guardRot = Quaternion.Euler(0f, _guardRotationY, 0f);
+            inputDir = guardRot * inputDir;
+        }
+
         // 重力処理
         // ジャンプ発動フレームは isGrounded=true だが JUMP_FORCE を上書きしてはいけない
         if (_controller.isGrounded && !_isJumping)
@@ -648,6 +693,10 @@ public class PlayerMovement : NetworkBehaviour
         // ダッシュ判定トラッキング
         ProcessDashTracking(input);
 
+        // 攻撃入力 → コンボシステムに委譲（サーバー権威）
+        if (input.AttackPressed && _comboSystem != null)
+            _comboSystem.TryStartAttack();
+
         // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
         Vector2 move = GetEffectiveMove(input);
         float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
@@ -657,6 +706,9 @@ public class PlayerMovement : NetworkBehaviour
 
         // サーバー権威で移動計算
         ApplyMovement(move.x, move.y, speedMul);
+
+        // 攻撃中の向き調整（位置は動かさず向きだけ更新）
+        ApplyAttackRotation(input);
 
         // 着地判定
         CheckLanding(true);
