@@ -165,7 +165,7 @@ const PROGRESS_DATA = {
   milestones: {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
-    m2: { progress: 55, status: "active" },
+    m2: { progress: 70, status: "active" },
     m3: { progress: 0, status: "locked" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
@@ -402,7 +402,7 @@ const PROGRESS_DATA = {
     {
       id: "m2-8",
       title: "無双乱舞 & 覚醒",
-      status: "inprogress",
+      status: "done",
       desc: "ゲージMAXで発動。無敵+連撃+フィニッシュ",
       details: [
         { text: "MusouGauge.cs（ゲージ管理・NetworkVariable同期）", done: true },
@@ -412,8 +412,8 @@ const PROGRESS_DATA = {
         { text: "のけぞり無双脱出", done: true },
         { text: "ヒット/被弾でゲージ増加", done: true },
         { text: "EGSystem を MusouGauge 連携に移行", done: true },
-        { text: "覚醒（ATK+30% / DEF+20% / SPD+15% / 30秒）", done: false },
-        { text: "覚醒無双（強化版）", done: false },
+        { text: "覚醒（ATK+30% / DEF+20% / SPD+15% / 30秒）— M4向け", done: false },
+        { text: "覚醒無双（強化版）— M4向け", done: false },
       ],
     },
     {
@@ -427,6 +427,20 @@ const PROGRESS_DATA = {
         { text: "ReactionSystem にアーマー判定追加", done: true },
         { text: "HitboxSystem に攻撃レベル判定（N/C/D/無双）", done: true },
         { text: "アーマーでのけぞり無効時もダメージは通る", done: true },
+      ],
+    },
+    {
+      id: "m2-10",
+      title: "ガードシステム（SSMO本家準拠）",
+      status: "done",
+      desc: "ガード完全カット + ガード不可技 + EGノックバックなし",
+      details: [
+        { text: "ガード成功時ダメージ完全カット（0ダメージ）", done: true },
+        { text: "ガード不可技（C1・無双乱舞がガードを貫通）", done: true },
+        { text: "通常ガード時ノックバックあり", done: true },
+        { text: "EG中ノックバックなし（完全に受け止める）", done: true },
+        { text: "DamageCalculator からガード補正ステップ削除", done: true },
+        { text: "combat-spec.md / CLAUDE.md ドキュメント更新", done: true },
       ],
     },
   ],

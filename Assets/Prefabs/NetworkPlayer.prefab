@@ -19,6 +19,9 @@ GameObject:
   - component: {fileID: 8723572835665815572}
   - component: {fileID: -7744957426483096189}
   - component: {fileID: 5351545034836221652}
+  - component: {fileID: 6766468100410672368}
+  - component: {fileID: 1418043050144386429}
+  - component: {fileID: 1669621690293299476}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -197,6 +200,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ae2bbb433043b1409752bc3783e7911, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MusouGauge
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &6766468100410672368
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84eb3c61c9576c84290cf3137dda3259, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArmorSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1418043050144386429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df6ff7663ec65cb489c71a35ad7e0b8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReactionSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1669621690293299476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cc0717e51c2d634c9cda8e9b25ad33f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DebugTestHelper
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2542845171839978957
 GameObject:
