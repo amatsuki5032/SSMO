@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 53047790272597321}
   - component: {fileID: 7901121124169488826}
   - component: {fileID: 4332280896199368995}
+  - component: {fileID: 8723572835665815572}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -53,7 +54,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3054504524
+  GlobalObjectIdHash: 4048734005
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -155,6 +156,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ebfc12c19c9c1742a7b0a486181922e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HurtboxComponent
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8723572835665815572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9770e23796792f94fbf64977508dc55a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealthSystem
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2542845171839978957
 GameObject:
