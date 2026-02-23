@@ -71,6 +71,19 @@ public class CharacterStateMachine : NetworkBehaviour
     // 現在無敵状態か（外部から参照用）
     private bool _isInvincible;
 
+    // 次の Hitstun 遷移時に使う持続時間オーバーライド（0 = デフォルト使用）
+    // ReactionSystem が軽/重を指定してから TryChangeState する
+    private float _hitstunOverride;
+
+    /// <summary>
+    /// 次の Hitstun 遷移で使用する持続時間を設定する（サーバー側のみ）
+    /// TryChangeState(Hitstun) の直前に呼ぶ。遷移後に自動で 0 にリセットされる
+    /// </summary>
+    public void SetHitstunDuration(float duration)
+    {
+        _hitstunOverride = duration;
+    }
+
     /// <summary>
     /// 現在無敵状態か。サーバーが管理する
     /// Musou/TrueMusou/Getup は全フレーム無敵
@@ -143,6 +156,10 @@ public class CharacterStateMachine : NetworkBehaviour
         // 新ステートに応じたタイマー・無敵フレームを設定
         InitializeStateTimer(newState);
         InitializeInvincibility(newState);
+
+        // Hitstun オーバーライドは遷移後にリセット（次回の遷移で再利用されないように）
+        if (newState == CharacterState.Hitstun)
+            _hitstunOverride = 0f;
 
         return true;
     }
@@ -357,7 +374,8 @@ public class CharacterStateMachine : NetworkBehaviour
     {
         _stateTimer = state switch
         {
-            CharacterState.Hitstun => GameConfig.HITSTUN_DURATION,
+            CharacterState.Hitstun => _hitstunOverride > 0f ? _hitstunOverride : GameConfig.HITSTUN_DURATION,
+            CharacterState.Launch => GameConfig.LAUNCH_DURATION,
             CharacterState.FaceDownDown => GameConfig.FACEDOWN_DOWN_DURATION,
             CharacterState.CrumbleDown => GameConfig.CRUMBLE_DOWN_DURATION,
             CharacterState.SprawlDown => GameConfig.SPRAWL_DOWN_DURATION,
@@ -389,6 +407,12 @@ public class CharacterStateMachine : NetworkBehaviour
             // のけぞり → Idle（立ち復帰）
             case CharacterState.Hitstun:
                 TryChangeState(CharacterState.Idle);
+                break;
+
+            // 打ち上げ → ダウン（受け身不能時間終了後に着地判定で遷移するが、
+            // タイマー満了はフォールバック：地面に戻っていればダウンに移行）
+            case CharacterState.Launch:
+                TryChangeState(CharacterState.SprawlDown);
                 break;
 
             // ダウン → 起き上がり

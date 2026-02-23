@@ -87,6 +87,15 @@ public static class GameConfig
 
     // のけぞり持続時間（秒）
     public const float HITSTUN_DURATION = 0.4f;
+    public const float HITSTUN_LIGHT_DURATION = 0.3f;    // のけぞり（軽）: N攻撃
+    public const float HITSTUN_HEAVY_DURATION = 0.5f;    // のけぞり（重）: C1等
+
+    // 打ち上げ
+    public const float LAUNCH_HEIGHT = 4f;               // 打ち上げ高さ (m)
+    public const float LAUNCH_DURATION = 1.0f;           // 打ち上げ受け身不能時間 (秒)
+
+    // 吹き飛ばし
+    public const float KNOCKBACK_FORCE = 5f;             // 吹き飛ばし力 (m/s)
 
     // ダウン持続時間（秒）
     public const float FACEDOWN_DOWN_DURATION = 0.8f;

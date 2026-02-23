@@ -176,7 +176,15 @@ public class HitboxSystem : NetworkBehaviour
             Vector3 hitPoint = hurtbox.transform.position;
             NotifyHitClientRpc(NetworkObjectId, hurtbox.NetworkObjectId, hitPoint);
 
-            // TODO: DamageSystem にヒット情報を送信（M2-6 で実装）
+            // リアクション適用: 被弾者のステートを変更
+            var targetReaction = hurtbox.GetComponent<ReactionSystem>();
+            if (targetReaction != null)
+            {
+                HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
+                targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType);
+            }
+
+            // TODO: DamageSystem でダメージ計算・HP減少（M2-6a で実装）
         }
     }
 
