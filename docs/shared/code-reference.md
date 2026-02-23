@@ -102,7 +102,8 @@
 |---------|-------------|
 | ネットワーク | `SERVER_TICK_RATE(60)`, `CLIENT_SEND_RATE(30)`, `FIXED_DELTA_TIME` |
 | ラグコンペンセーション | `MAX_LAG_COMPENSATION_MS(150)`, `SNAPSHOT_BUFFER_SIZE(128)` |
-| 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)`, `SPAWN_POINTS_PER_TEAM(2)` |
+| 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)`, `SPAWN_POINTS_PER_TEAM(2)`, `RESPAWN_DELAY(0)` |
+| スポーン座標 | `TEAM_RED_SPAWN_POS_1/2` (readonly Vector3), `TEAM_BLUE_SPAWN_POS_1/2` (readonly Vector3) |
 | 戦闘 | `INPUT_BUFFER_SEC(0.15)`, `COMBO_WINDOW_RATIO(0.3)` |
 | ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_KNOCKBACK_DISTANCE(0.3)` |
 | ジャンプ | `JUMP_FORCE(8)`, `JUMP_GRAVITY(-20)` |
@@ -604,6 +605,37 @@ NetworkVariable / RPC / GetComponent なし。
 **依存（GetComponent）**
 
 なし（`NetworkManager.Singleton` を直接参照）
+
+---
+
+### SpawnManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `SpawnManager : NetworkBehaviour`（シングルトン） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static SpawnManager Instance` | シングルトン |
+| `Vector3 GetSpawnPosition(ulong, Team)` | チーム別スポーン位置を取得（初回ラウンドロビン / リスポーン交互拠点） |
+| `void RespawnPlayer(NetworkObject)` | リスポーン実行（テレポート + HP全回復 + 無双MAX + Idle遷移、サーバー専用） |
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（サーバー側ローカル処理のみ）
+
+**依存（GetComponent — 対象プレイヤーから取得）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterController` | テレポート時の一時無効化 |
+| `CharacterStateMachine` | Idle 強制遷移 |
+| `HealthSystem` | HP全回復 |
+| `MusouGauge` | 無双ゲージMAX |
+| `ReactionSystem` | リアクション物理リセット |
+| `TeamManager.Instance` | チーム情報取得 |
 
 ---
 

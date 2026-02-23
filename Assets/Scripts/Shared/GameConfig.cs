@@ -22,7 +22,15 @@ public static class GameConfig
     public const int MAX_PLAYERS = TEAM_SIZE * 2;    // 最大プレイヤー数 (4v4)
     public const float MATCH_TIME_SECONDS = 300f;    // 試合時間 (5分)
     public const int RESPAWN_TIME_SECONDS = 5;       // リスポーン時間
+    public const float RESPAWN_DELAY = 0f;            // リスポーン遅延（0 = 即復活）
     public const int SPAWN_POINTS_PER_TEAM = 2;      // チームごとのスポーンポイント数
+
+    // === スポーン座標（仮値。マップ完成後に調整）===
+    // 赤軍: マップ西側、青軍: マップ東側
+    public static readonly Vector3 TEAM_RED_SPAWN_POS_1  = new Vector3(-20f, 1f, 0f);
+    public static readonly Vector3 TEAM_RED_SPAWN_POS_2  = new Vector3(-20f, 1f, 10f);
+    public static readonly Vector3 TEAM_BLUE_SPAWN_POS_1 = new Vector3( 20f, 1f, 0f);
+    public static readonly Vector3 TEAM_BLUE_SPAWN_POS_2 = new Vector3( 20f, 1f, 10f);
 
     // === 戦闘 ===
     // ※ ヒットストップなし（常時戦闘が流れるスピード感を重視）

@@ -1,0 +1,24 @@
+読むファイル: GameConfig.cs, TeamManager.cs, CharacterState.cs
+変更ファイル: CharacterState.cs, GameConfig.cs, 新規 Scripts/Server/BasePoint.cs
+
+拠点システムの基盤を作成する。
+
+1. CharacterState.cs に追加：
+   - enum BaseStatus : byte { Neutral, Red, Blue }
+
+2. 新規 Scripts/Server/BasePoint.cs：
+   - NetworkBehaviour, サーバー権威
+   - NetworkVariable<BaseStatus> で拠点の所属チームを同期
+   - 拠点エリア内のプレイヤーを検出（OnTriggerStay）
+   - 制圧判定: エリア内に片方チームのプレイヤーのみ → 制圧ゲージ上昇 → 制圧完了
+   - NetworkVariable<float> で制圧ゲージを同期
+   - 制圧完了時にチーム所属を変更
+   - 拠点内の味方プレイヤーにHP自動回復（毎秒）
+
+3. GameConfig.cs に追加：
+   - BASE_CAPTURE_TIME = 10f（制圧に必要な秒数）
+   - BASE_CAPTURE_RADIUS = 5f
+   - BASE_HP_REGEN_RATE = 20f（毎秒回復量）
+   - BASE_COUNT = 5
+
+git commit -m "M3-4a: 拠点システム基盤（BasePoint）"

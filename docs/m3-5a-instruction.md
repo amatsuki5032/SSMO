@@ -1,0 +1,28 @@
+読むファイル: GameConfig.cs, TeamManager.cs, BasePoint.cs
+変更ファイル: GameConfig.cs, 新規 Scripts/Server/NPCSoldier.cs, 新規 Scripts/Server/NPCSpawner.cs
+
+NPC兵士（雑兵）のスポーンシステムを作成する。
+
+1. 新規 Scripts/Server/NPCSoldier.cs：
+   - NetworkBehaviour, サーバー権威
+   - NetworkVariable<Team> で所属チームを同期
+   - HP管理（HealthSystem再利用 or 簡易版）
+   - 既存の HurtboxComponent を付けてプレイヤーの攻撃でダメージを受ける
+   - 死亡時に仙箪アイテムをドロップ（M4向けフラグのみ。実装はスキップ）
+   - 箱人間より小さいサイズで表現（0.6倍スケール）
+   - チーム色で色分け
+
+2. 新規 Scripts/Server/NPCSpawner.cs：
+   - NetworkBehaviour, サーバー権威
+   - 各拠点から定期的に兵士をスポーン（5秒間隔、各拠点3体まで）
+   - スポーンした兵士は敵拠点方向へ移動
+   - 拠点制圧状況に応じてスポーンチームが変わる
+
+3. GameConfig.cs に追加：
+   - NPC_SPAWN_INTERVAL = 5f
+   - NPC_MAX_PER_BASE = 3
+   - NPC_MOVE_SPEED = 2f
+   - NPC_HP = 100
+   - NPC_ATK = 20
+
+git commit -m "M3-5a: NPC兵士スポーンシステム"
