@@ -242,13 +242,13 @@ public class DebugTestHelper : NetworkBehaviour
     {
         if (!IsServer || !IsOwner || !_showGui) return;
 
-        // プレイヤー数に応じた高さ計算
+        // プレイヤー数に応じた高さ計算（デバッグコマンド + 操作キー + ステータス）
         int playerCount = NetworkManager.Singleton.ConnectedClientsList.Count;
-        float boxHeight = 240f + playerCount * 36f;
+        float boxHeight = 390f + playerCount * 20f;
 
-        float x = 10f;
-        float y = 10f;
         float w = 340f;
+        float x = Screen.width - w - 10f; // 右上に配置
+        float y = 10f;
 
         GUI.Box(new Rect(x, y, w, boxHeight), "");
 
@@ -258,12 +258,17 @@ public class DebugTestHelper : NetworkBehaviour
             fontSize = 13
         };
         GUIStyle label = new GUIStyle(GUI.skin.label) { fontSize = 12 };
+        GUIStyle separator = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 10,
+            normal = { textColor = Color.gray }
+        };
 
         // タイトル
         GUI.Label(new Rect(x + 8, y + 2, w, 20), "Debug Test Helper  [F12:非表示]", header);
         y += 22;
 
-        // コマンド一覧
+        // デバッグコマンド一覧
         string[] cmds =
         {
             "F1 : 相手 Hitstun トグル",
@@ -284,7 +289,30 @@ public class DebugTestHelper : NetworkBehaviour
         // 最終操作
         y += 4;
         GUI.Label(new Rect(x + 12, y, w - 20, 18), $">> {_lastAction}", label);
-        y += 22;
+        y += 20;
+
+        // ── 区切り線 ──
+        GUI.Label(new Rect(x + 8, y, w - 16, 16), "──── 通常操作キー ────", separator);
+        y += 16;
+
+        // 通常操作キー一覧（PlayerMovement.cs の実際のキーバインドに準拠）
+        string[] controls =
+        {
+            "WASD       : 移動",
+            "Space      : ジャンプ",
+            "左クリック : 通常攻撃 (□)",
+            "右クリック : チャージ攻撃 (△)",
+            "LShift     : ガード (L1)",
+            "LShift+右長押し : EG準備 → EG完成",
+            "Q / 中クリック  : 無双 (○)",
+        };
+        foreach (string ctrl in controls)
+        {
+            GUI.Label(new Rect(x + 12, y, w - 20, 18), ctrl, label);
+            y += 16;
+        }
+
+        y += 6;
 
         // プレイヤー状態
         GUI.Label(new Rect(x + 8, y, w, 20), "--- Player Status ---", header);
