@@ -30,6 +30,8 @@ public class PlayerMovement : NetworkBehaviour
         public Vector3 Position;
         public float RotationY;
         public float VerticalVelocity;
+        public bool IsJumping;          // リコンシリエーションリプレイ用
+        public Vector3 JumpLaunchDir;   // リコンシリエーションリプレイ用
     }
 
     /// <summary>
@@ -67,6 +69,10 @@ public class PlayerMovement : NetworkBehaviour
     private CharacterController _controller;
     private CharacterStateMachine _stateMachine;
     private float _verticalVelocity;
+
+    // --- ジャンプ ---
+    private Vector3 _jumpLaunchDir;  // 離陸時の水平方向（ジャンプ中維持、方向転換不可）
+    private bool _isJumping;         // ジャンプ中フラグ（クライアント予測 + サーバー権威）
 
     // --- ティックカウンター ---
     // NGO の ServerTime.Tick ではなく自前カウンターを使う理由:
@@ -317,16 +323,10 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void ProcessOwnerTick()
     {
-        // ステートマシンが移動を許可しない場合は移動入力をゼロにする
-        // （ステートチェックは予測にも使われるのでクライアント側でも実行）
-        bool canMove = _stateMachine == null || _stateMachine.CanMove();
-        float h = canMove ? _inputH : 0f;
-        float v = canMove ? _inputV : 0f;
-
-        // 全入力を1構造体にまとめる
+        // 全入力を生のまま構造体に格納（フィルタリングはサーバーが行う）
         PlayerInput input = new PlayerInput
         {
-            MoveInput = new Vector2(h, v),
+            MoveInput = new Vector2(_inputH, _inputV),
             JumpPressed = _jumpPressed,
             GuardHeld = _guardHeld,
             AttackPressed = false,  // M2-3で実装
@@ -341,18 +341,25 @@ public class PlayerMovement : NetworkBehaviour
         if (IsServer)
         {
             // --- ホスト（サーバー兼オーナー）---
-            // Idle ↔ Move ステート遷移（サーバー権威）
-            UpdateMoveState(input.MoveInput.x, input.MoveInput.y);
-
-            ApplyMovement(input.MoveInput.x, input.MoveInput.y);
+            ProcessJump(input, true);
+            Vector2 move = GetEffectiveMove(input);
+            if (!_isJumping) UpdateMoveState(move.x, move.y);
+            ApplyMovement(move.x, move.y);
+            CheckLanding(true);
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
         }
         else
         {
             // --- リモートクライアント ---
+            // サーバーに生入力を送信
             SubmitInputServerRpc(input);
-            ApplyMovement(input.MoveInput.x, input.MoveInput.y);
+
+            // クライアント予測: ローカルでも即座にジャンプ実行
+            ProcessJump(input, false);
+            Vector2 move = GetEffectiveMove(input);
+            ApplyMovement(move.x, move.y);
+            CheckLanding(false);
 
             int idx = (int)(_currentTick % GameConfig.PREDICTION_BUFFER_SIZE);
             _inputBuffer[idx] = input;
@@ -360,7 +367,9 @@ public class PlayerMovement : NetworkBehaviour
             {
                 Position = transform.position,
                 RotationY = transform.eulerAngles.y,
-                VerticalVelocity = _verticalVelocity
+                VerticalVelocity = _verticalVelocity,
+                IsJumping = _isJumping,
+                JumpLaunchDir = _jumpLaunchDir
             };
         }
 
@@ -389,6 +398,62 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     // ============================================================
+    // ジャンプ処理
+    // ============================================================
+
+    /// <summary>
+    /// ジャンプ開始判定。サーバー権威でステート遷移、クライアントは予測実行
+    /// Idle/Move のときのみジャンプ可。離陸時の方向を保持する
+    /// </summary>
+    private void ProcessJump(PlayerInput input, bool isServerAuthority)
+    {
+        if (!input.JumpPressed || _isJumping) return;
+
+        bool canJump = _stateMachine != null
+            && _stateMachine.CanAcceptInput(InputType.Jump);
+        if (!canJump) return;
+
+        _isJumping = true;
+        _verticalVelocity = GameConfig.JUMP_FORCE;
+
+        // 離陸時の水平方向を保存（ジャンプ中は方向転換不可）
+        _jumpLaunchDir = new Vector3(input.MoveInput.x, 0f, input.MoveInput.y);
+        if (_jumpLaunchDir.sqrMagnitude > 1f)
+            _jumpLaunchDir.Normalize();
+
+        if (isServerAuthority)
+            _stateMachine.TryChangeState(CharacterState.Jump);
+    }
+
+    /// <summary>
+    /// ジャンプ中は離陸時の方向を使い、地上では通常の入力を使う
+    /// </summary>
+    private Vector2 GetEffectiveMove(PlayerInput input)
+    {
+        if (_isJumping)
+            return new Vector2(_jumpLaunchDir.x, _jumpLaunchDir.z);
+
+        bool canMove = _stateMachine == null || _stateMachine.CanMove();
+        return canMove ? input.MoveInput : Vector2.zero;
+    }
+
+    /// <summary>
+    /// 着地判定。isGrounded かつ落下中ならジャンプ終了
+    /// サーバー権威でステート遷移、クライアントは予測フラグのみ更新
+    /// </summary>
+    private void CheckLanding(bool isServerAuthority)
+    {
+        if (!_isJumping) return;
+        if (!_controller.isGrounded || _verticalVelocity > 0f) return;
+
+        _isJumping = false;
+        _jumpLaunchDir = Vector3.zero;
+
+        if (isServerAuthority)
+            _stateMachine.TryChangeState(CharacterState.Idle);
+    }
+
+    // ============================================================
     // 共通移動計算
     // ============================================================
 
@@ -413,13 +478,14 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         // 重力処理
-        if (_controller.isGrounded)
+        // ジャンプ発動フレームは isGrounded=true だが JUMP_FORCE を上書きしてはいけない
+        if (_controller.isGrounded && !_isJumping)
         {
             _verticalVelocity = GameConfig.GROUND_STICK_FORCE;
         }
-        else
+        else if (!_controller.isGrounded)
         {
-            _verticalVelocity += GameConfig.GRAVITY * GameConfig.FIXED_DELTA_TIME;
+            _verticalVelocity += GameConfig.JUMP_GRAVITY * GameConfig.FIXED_DELTA_TIME;
         }
 
         // 移動（固定デルタタイム使用で決定論的）
@@ -428,7 +494,8 @@ public class PlayerMovement : NetworkBehaviour
         _controller.Move(velocity * GameConfig.FIXED_DELTA_TIME);
 
         // 回転（入力方向に向かって滑らかに回転）
-        if (inputDir.sqrMagnitude > 0.01f)
+        // ジャンプ中は方向転換不可（離陸時の向きを維持）
+        if (!_isJumping && inputDir.sqrMagnitude > 0.01f)
         {
             float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg;
             float currentY = transform.eulerAngles.y;
@@ -451,18 +518,20 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc]
     private void SubmitInputServerRpc(PlayerInput input)
     {
-        // ステートマシンによる移動制限（サーバー権威で再チェック）
-        bool canMove = _stateMachine == null || _stateMachine.CanMove();
-        if (!canMove)
-        {
-            input.MoveInput = Vector2.zero;
-        }
+        // ジャンプ処理（サーバー権威）
+        ProcessJump(input, true);
 
-        // Idle ↔ Move ステート遷移（サーバー権威）
-        UpdateMoveState(input.MoveInput.x, input.MoveInput.y);
+        // 移動入力の決定（ジャンプ中は離陸方向を使用）
+        Vector2 move = GetEffectiveMove(input);
+
+        // Idle ↔ Move ステート遷移（ジャンプ中は不要）
+        if (!_isJumping) UpdateMoveState(move.x, move.y);
 
         // サーバー権威で移動計算
-        ApplyMovement(input.MoveInput.x, input.MoveInput.y);
+        ApplyMovement(move.x, move.y);
+
+        // 着地判定
+        CheckLanding(true);
 
         // 他プレイヤー表示用に NetworkVariable を更新
         _netPosition.Value = transform.position;
@@ -518,9 +587,13 @@ public class PlayerMovement : NetworkBehaviour
         transform.rotation = Quaternion.Euler(0f, serverRotationY, 0f);
         _verticalVelocity = serverVerticalVelocity;
 
+        // ジャンプ状態を復元（確定ティックのバッファから取得）
+        _isJumping = _stateBuffer[idx].IsJumping;
+        _jumpLaunchDir = _stateBuffer[idx].JumpLaunchDir;
+
         // --- 再シミュレーション（Replay）---
         // 確定ティック以降の保存済み入力を順番に再適用
-        // CharacterController.Move() を高速ループで回す（描画は発生しない）
+        // ジャンプ開始・着地も含めて完全にリプレイする
         uint replayTick = tick + 1;
         while (replayTick < _currentTick)
         {
@@ -529,14 +602,20 @@ public class PlayerMovement : NetworkBehaviour
             // バッファの整合性チェック
             if (_inputBuffer[replayIdx].Tick != replayTick) break;
 
-            ApplyMovement(_inputBuffer[replayIdx].MoveInput.x, _inputBuffer[replayIdx].MoveInput.y);
+            PlayerInput replayInput = _inputBuffer[replayIdx];
+            ProcessJump(replayInput, false);
+            Vector2 move = GetEffectiveMove(replayInput);
+            ApplyMovement(move.x, move.y);
+            CheckLanding(false);
 
             // リプレイ結果でバッファを更新（次回のリコンシリエーションに備える）
             _stateBuffer[replayIdx] = new MoveState
             {
                 Position = transform.position,
                 RotationY = transform.eulerAngles.y,
-                VerticalVelocity = _verticalVelocity
+                VerticalVelocity = _verticalVelocity,
+                IsJumping = _isJumping,
+                JumpLaunchDir = _jumpLaunchDir
             };
 
             replayTick++;

@@ -34,8 +34,10 @@ public static class GameConfig
     public const float EG_CHARGE_SEC = 1.0f;           // エレメンタルガード準備時間（△押し込み）
 
     // === ジャンプ ===
-    public const float JUMP_HEIGHT = 3f;               // ジャンプ高さ (m)（武器種で変動、仮値）
-    public const float JUMP_DURATION = 0.6f;           // 滞空時間 (秒)（武器種で変動、仮値）
+    public const float JUMP_FORCE = 8f;                // ジャンプ初速 (m/s)
+    public const float JUMP_GRAVITY = -20f;            // ジャンプ中の重力（将来武器種で変動可能にするため GRAVITY と別管理）
+    public const float JUMP_HEIGHT = 3f;               // 目標ジャンプ高さ (m)（参考値、武器種で変動）
+    public const float JUMP_DURATION = 0.6f;           // 目標滞空時間 (秒)（参考値、武器種で変動）
     public const float JUMP_INVINCIBLE_SEC = 0.067f;   // ジャンプ離陸無敵 (4F@60Hz、仮値)
 
     // === 交戦距離 ===
