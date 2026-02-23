@@ -203,12 +203,19 @@ public class ComboSystem : NetworkBehaviour
             return;
 
         // チャージタイプ決定: _comboStep に応じて C1〜C5
+        // バッファされた□入力がある場合、実効コンボ段数を+1して計算
+        // これにより□□□△で必ず C4 が出る（バッファ消費タイミングに依存しない）
         // _comboStep == 0 → C1（Idle/Move から直接）
         // _comboStep == 1 → C2（N1 から派生）
         // _comboStep == 2 → C3（N2 から派生）
         // _comboStep == 3 → C4（N3 から派生）
         // _comboStep == 4 → C5（N4 から派生）
-        int chargeType = (_comboStep == 0) ? 1 : _comboStep + 1;
+        int effectiveStep = _comboStep;
+        if (_hasBufferedAttack && effectiveStep < _maxComboStep)
+        {
+            effectiveStep++;
+        }
+        int chargeType = (effectiveStep == 0) ? 1 : effectiveStep + 1;
 
         StartCharge(chargeType, moveInput);
     }
