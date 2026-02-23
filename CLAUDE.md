@@ -4,6 +4,11 @@
 真三國無双Online風の **4v4 近接アクション対戦ゲーム**。
 Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 
+## 仕様の信頼性ルール
+- **戦闘仕様の唯一の正 (Single Source of Truth) は `docs/combat-spec.md`**
+- CLAUDE.md や指示書と combat-spec.md で矛盾がある場合、**combat-spec.md を優先**する
+- CLAUDE.md はあくまでCCへの作業ガイド。仕様の詳細判断は必ず combat-spec.md を参照すること
+
 ## 最重要原則
 1. **サーバー権威型**: ゲーム状態の正解はサーバーが持つ。クライアントの値は一切信用しない
 2. **ネットワークは後付けできない**: 全ての機能はオンライン前提で設計・実装する
@@ -19,25 +24,58 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 - **ネットワーク統計**: Multiplayer Tools 2.2.8
 - **認証/DB**: Firebase Auth / Firestore (将来)
 
-## プロジェクト構造
+## ファイル構成（実際のコードに準拠）
+
+### Assets/Scripts/ 全ファイル一覧
+
+| パス | クラス名 | 役割 |
+|------|---------|------|
+| `Character/PlayerMovement.cs` | PlayerMovement | 入力収集・サーバー権威移動・クライアント予測・リコンシリエーション |
+| `Character/CharacterStateMachine.cs` | CharacterStateMachine | サーバー権威ステートマシン（NetworkVariable同期・遷移バリデーション・無敵管理） |
+| `Combat/ComboSystem.cs` | ComboSystem | コンボ管理（N1-N4・C1-C5派生・先行入力バッファ・ダッシュ攻撃） |
+| `Combat/HitboxSystem.cs` | HitboxSystem | サーバー権威ヒット判定（OverlapCapsule・ラグコンペンセーション・ガード判定） |
+| `Combat/HitboxData.cs` | HitboxData | 全攻撃種別のヒットボックスパラメータ（アクティブフレーム・範囲・オフセット） |
+| `Combat/HurtboxComponent.cs` | HurtboxComponent | 被弾判定コンポーネント（無敵チェック・ガード方向判定・めくり検出） |
+| `Combat/HealthSystem.cs` | HealthSystem | HP管理（NetworkVariable同期・TakeDamage・FullHeal・Dead遷移） |
+| `Combat/ReactionSystem.cs` | ReactionSystem | 被弾リアクション（のけぞり・打ち上げ・吹き飛ばし・ダウン4種） |
+| `Combat/ArmorSystem.cs` | ArmorSystem | 5段階アーマー（攻撃レベル比較でのけぞり判定） |
+| `Combat/EGSystem.cs` | EGSystem | エレメンタルガード（準備・完成・カウンター・無双ゲージ連携） |
+| `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
+| `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
+| `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
+| `Shared/CharacterState.cs` | CharacterState等 | enum定義（CharacterState・HitReaction・AttackLevel・ArmorLevel・ElementType等） |
+| `Shared/PlayerInput.cs` | PlayerInput | 入力構造体（INetworkSerializable。移動・攻撃・ガード・チャージ等） |
+| `Netcode/LagCompensationManager.cs` | LagCompensationManager | ラグコンペンセーション（ワールドスナップショット・Rewindスコープ） |
+| `Netcode/HelloNetwork.cs` | HelloNetwork | 接続確認用（M0で作成） |
+| `UI/NetworkStatsHUD.cs` | NetworkStatsHUD | ネットワーク統計表示（RTT・PacketLoss） |
+| `Debug/DebugTestHelper.cs` | DebugTestHelper | デバッグ用テストヘルパー（Editor限定・F1-F10キー操作） |
+
+### NetworkPlayer Prefab コンポーネント一覧（追加順）
+
+1. NetworkObject（NGO必須）
+2. CharacterController（物理移動）
+3. PlayerMovement（入力・移動同期）
+4. CharacterStateMachine（ステート管理）
+5. ComboSystem（コンボ管理）
+6. HitboxSystem（ヒット判定）
+7. HurtboxComponent（被弾判定）
+8. HealthSystem（HP管理）
+9. EGSystem（エレメンタルガード）
+10. MusouGauge（無双ゲージ）
+11. ArmorSystem（アーマー）
+12. ReactionSystem（被弾リアクション）
+13. DebugTestHelper（デバッグ用、Editor限定）
+
+### ドキュメント構成
+
 ```
-C:\dev\SSMO/
-├── Assets/
-│   ├── Scripts/
-│   │   ├── Netcode/        # ネットワーク同期・予測・補間・ラグ補正
-│   │   ├── Combat/         # ヒット判定・ダメージ・コンボシステム
-│   │   ├── Character/      # 移動・ステートマシン・アニメーション
-│   │   ├── UI/             # HUD・メニュー・ロビー
-│   │   ├── Shared/         # 定数・計算式・データ定義（サーバー/クライアント共有）
-│   │   └── Server/         # サーバー専用ロジック・AI
-│   ├── Prefabs/
-│   ├── Scenes/
-│   ├── Models/
-│   ├── Materials/
-│   └── Effects/
-├── docs/                   # 設計ドキュメント
-├── .gitattributes          # Git LFS 設定
-└── README.md
+docs/
+├── combat-spec.md          # ★ 戦闘仕様の正（Single Source of Truth）
+├── combat-design.md        # 初期設計メモ
+├── netcode-design.md       # ネットコード設計メモ
+├── ssmo-system-prompt.md   # 仕様収集用プロンプト
+├── progress.html           # 進捗トラッカー（PROGRESS_DATA）
+└── archive/m2/             # M2指示書アーカイブ（参照用）
 ```
 
 ## ネットワークアーキテクチャ
@@ -63,23 +101,16 @@ C:\dev\SSMO/
 - コンボ段数: 1 byte
 - HP: 2 bytes
 
-## 戦闘システム
+## 戦闘システム（M2で確定した仕様）
 
-※ 詳細仕様は `docs/combat-spec.md` を参照
+※ 詳細仕様は `docs/combat-spec.md` を参照（正の情報源）
 
 ### コンボ構造
 - 通常攻撃 (□): 無強化 N1→N4 / 連撃強化1回 N5 / 2回 N6 / 3回+無双MAX E6→E9
 - チャージ攻撃 (△): N[x]→△ で C[x] に派生（C1〜C6、武器種固有）
 - ダッシュ攻撃: 一定時間移動後に □ で発動（Nコンボとは別系統）
-- ブレイクチャージ: 武器2装備時に L2 で武器切替攻撃
 - 先行入力バッファ: 150ms
 - コンボ受付ウィンドウ: 各攻撃モーションの最後30%フレーム
-
-### ヒット判定フロー (近接)
-1. クライアント: 攻撃入力 → ローカル予測実行 → 予測ヒットエフェクト
-2. サーバー: 入力受信 → ラグコンペンセーション → Hitbox vs Hurtbox 判定
-3. サーバー: ヒット確定 → 全クライアントに通知
-4. クライアント: 予測が正しければそのまま / 外れたらエフェクト取消
 
 ### ダメージ計算式 (★サーバー側のみ★)
 ```
@@ -88,13 +119,22 @@ C:\dev\SSMO/
 3. 防御計算 = 基礎ダメージ × (100 / (100 + DEF))   ※斬属性は DEF=0
 4. 空中補正 = 空中被弾時 ÷2
 5. 根性補正 = HP青(50-100%):÷1 / HP黄(20-50%):÷1.5 / HP赤(0-20%):÷2
-6. 最終ダメージ = 防御計算 ÷ 空中補正 ÷ 根性補正
-7. 斬保証 = 斬属性の場合 max(最終ダメージ, 斬固定値)
-8. 最低保証 = max(最終ダメージ, 1)
-9. クリティカル = 5%確率で ×1.5
+6. 斬保証 = 斬属性の場合 max(最終ダメージ, 斬固定値)
+7. 最低保証 = max(最終ダメージ, 1)
+8. クリティカル = 5%確率で ×1.5
 ※ ガード成功時はダメージ0（完全カット）。計算自体をスキップする
 ※ ガード不可技は存在しない。崩し手段はめくり（背面攻撃）のみ
 ```
+
+### ガード（SSMO本家準拠・M2で確定）
+- L1 押しっぱなしで正面180度を防御（**ダメージ完全カット = 0ダメージ**）
+- 通常ガード時は**ノックバックあり**（多少押される）
+- **ガード不可技は存在しない**（無双乱舞・C1含め全攻撃ガード可能）
+- **崩し手段はめくり（側面・背面攻撃）のみ**
+- ガード移動可能（正面向いたまま）
+- エレメンタルガード (EG): ガード中に△約1秒押し込みで発動、カウンター攻撃
+- **EG中はノックバックなし**（その場で完全に受け止める）
+- ジャストガードシステムは**なし**（EGに置換）
 
 ### 属性システム（5種 + 無属性）
 - **属性同士の相性なし**
@@ -116,24 +156,9 @@ C:\dev\SSMO/
 
 ※ アーマーはのけぞり無効化のみ。ダメージは常に通る
 
-### ガード
-- L1 押しっぱなしで正面180度を防御（ダメージ完全カット = 0ダメージ）
-- 通常ガード時はノックバックあり（多少押される）
-- **ガード不可技は存在しない**（無双乱舞・C1含め全てガード可能）
-- **崩し手段はめくり（側面・背面攻撃）のみ**
-- ガード移動可能（正面向いたまま）
-- エレメンタルガード (EG): ガード中に△約1秒押し込みで発動、カウンター攻撃
-- EG中はノックバックなし（その場で完全に受け止める）
-
-### 武器種 (初期6種)
-| 武器 | 射程 | 特徴 |
-|------|------|------|
-| 大剣 | 3m | 広範囲・高威力・遅い |
-| 双剣 | 1.5m | 手数型・連撃コンボ |
-| 槍 | 4.5m | 突き特化・リーチ戦 |
-| 戟 | 3.5m | 打ち上げ・回転斬り |
-| 拳 | 1m | 超近距離ラッシュ |
-| 弓 | 100m | 遠距離射撃・牽制（サブ） |
+### M2で確定したその他の仕様
+- **ヒットストップなし**（常時戦闘が流れるスピード感を重視）
+- **覚醒システムなし**（SSMOに存在しない。究極強化は仙箪システムでM4以降に検討）
 
 ### ステートマシン
 **基本**: Idle / Move / Jump / JumpAttack
@@ -147,19 +172,23 @@ C:\dev\SSMO/
 **死亡**: Dead
 
 ※ ステート遷移の最終決定権はサーバー
-※ ヒットストップなし（常時戦闘が流れるスピード感を重視）
 
 ## 開発ロードマップ
 - [x] **M0** (Week 1-2): リポジトリ & 環境構築
 - [x] **M1** (Week 3-8): ネットワーク同期基盤（クライアント予測・補間・ラグ補正）
-- [ ] **M2** (Week 9-22): 戦闘アクション（コンボ・ヒット判定・ガード・ジャンプ・無双）
+- [x] **M2** (Week 9-22): 戦闘アクション（コンボ・ヒット判定・ガード・ジャンプ・無双）
 - [ ] **M3** (Week 23-28): 4v4 対戦モード（マッチメイキング・マップ・AI）
 - [ ] **M4** (Week 29-38): キャラクター & コンテンツ（武器種・育成・仙箪強化）
 - [ ] **M5** (Week 39-44): インフラ & チート対策
 - [ ] **M6** (Week 45-52): ポリッシュ & α版リリース
 
-## 現在の状態 (M1 完了)
-- M0: 環境構築完了（Unity 6.3 LTS + NGO 2.9.2 + ParrelSync 1.5.2）
+## 現在の状態 (M2 完了)
+
+### M0: 環境構築 (完了)
+- リポジトリ作成・Git LFS設定
+- Unity 6.3 LTS + NGO 2.9.2 + ParrelSync 1.5.2
+
+### M1: ネットワーク同期基盤 (完了)
 - M1-1: NetworkPlayer Prefab（箱人間 + NetworkObject + CharacterController）
 - M1-2: サーバー権威型 移動同期（NetworkVariable + ServerRpc）
 - M1-3: クライアント予測 + リコンシリエーション（巻き戻し再計算）
@@ -167,16 +196,22 @@ C:\dev\SSMO/
 - M1-5: ラグコンペンセーション基盤（ワールドスナップショット + 巻き戻しAPI）
 - M1-6: ネットワーク統計HUD（RTT / PacketLoss）
 
-## 次のタスク: M2 - 戦闘アクション
-1. 通常攻撃コンボ (N1→N6) + コンボステートマシン + 先行入力バッファ
-2. ヒット判定システム (Hitbox/Hurtbox + サーバー権威 + ラグ補正)
-3. ヒットリアクション (のけぞり・打ち上げ・4種ダウン)
-4. ガード & ジャンプ (ガード80%カット・めくり・ジャンプ離陸無敵)
-5. チャージ攻撃 (C1→C6) + ダッシュ攻撃
-6. 無双乱舞 & 真・無双 (ゲージMAX・HP赤で真無双・無敵)
-7. 遠隔攻撃システム (投射物のサーバー権威同期)
+### M2: 戦闘アクション (完了)
+- M2-1: キャラクターステートマシン（サーバー権威遷移・無敵管理・自動タイマー）
+- M2-2: 入力・ジャンプ・ダッシュ・ガード移動（PlayerInput構造体）
+- M2-3: 通常攻撃コンボ N1-N4 + 先行入力バッファ 150ms
+- M2-4: チャージ攻撃 C1-C5 + C3ラッシュ + ダッシュ攻撃 + ダッシュラッシュ
+- M2-5: Hitbox/Hurtbox サーバー権威ヒット判定 + ラグコンペンセーション連携
+- M2-6: 被弾リアクション（のけぞり・打ち上げ・吹き飛ばし・ダウン4種）
+- M2-7: ダメージシステム（HP管理・ガード判定・EGカウンター）
+- M2-8: 無双乱舞 + 真無双 + 無双ゲージ管理
+- M2-9: アーマーシステム（5段階 × 攻撃レベル比較）
+- M2-10: ガードシステム本家準拠（完全カット・めくりのみ・EGノックバックなし）
+- デバッグテストヘルパー（F1-F10操作・OnGUI表示）
 
-※ 戦闘仕様の詳細は `docs/combat-spec.md` を参照
+### 次のステップ
+1. M2統合テスト（ParrelSyncで2人対戦の全機能動作確認）
+2. M3: 4v4 対戦モード（マッチメイキング・バトルマップ・NPC AI・HUD）
 
 ## コーディング規約
 
@@ -206,6 +241,7 @@ C:\dev\SSMO/
 - UI → `Scripts/UI/`
 - サーバー/クライアント共有の定数・計算式 → `Scripts/Shared/`
 - サーバー専用ロジック (AI等) → `Scripts/Server/`
+- デバッグ専用（Editor限定） → `Scripts/Debug/`
 
 ### 重要な注意事項
 - **ダメージ計算は必ずサーバー側で実行**。クライアント値を絶対に信用しない
