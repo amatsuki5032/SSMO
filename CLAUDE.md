@@ -5,7 +5,7 @@
 Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 
 ## 仕様の信頼性ルール
-- **戦闘仕様の唯一の正 (Single Source of Truth) は `docs/combat-spec.md`**
+- **戦闘仕様の唯一の正 (Single Source of Truth) は `docs/shared/combat-spec.md`**
 - CLAUDE.md や指示書と combat-spec.md で矛盾がある場合、**combat-spec.md を優先**する
 - CLAUDE.md はあくまでCCへの作業ガイド。仕様の詳細判断は必ず combat-spec.md を参照すること
 
@@ -70,12 +70,15 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 
 ```
 docs/
-├── combat-spec.md          # ★ 戦闘仕様の正（Single Source of Truth）
-├── combat-design.md        # 初期設計メモ
-├── netcode-design.md       # ネットコード設計メモ
-├── ssmo-system-prompt.md   # 仕様収集用プロンプト
-├── progress.html           # 進捗トラッカー（PROGRESS_DATA）
-└── archive/m2/             # M2指示書アーカイブ（参照用）
+├── shared/                     # claude.ai プロジェクトナレッジと同期するファイル
+│   ├── combat-spec.md          # ★ 戦闘仕様の正（Single Source of Truth）
+│   ├── code-reference.md       # コードAPI参照
+│   └── ssmo-system-prompt.md   # 仕様収集用プロンプト
+├── design/                     # 設計メモ（参考用）
+│   ├── combat-design.md
+│   └── netcode-design.md
+├── archive/m2/                 # M2指示書アーカイブ（参照用）
+└── progress.html               # 進捗トラッカー（PROGRESS_DATA）
 ```
 
 ## ネットワークアーキテクチャ
@@ -103,7 +106,7 @@ docs/
 
 ## 戦闘システム（M2で確定した仕様）
 
-※ 詳細仕様は `docs/combat-spec.md` を参照（正の情報源）
+※ 詳細仕様は `docs/shared/combat-spec.md` を参照（正の情報源）
 
 ### コンボ構造
 - 通常攻撃 (□): 無強化 N1→N4 / 連撃強化1回 N5 / 2回 N6 / 3回+無双MAX E6→E9
@@ -308,7 +311,7 @@ docs/
 - コミット時に progress.html の更新も含めること
 
 ## コードリファレンス更新ルール
-- public メソッド追加・変更、NetworkVariable 追加、新規ファイル作成時は `docs/code-reference.md` も更新すること
+- public メソッド追加・変更、NetworkVariable 追加、新規ファイル作成時は `docs/shared/code-reference.md` も更新すること
 - コミット時に code-reference.md の更新も含めること
 
 ## コミットルール
