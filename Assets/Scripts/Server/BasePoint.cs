@@ -266,7 +266,9 @@ public class BasePoint : NetworkBehaviour
     /// </summary>
     public void SetInitialStatus(BaseStatus status)
     {
-        if (!IsServer) return;
+        // spawn前（MapGeneratorのAwake）でも初期値設定を許可する
+        // NetworkVariable は spawn 前に設定した値が初期値として同期される
+        if (IsSpawned && !IsServer) return;
         _status.Value = status;
         _captureProgress.Value = 0f;
         Debug.Log($"[BasePoint] 拠点{_baseIndex} 初期所属: {status}");
