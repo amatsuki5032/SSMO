@@ -53,6 +53,8 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Server/SpawnManager.cs` | SpawnManager | スポーン地点管理（チーム別配置・リスポーン・交互拠点制限） |
 | `Server/MapGenerator.cs` | MapGenerator | バトルマップ生成（地面・外壁・拠点5箇所・障害物） |
 | `Server/BasePoint.cs` | BasePoint | 拠点システム（サーバー権威・制圧ゲージ・HP自動回復） |
+| `Server/NPCSoldier.cs` | NPCSoldier | NPC兵士（サーバー権威・簡易HP・チーム色分け・自動移動） |
+| `Server/NPCSpawner.cs` | NPCSpawner | NPC兵士スポーン管理（拠点ごと定期スポーン・上限管理） |
 | `Debug/DebugTestHelper.cs` | DebugTestHelper | デバッグ用テストヘルパー（Editor限定・F1-F10キー操作） |
 
 ### NetworkPlayer Prefab コンポーネント一覧（追加順）

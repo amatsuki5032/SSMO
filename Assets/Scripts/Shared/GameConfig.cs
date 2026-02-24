@@ -229,6 +229,16 @@ public static class GameConfig
     public const float C5_DURATION = 0.7f;           // C5 チャージシュート
     public const float C6_DURATION = 1.0f;           // C6 最大技
 
+    // === NPC兵士 ===
+    public const float NPC_SPAWN_INTERVAL = 5f;       // スポーン間隔（秒）
+    public const int NPC_MAX_PER_BASE = 3;             // 各拠点からの最大スポーン数
+    public const float NPC_MOVE_SPEED = 2f;            // NPC移動速度 (m/s)
+    public const int NPC_HP = 100;                      // NPC HP
+    public const int NPC_ATK = 20;                      // NPC攻撃力
+    public const float NPC_SCALE = 0.6f;               // NPC表示スケール（プレイヤー比）
+    public const float NPC_DESPAWN_DELAY = 1.5f;       // 死亡後デスポーンまでの遅延（秒）
+    public const float NPC_SPAWN_OFFSET = 3f;          // 拠点中心からのスポーンオフセット（m）
+
     // === M2-Visual-B: 攻撃前進距離 (m) ===
     // アクティブフレーム中にキャラ前方へ移動する合計距離
     public const float ADVANCE_N1 = 0.3f;

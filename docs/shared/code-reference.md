@@ -138,6 +138,7 @@
 | カメラ | `CAMERA_DISTANCE(3.0)`, `CAMERA_HEIGHT(2.0)`, `CAMERA_SENSITIVITY(2.0)`, `CAMERA_MIN/MAX_PITCH(-10/60)` |
 | 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
 | 拠点システム | `BASE_COUNT(5)`, `BASE_CAPTURE_TIME(10)`, `BASE_CAPTURE_RADIUS(5)`, `BASE_HP_REGEN_RATE(20)` |
+| NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -295,6 +296,8 @@ NetworkVariable / RPC / GetComponent なし。
 
 ※ ヒット対象（`hurtbox.GetComponent`）から以下も取得:
 `HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`
+
+※ NPC兵士ヒット対象（`GetComponent<NPCSoldier>`）: `NPCSoldier.TakeDamage()` で簡易ダメージ適用（ガード・リアクションなし）
 
 ---
 
@@ -729,6 +732,71 @@ NetworkVariable / RPC / GetComponent なし。
 | `TeamManager.Instance` | プレイヤーのチーム判定 |
 | `HealthSystem`（対象プレイヤー） | HP回復 |
 | `CharacterStateMachine`（対象プレイヤー） | 死亡判定 |
+
+---
+
+### NPCSoldier.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `NPCSoldier : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `Team SoldierTeam` | 所属チーム（読み取り専用プロパティ） |
+| `int CurrentHp` | 現在HP（読み取り専用プロパティ） |
+| `int SpawnBaseIndex` | スポーン元拠点番号 |
+| `bool IsDead` | 死亡フラグ |
+| `void Initialize(Team, int, Vector3)` | サーバー専用初期設定（チーム・拠点番号・移動先） |
+| `void TakeDamage(int)` | ダメージ適用（サーバー専用。HP0でデスポーン） |
+
+**NetworkVariable**
+
+| 変数名 | 型 | 説明 |
+|--------|-----|------|
+| `_team` | `NetworkVariable<byte>` | 所属チーム |
+| `_currentHp` | `NetworkVariable<int>` | 現在HP |
+
+**ServerRpc / ClientRpc**
+
+なし
+
+**依存（GetComponent）**
+
+なし（NetworkTransform で位置同期。Prefab に手動追加）
+
+---
+
+### NPCSpawner.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `NPCSpawner : NetworkBehaviour`（シングルトン） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static NPCSpawner Instance` | シングルトン |
+
+**設定**
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `_npcSoldierPrefab` | `GameObject` | NPCSoldier Prefab（エディタで設定） |
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（サーバー側ローカル処理のみ）
+
+**依存**
+
+| 取得先 | 用途 |
+|--------|------|
+| `BasePoint[]`（FindObjectsByType） | 拠点情報取得（スポーン元・ターゲット） |
+| `TeamManager.Instance` | フレンドリーファイア判定（HitboxSystem経由） |
 
 ---
 

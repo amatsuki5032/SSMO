@@ -160,117 +160,194 @@ public class HitboxSystem : NetworkBehaviour
         for (int i = 0; i < hitCount; i++)
         {
             var hurtbox = _hitResults[i].GetComponent<HurtboxComponent>();
-            if (hurtbox == null) continue;
 
-            // 自分自身を除外
-            if (hurtbox.NetworkObjectId == NetworkObjectId) continue;
-
-            // 無敵状態を除外
-            if (hurtbox.IsInvincible()) continue;
-
-            // 1攻撃1ヒット: 既にヒット済みならスキップ
-            if (_hitTargetsThisAttack.Contains(hurtbox.NetworkObjectId)) continue;
-
-            // ヒット確定
-            _hitTargetsThisAttack.Add(hurtbox.NetworkObjectId);
-
-            int comboStep = _comboSystem.ComboStep;
-            int chargeType = _comboSystem.ChargeType;
-            bool isDash = _comboSystem.IsDashAttacking;
-
-            Debug.Log($"[Hit] {gameObject.name} → {hurtbox.gameObject.name} ヒット確定" +
-                      $" (N{comboStep}/C{chargeType}/D={isDash})");
-
-            // 全クライアントにヒット通知（エフェクト表示用）
-            Vector3 hitPoint = hurtbox.transform.position;
-            NotifyHitClientRpc(NetworkObjectId, hurtbox.NetworkObjectId, hitPoint);
-
-            // ガード方向判定: 正面180度以内ならガード成功、背面はめくり
-            bool isGuardSuccess = hurtbox.IsGuardingAgainst(transform.position);
-
-            if (isGuardSuccess)
+            // プレイヤーヒット判定
+            if (hurtbox != null)
             {
-                // EGReady 中にガード成功 → EGカウンター発動
-                var targetEG = hurtbox.GetComponent<EGSystem>();
-                if (targetEG != null && targetEG.IsEGReady)
-                {
-                    var attackerReaction = GetComponent<ReactionSystem>();
-                    targetEG.OnEGCounter(transform, attackerReaction);
-                    // EGカウンター時はダメージもノックバックも無し（カウンターで反撃するため）
-                    continue;
-                }
-
-                Debug.Log($"[Guard] {hurtbox.gameObject.name} ガード成功（{gameObject.name} の攻撃）→ ダメージ0");
-
-                // ガード成功: ダメージ完全カット + ノックバックのみ
-                // EG準備中はノックバックなし（その場で完全に受け止める）
-                bool isEGState = hurtbox.GetComponent<EGSystem>()?.IsInEGState ?? false;
-                if (!isEGState)
-                {
-                    ApplyGuardKnockback(hurtbox.transform, transform.position);
-                }
-
-                // 攻撃者の無双ゲージ増加（ガードされても攻撃ヒット扱い）
-                var attackerGaugeOnGuard = GetComponent<MusouGauge>();
-                if (attackerGaugeOnGuard != null)
-                    attackerGaugeOnGuard.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
-
-                continue; // ダメージ0 → HP減少・ダメージ通知をスキップ
+                ProcessPlayerHit(hurtbox);
+                continue;
             }
 
-            // ガード失敗（めくり）or 非ガード: 通常リアクション適用
-            if (hurtbox.IsGuarding())
+            // NPC兵士ヒット判定
+            var npcSoldier = _hitResults[i].GetComponent<NPCSoldier>();
+            if (npcSoldier != null)
             {
-                Debug.Log($"[Guard] めくり！ {hurtbox.gameObject.name} のガードを貫通");
-            }
-
-            var targetReaction = hurtbox.GetComponent<ReactionSystem>();
-            if (targetReaction != null)
-            {
-                HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
-                AttackLevel attackLevel = GetAttackLevel(comboStep, chargeType);
-                targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType, attackLevel);
-            }
-
-            // ダメージ計算・HP減少（ガード成功時はここに到達しない）
-            var targetHealth = hurtbox.GetComponent<HealthSystem>();
-            if (targetHealth != null)
-            {
-                bool isRush = _comboSystem.IsRush;
-                float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
-
-                // 被弾者のステートから空中かを判定
-                var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
-                bool isAirborne = targetStateMachine != null &&
-                    (targetStateMachine.CurrentState == CharacterState.Launch ||
-                     targetStateMachine.CurrentState == CharacterState.AirHitstun ||
-                     targetStateMachine.CurrentState == CharacterState.AirRecover ||
-                     targetStateMachine.CurrentState == CharacterState.JumpAttack ||
-                     targetStateMachine.CurrentState == CharacterState.Jump);
-
-                var damageResult = DamageCalculator.Calculate(
-                    GameConfig.DEFAULT_ATK,
-                    motionMultiplier,
-                    GameConfig.DEFAULT_DEF,
-                    targetHealth.GetHpRatio(),
-                    isAirborne: isAirborne
-                );
-
-                targetHealth.TakeDamage(damageResult.HpDamage);
-
-                // ダメージ通知（クリティカル情報を含む）
-                NotifyDamageClientRpc(hurtbox.NetworkObjectId, damageResult.HpDamage, damageResult.IsCritical);
-
-                // 無双ゲージ増加: 攻撃者ヒット + 被弾者ダメージ
-                var attackerGauge = GetComponent<MusouGauge>();
-                if (attackerGauge != null)
-                    attackerGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
-
-                var targetGauge = hurtbox.GetComponent<MusouGauge>();
-                if (targetGauge != null)
-                    targetGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_DAMAGE);
+                ProcessNPCHit(npcSoldier);
+                continue;
             }
         }
+    }
+
+    // ============================================================
+    // プレイヤーヒット処理
+    // ============================================================
+
+    /// <summary>
+    /// プレイヤー（HurtboxComponent持ち）へのヒット処理
+    /// ガード判定・リアクション・ダメージ計算の全処理を含む
+    /// </summary>
+    private void ProcessPlayerHit(HurtboxComponent hurtbox)
+    {
+        // 自分自身を除外
+        if (hurtbox.NetworkObjectId == NetworkObjectId) return;
+
+        // 無敵状態を除外
+        if (hurtbox.IsInvincible()) return;
+
+        // 1攻撃1ヒット: 既にヒット済みならスキップ
+        if (_hitTargetsThisAttack.Contains(hurtbox.NetworkObjectId)) return;
+
+        // ヒット確定
+        _hitTargetsThisAttack.Add(hurtbox.NetworkObjectId);
+
+        int comboStep = _comboSystem.ComboStep;
+        int chargeType = _comboSystem.ChargeType;
+        bool isDash = _comboSystem.IsDashAttacking;
+
+        Debug.Log($"[Hit] {gameObject.name} → {hurtbox.gameObject.name} ヒット確定" +
+                  $" (N{comboStep}/C{chargeType}/D={isDash})");
+
+        // 全クライアントにヒット通知（エフェクト表示用）
+        Vector3 hitPoint = hurtbox.transform.position;
+        NotifyHitClientRpc(NetworkObjectId, hurtbox.NetworkObjectId, hitPoint);
+
+        // ガード方向判定: 正面180度以内ならガード成功、背面はめくり
+        bool isGuardSuccess = hurtbox.IsGuardingAgainst(transform.position);
+
+        if (isGuardSuccess)
+        {
+            // EGReady 中にガード成功 → EGカウンター発動
+            var targetEG = hurtbox.GetComponent<EGSystem>();
+            if (targetEG != null && targetEG.IsEGReady)
+            {
+                var attackerReaction = GetComponent<ReactionSystem>();
+                targetEG.OnEGCounter(transform, attackerReaction);
+                // EGカウンター時はダメージもノックバックも無し（カウンターで反撃するため）
+                return;
+            }
+
+            Debug.Log($"[Guard] {hurtbox.gameObject.name} ガード成功（{gameObject.name} の攻撃）→ ダメージ0");
+
+            // ガード成功: ダメージ完全カット + ノックバックのみ
+            // EG準備中はノックバックなし（その場で完全に受け止める）
+            bool isEGState = hurtbox.GetComponent<EGSystem>()?.IsInEGState ?? false;
+            if (!isEGState)
+            {
+                ApplyGuardKnockback(hurtbox.transform, transform.position);
+            }
+
+            // 攻撃者の無双ゲージ増加（ガードされても攻撃ヒット扱い）
+            var attackerGaugeOnGuard = GetComponent<MusouGauge>();
+            if (attackerGaugeOnGuard != null)
+                attackerGaugeOnGuard.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
+
+            return; // ダメージ0 → HP減少・ダメージ通知をスキップ
+        }
+
+        // ガード失敗（めくり）or 非ガード: 通常リアクション適用
+        if (hurtbox.IsGuarding())
+        {
+            Debug.Log($"[Guard] めくり！ {hurtbox.gameObject.name} のガードを貫通");
+        }
+
+        var targetReaction = hurtbox.GetComponent<ReactionSystem>();
+        if (targetReaction != null)
+        {
+            HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
+            AttackLevel attackLevel = GetAttackLevel(comboStep, chargeType);
+            targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType, attackLevel);
+        }
+
+        // ダメージ計算・HP減少（ガード成功時はここに到達しない）
+        var targetHealth = hurtbox.GetComponent<HealthSystem>();
+        if (targetHealth != null)
+        {
+            bool isRush = _comboSystem.IsRush;
+            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
+
+            // 被弾者のステートから空中かを判定
+            var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
+            bool isAirborne = targetStateMachine != null &&
+                (targetStateMachine.CurrentState == CharacterState.Launch ||
+                 targetStateMachine.CurrentState == CharacterState.AirHitstun ||
+                 targetStateMachine.CurrentState == CharacterState.AirRecover ||
+                 targetStateMachine.CurrentState == CharacterState.JumpAttack ||
+                 targetStateMachine.CurrentState == CharacterState.Jump);
+
+            var damageResult = DamageCalculator.Calculate(
+                GameConfig.DEFAULT_ATK,
+                motionMultiplier,
+                GameConfig.DEFAULT_DEF,
+                targetHealth.GetHpRatio(),
+                isAirborne: isAirborne
+            );
+
+            targetHealth.TakeDamage(damageResult.HpDamage);
+
+            // ダメージ通知（クリティカル情報を含む）
+            NotifyDamageClientRpc(hurtbox.NetworkObjectId, damageResult.HpDamage, damageResult.IsCritical);
+
+            // 無双ゲージ増加: 攻撃者ヒット + 被弾者ダメージ
+            var attackerGauge = GetComponent<MusouGauge>();
+            if (attackerGauge != null)
+                attackerGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
+
+            var targetGauge = hurtbox.GetComponent<MusouGauge>();
+            if (targetGauge != null)
+                targetGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_DAMAGE);
+        }
+    }
+
+    // ============================================================
+    // NPC兵士ヒット処理
+    // ============================================================
+
+    /// <summary>
+    /// NPC兵士（NPCSoldier）へのヒット処理
+    /// ガード・リアクション・アーマーなし。シンプルにダメージのみ適用
+    /// 味方NPCへのフレンドリーファイアは無効
+    /// </summary>
+    private void ProcessNPCHit(NPCSoldier npcSoldier)
+    {
+        // 死亡済みNPCは除外
+        if (npcSoldier.IsDead) return;
+
+        // 1攻撃1ヒット: 既にヒット済みならスキップ
+        if (_hitTargetsThisAttack.Contains(npcSoldier.NetworkObjectId)) return;
+
+        // 味方NPC除外（フレンドリーファイア防止）
+        if (TeamManager.Instance != null)
+        {
+            Team attackerTeam = TeamManager.Instance.GetPlayerTeam(OwnerClientId);
+            if (npcSoldier.SoldierTeam == attackerTeam) return;
+        }
+
+        // ヒット確定
+        _hitTargetsThisAttack.Add(npcSoldier.NetworkObjectId);
+
+        int comboStep = _comboSystem.ComboStep;
+        int chargeType = _comboSystem.ChargeType;
+        bool isDash = _comboSystem.IsDashAttacking;
+        bool isRush = _comboSystem.IsRush;
+
+        Debug.Log($"[Hit-NPC] {gameObject.name} → {npcSoldier.gameObject.name} ヒット確定" +
+                  $" (N{comboStep}/C{chargeType}/D={isDash})");
+
+        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし）
+        float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
+        int damage = Mathf.Max(1, Mathf.RoundToInt(GameConfig.DEFAULT_ATK * motionMultiplier));
+
+        npcSoldier.TakeDamage(damage);
+
+        // ヒット通知
+        Vector3 hitPoint = npcSoldier.transform.position;
+        NotifyHitClientRpc(NetworkObjectId, npcSoldier.NetworkObjectId, hitPoint);
+        NotifyDamageClientRpc(npcSoldier.NetworkObjectId, damage, false);
+
+        // 攻撃者の無双ゲージ増加（NPC撃破でもゲージが溜まる）
+        var attackerGauge = GetComponent<MusouGauge>();
+        if (attackerGauge != null)
+            attackerGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_HIT);
     }
 
     // ============================================================
