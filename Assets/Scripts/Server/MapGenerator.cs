@@ -136,10 +136,19 @@ public class MapGenerator : MonoBehaviour
             new Color(0.2f, 0.2f, 0.8f),  // 青1
             new Color(0.2f, 0.2f, 0.8f),  // 青2
         };
+        // 拠点の初期所属: 中央=Neutral、赤側=Red、青側=Blue
+        BaseStatus[] initialStatuses =
+        {
+            BaseStatus.Neutral,
+            BaseStatus.Red,
+            BaseStatus.Red,
+            BaseStatus.Blue,
+            BaseStatus.Blue,
+        };
 
         for (int i = 0; i < GameConfig.BASE_POSITIONS.Length; i++)
         {
-            CreateBase(baseNames[i], GameConfig.BASE_POSITIONS[i], baseColors[i]);
+            CreateBase(baseNames[i], GameConfig.BASE_POSITIONS[i], baseColors[i], i, initialStatuses[i]);
         }
     }
 
@@ -147,7 +156,7 @@ public class MapGenerator : MonoBehaviour
     /// 拠点オブジェクトを1つ生成
     /// 地面に接地するよう Y座標を補正（拠点底面 = Y:0）
     /// </summary>
-    private void CreateBase(string name, Vector3 position, Color color)
+    private void CreateBase(string name, Vector3 position, Color color, int index, BaseStatus initialStatus)
     {
         var baseObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
         baseObj.name = name;
@@ -172,6 +181,12 @@ public class MapGenerator : MonoBehaviour
         var triggerCollider = baseObj.AddComponent<BoxCollider>();
         triggerCollider.isTrigger = true;
         triggerCollider.size = new Vector3(2f, 2f, 2f); // 拠点の2倍の範囲をエリアとする
+
+        // BasePoint コンポーネントを追加して初期化
+        // SphereCollider は [RequireComponent] で自動追加される
+        var basePoint = baseObj.AddComponent<BasePoint>();
+        basePoint.SetBaseIndex(index);
+        basePoint.SetInitialStatus(initialStatus);
 
         // タグ設定（将来の拠点制圧判定用）
         baseObj.tag = "Untagged"; // カスタムタグは手動追加が必要なので仮
