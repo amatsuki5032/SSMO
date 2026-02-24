@@ -33,7 +33,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Character/PlayerMovement.cs` | PlayerMovement | 入力収集・サーバー権威移動・クライアント予測・リコンシリエーション |
 | `Character/CameraController.cs` | CameraController | 3人称カメラ（MonoBehaviour・オーナー専用・壁衝突回避） |
 | `Character/CharacterStateMachine.cs` | CharacterStateMachine | サーバー権威ステートマシン（NetworkVariable同期・遷移バリデーション・無敵管理） |
-| `Combat/ComboSystem.cs` | ComboSystem | コンボ管理（N1-N4・C1-C5派生・先行入力バッファ・ダッシュ攻撃） |
+| `Combat/ComboSystem.cs` | ComboSystem | コンボ管理（N1-N6・C1-C6派生・E6-E9・刻印・ブレイクチャージ・先行入力バッファ・ダッシュ攻撃） |
 | `Combat/HitboxSystem.cs` | HitboxSystem | サーバー権威ヒット判定（OverlapCapsule・ラグコンペンセーション・ガード判定） |
 | `Combat/HitboxData.cs` | HitboxData | 全攻撃種別のヒットボックスパラメータ（アクティブフレーム・範囲・オフセット） |
 | `Combat/HurtboxComponent.cs` | HurtboxComponent | 被弾判定コンポーネント（無敵チェック・ガード方向判定・めくり検出） |
@@ -204,11 +204,11 @@ docs/
 - [x] **M1** (Week 3-8): ネットワーク同期基盤（クライアント予測・補間・ラグ補正）
 - [x] **M2** (Week 9-22): 戦闘アクション（コンボ・ヒット判定・ガード・ジャンプ・無双）
 - [ ] **M3** (Week 23-28): 4v4 対戦モード（マッチメイキング・マップ・AI）
-- [ ] **M4** (Week 29-38): キャラクター & コンテンツ（武器種・育成・仙箪強化）
+- [x] **M4** (Week 29-38): キャラクター & コンテンツ（武器種・育成・仙箪強化）
 - [ ] **M5** (Week 39-44): インフラ & チート対策
 - [ ] **M6** (Week 45-52): ポリッシュ & α版リリース
 
-## 現在の状態 (M3 進行中)
+## 現在の状態 (M4 完了・M5 準備中)
 
 ### M0: 環境構築 (完了)
 - リポジトリ作成・Git LFS設定
@@ -247,9 +247,26 @@ docs/
 - M3-6b: ミニマップ（MinimapHUD・プレイヤー/拠点位置表示・全体マップ切替）
 - M3-7: ゲームモード管理（GameModeManager・タイマー・スコア・勝敗判定）
 
+### M4: キャラクター＆コンテンツ (完了)
+- M4-1a: WeaponData基盤（武器種パラメータデータ構造・6種定義）
+- M4-1b: 武器種パラメータ適用（移動・コンボ・ヒットボックス）
+- M4-1c: 武器種別ヒットボックスパラメータ
+- M4-2a: 属性システム基盤（ElementSystem・属性倍率計算）
+- M4-2b: 炎（燃焼）・風（鈍足）状態異常
+- M4-2c: 氷（凍結）・雷（感電+気絶）状態異常
+- M4-2d: 斬属性（防御無視・HP&無双ダメ・攻撃側無双減）
+- M4-3a: 連撃強化基盤（N5/N6解放）
+- M4-3b: エボリューション攻撃（E6-E9）
+- M4-4a: 仙箪ドロップ＆拾いシステム
+- M4-4b: 強化リングUI＆発動
+- M4-5: 鍛錬システム（三角数コスト・ステータス振り分け計算）
+- M4-6: 刻印システム（C1/C6モーション選択）
+- M4-7: 究極強化（30秒バフ）
+- M4-8: ブレイクチャージ（武器2システム）
+
 ### 次のステップ
-1. M3残タスク: テスト（真無双・アーマー・めくり）
-2. M4: キャラクター＆コンテンツ（WeaponData基盤 → 武器種パラメータ → 属性システム → 連撃強化 → 仙箪・鍛錬・刻印）
+1. INBOX転記タスク: 微弱ロックオン・スポーン無敵・デバッグ俯瞰カメラ・視認性改善
+2. M5: インフラ＆チート対策（Firebase Auth → Firestore → Unity Relay → ロビー → チート対策）
 
 ## 開発ワークフロー & CC運用ノウハウ
 
