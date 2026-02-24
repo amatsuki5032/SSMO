@@ -44,7 +44,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
 | `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
-| `Shared/CharacterState.cs` | CharacterState等 | enum定義（CharacterState・HitReaction・AttackLevel・ArmorLevel・ElementType等） |
+| `Shared/CharacterState.cs` | CharacterState等 | enum定義（CharacterState・HitReaction・AttackLevel・ArmorLevel・ElementType・GamePhase等） |
 | `Shared/PlayerInput.cs` | PlayerInput | 入力構造体（INetworkSerializable。移動・攻撃・ガード・チャージ等） |
 | `Netcode/LagCompensationManager.cs` | LagCompensationManager | ラグコンペンセーション（ワールドスナップショット・Rewindスコープ） |
 | `Netcode/HelloNetwork.cs` | HelloNetwork | 接続確認用（M0で作成） |
@@ -196,7 +196,7 @@ docs/
 - [ ] **M5** (Week 39-44): インフラ & チート対策
 - [ ] **M6** (Week 45-52): ポリッシュ & α版リリース
 
-## 現在の状態 (M2 完了)
+## 現在の状態 (M3 進行中)
 
 ### M0: 環境構築 (完了)
 - リポジトリ作成・Git LFS設定
@@ -223,9 +223,21 @@ docs/
 - M2-10: ガードシステム本家準拠（完全カット・めくりのみ・EGノックバックなし）
 - デバッグテストヘルパー（F1-F10操作・OnGUI表示）
 
+### M3: 4v4 対戦モード (進行中)
+- M3-1a: チーム管理基盤（TeamManager・自動振り分け・NetworkList同期）
+- M3-1b: スポーン地点管理（SpawnManager・チーム別配置・リスポーン）
+- M3-2: 3人称カメラシステム（CameraController・壁衝突回避）
+- M3-3: バトルマップ生成（MapGenerator・100m×100m・拠点5箇所）
+- M3-4a: 拠点システム基盤（BasePoint・制圧ゲージ・HP自動回復）
+- M3-5a: NPC兵士スポーンシステム（NPCSpawner・拠点ごと定期スポーン）
+- M3-5b: NPC兵士AI行動（NPCSoldier・敵検出・攻撃・ガード判定）
+- M3-6a: 戦闘HUD基盤（BattleHUD・HP/無双ゲージ/ターゲット表示）
+- M3-6b: ミニマップ（MinimapHUD・プレイヤー/拠点位置表示・全体マップ切替）
+- M3-7: ゲームモード管理（GameModeManager・タイマー・スコア・勝敗判定）
+
 ### 次のステップ
-1. M2統合テスト（ParrelSyncで2人対戦の全機能動作確認）
-2. M3: 4v4 対戦モード（マッチメイキング・バトルマップ・NPC AI・HUD）
+1. BugFix: ガードノックバック値調整 / C5発動不具合
+2. M3残タスク: ロビー/マッチメイキング・武将AI・リザルト画面（M4以降に延期の可能性あり）
 
 ## 開発ワークフロー & CC運用ノウハウ
 
