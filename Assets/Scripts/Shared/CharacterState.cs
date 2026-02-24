@@ -173,6 +173,16 @@ public enum BaseStatus : byte
 }
 
 /// <summary>
+/// ゲームフェーズ（GameModeManager で使用）
+/// </summary>
+public enum GamePhase : byte
+{
+    WaitingForPlayers = 0,  // プレイヤー待ち
+    InProgress = 1,         // 試合中
+    GameOver = 2,           // 試合終了
+}
+
+/// <summary>
 /// 武器種
 /// </summary>
 public enum WeaponType

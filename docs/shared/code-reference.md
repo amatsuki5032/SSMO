@@ -125,7 +125,7 @@
 |---------|-------------|
 | ネットワーク | `SERVER_TICK_RATE(60)`, `CLIENT_SEND_RATE(30)`, `FIXED_DELTA_TIME` |
 | ラグコンペンセーション | `MAX_LAG_COMPENSATION_MS(150)`, `SNAPSHOT_BUFFER_SIZE(128)` |
-| 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)`, `SPAWN_POINTS_PER_TEAM(2)`, `RESPAWN_DELAY(0)` |
+| 対戦ルール | `TEAM_SIZE(4)`, `MAX_PLAYERS(8)`, `MATCH_TIME_SECONDS(300)`, `SPAWN_POINTS_PER_TEAM(2)`, `RESPAWN_DELAY(0)`, `MIN_PLAYERS_TO_START(2)` |
 | マップ | `MAP_SIZE(100)`, `MAP_HALF(50)`, `WALL_HEIGHT(10)`, `BASE_SIZE(3)`, `BASE_POSITIONS[5]` (readonly Vector3[]) |
 | スポーン座標 | `TEAM_RED_SPAWN_POS_1/2` (readonly Vector3), `TEAM_BLUE_SPAWN_POS_1/2` (readonly Vector3) |
 | 戦闘 | `INPUT_BUFFER_SEC(0.15)`, `COMBO_WINDOW_RATIO(0.3)` |
@@ -190,6 +190,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `ElementType` | 属性種別（None, Fire, Ice, Thunder, Wind, Slash） |
 | `Team` | チーム識別（Red, Blue） |
 | `BaseStatus : byte` | 拠点の所属チーム状態（Neutral=0, Red=1, Blue=2） |
+| `GamePhase : byte` | ゲームフェーズ（WaitingForPlayers, InProgress, GameOver） |
 | `WeaponType` | 武器種（GreatSword, DualBlades, Spear, Halberd, Fists, Bow） |
 
 ---
@@ -660,6 +661,35 @@ NetworkVariable / RPC / GetComponent なし。
 
 ---
 
+### ScoreboardHUD.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `ScoreboardHUD : MonoBehaviour`（クライアント専用UI） |
+
+**主要 public メソッド / プロパティ**
+
+なし（全て private。OnGUI でスコアボードを描画）
+
+**主な機能**
+- 画面上部中央: 残り時間タイマー（分:秒）
+- タイマー左右: 赤チーム撃破数 vs 青チーム撃破数
+- WaitingForPlayers 時は「Waiting for players...」表示
+- GameOver 時に画面中央に勝敗テキスト（VICTORY!/DEFEAT/DRAW）
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存**
+
+| 取得先 | 用途 |
+|--------|------|
+| `GameModeManager.Instance` | フェーズ・タイマー・スコア・勝敗情報 |
+| `TeamManager.Instance` | ローカルプレイヤーのチーム判定 |
+
+---
+
 ## Server/
 
 ### TeamManager.cs
@@ -866,6 +896,49 @@ NetworkVariable / RPC / GetComponent なし。
 |--------|------|
 | `BasePoint[]`（FindObjectsByType） | 拠点情報取得（スポーン元・ターゲット） |
 | `TeamManager.Instance` | フレンドリーファイア判定（HitboxSystem経由） |
+
+---
+
+### GameModeManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `GameModeManager : NetworkBehaviour`（シングルトン） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static GameModeManager Instance` | シングルトン |
+| `GamePhase Phase` | 現在のゲームフェーズ（読み取り専用プロパティ） |
+| `float RemainingTime` | 残り時間（秒、読み取り専用プロパティ） |
+| `int RedKills` | 赤チーム撃破数（読み取り専用プロパティ） |
+| `int BlueKills` | 青チーム撃破数（読み取り専用プロパティ） |
+| `int WinnerTeam` | 勝利チーム（-1=未決定, 0=Red, 1=Blue, 2=Draw） |
+| `void AddKill(ulong)` | 撃破スコア加算（サーバー側。killerClientId のチームに+1） |
+
+**NetworkVariable**
+
+| 変数名 | 型 | 説明 |
+|--------|-----|------|
+| `_phase` | `NetworkVariable<GamePhase>` | ゲームフェーズ |
+| `_remainingTime` | `NetworkVariable<float>` | 残り時間（秒） |
+| `_redKills` | `NetworkVariable<int>` | 赤チーム撃破数 |
+| `_blueKills` | `NetworkVariable<int>` | 青チーム撃破数 |
+| `_winnerTeam` | `NetworkVariable<int>` | 勝利チーム |
+
+**ServerRpc / ClientRpc**
+
+| メソッド名 | 種別 | 説明 |
+|-----------|------|------|
+| `NotifyGameStartClientRpc()` | ClientRpc | 試合開始を全クライアントに通知 |
+| `NotifyGameOverClientRpc(int)` | ClientRpc | 試合終了を全クライアントに通知（winner） |
+
+**依存**
+
+| 取得先 | 用途 |
+|--------|------|
+| `TeamManager.Instance` | チーム人数・撃破チーム判定 |
 
 ---
 

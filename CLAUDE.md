@@ -51,12 +51,14 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `UI/NetworkStatsHUD.cs` | NetworkStatsHUD | ネットワーク統計表示（RTT・PacketLoss） |
 | `UI/BattleHUD.cs` | BattleHUD | 戦闘HUD（自キャラHP・無双ゲージ・ターゲットHP） |
 | `UI/MinimapHUD.cs` | MinimapHUD | ミニマップ（プレイヤー位置・拠点表示・全体マップ切替） |
+| `UI/ScoreboardHUD.cs` | ScoreboardHUD | スコアボード（タイマー・チーム撃破数・勝敗表示） |
 | `Server/TeamManager.cs` | TeamManager | チーム管理（サーバー権威・自動振り分け・NetworkList同期） |
 | `Server/SpawnManager.cs` | SpawnManager | スポーン地点管理（チーム別配置・リスポーン・交互拠点制限） |
 | `Server/MapGenerator.cs` | MapGenerator | バトルマップ生成（地面・外壁・拠点5箇所・障害物） |
 | `Server/BasePoint.cs` | BasePoint | 拠点システム（サーバー権威・制圧ゲージ・HP自動回復） |
 | `Server/NPCSoldier.cs` | NPCSoldier | NPC兵士（サーバー権威・簡易HP・チーム色分け・自動移動） |
 | `Server/NPCSpawner.cs` | NPCSpawner | NPC兵士スポーン管理（拠点ごと定期スポーン・上限管理） |
+| `Server/GameModeManager.cs` | GameModeManager | ゲームモード管理（フェーズ・タイマー・スコア・勝敗） |
 | `Debug/DebugTestHelper.cs` | DebugTestHelper | デバッグ用テストヘルパー（Editor限定・F1-F10キー操作） |
 
 ### NetworkPlayer Prefab コンポーネント一覧（追加順）
