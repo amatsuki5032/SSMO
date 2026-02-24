@@ -102,10 +102,11 @@ public static class DamageCalculator
     // ============================================================
 
     /// <summary>
-    /// 攻撃の種類に応じたモーション倍率を返す（武器種対応）
+    /// 攻撃の種類に応じたモーション倍率を返す（武器種・刻印対応）
     /// WeaponData から各武器種のパラメータを参照する
+    /// C1/C6は刻印に応じた倍率を使用
     /// </summary>
-    public static float GetMotionMultiplier(int comboStep, int chargeType, bool isDash, bool isRush, WeaponType weaponType = WeaponType.GreatSword, bool isEvolution = false)
+    public static float GetMotionMultiplier(int comboStep, int chargeType, bool isDash, bool isRush, WeaponType weaponType = WeaponType.GreatSword, bool isEvolution = false, InscriptionType c1Inscription = InscriptionType.Thrust, InscriptionType c6Inscription = InscriptionType.Thrust)
     {
         // ダッシュ攻撃
         if (isDash)
@@ -113,7 +114,15 @@ public static class DamageCalculator
 
         // チャージ攻撃
         if (chargeType > 0)
+        {
+            // C1: 刻印倍率使用
+            if (chargeType == 1)
+                return WeaponData.GetInscriptionC1Multiplier(c1Inscription);
+            // C6: 刻印倍率使用
+            if (chargeType == 6)
+                return WeaponData.GetInscriptionC6Multiplier(c6Inscription);
             return WeaponData.GetChargeMultiplier(weaponType, chargeType);
+        }
 
         // エボリューション攻撃（E6-E9）
         if (isEvolution && comboStep >= 6)

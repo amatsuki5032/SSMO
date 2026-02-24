@@ -72,11 +72,37 @@ public class ComboSystem : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    /// <summary>
+    /// C1 刻印種別（サーバー権威）
+    /// C1 発動時にこの刻印に応じたモーションパラメータを使用する
+    /// </summary>
+    private readonly NetworkVariable<byte> _c1Inscription = new(
+        (byte)InscriptionType.Thrust,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    /// <summary>
+    /// C6 刻印種別（サーバー権威）
+    /// C6 発動時にこの刻印に応じたモーションパラメータを使用する
+    /// </summary>
+    private readonly NetworkVariable<byte> _c6Inscription = new(
+        (byte)InscriptionType.Thrust,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     /// <summary>連撃強化レベル（0〜3。読み取り専用）</summary>
     public int ComboEnhanceLevel => _comboEnhanceLevel.Value;
 
     /// <summary>所持仙箪数（読み取り専用）</summary>
     public int SentanCount => _sentanCount.Value;
+
+    /// <summary>C1 刻印種別（読み取り専用）</summary>
+    public InscriptionType C1Inscription => (InscriptionType)_c1Inscription.Value;
+
+    /// <summary>C6 刻印種別（読み取り専用）</summary>
+    public InscriptionType C6Inscription => (InscriptionType)_c6Inscription.Value;
 
     // ============================================================
     // サーバー側管理データ — 通常攻撃
@@ -610,10 +636,17 @@ public class ComboSystem : NetworkBehaviour
     }
 
     /// <summary>
-    /// チャージ技番号に応じた持続時間を返す（武器種から取得）
+    /// チャージ技番号に応じた持続時間を返す（武器種・刻印から取得）
+    /// C1/C6は刻印に応じたパラメータを使用する
     /// </summary>
     private float GetChargeDuration(int chargeType)
     {
+        // C1: 刻印パラメータ使用
+        if (chargeType == 1)
+            return WeaponData.GetInscriptionC1Duration(C1Inscription);
+        // C6: 刻印パラメータ使用
+        if (chargeType == 6)
+            return WeaponData.GetInscriptionC6Duration(C6Inscription);
         return WeaponData.GetChargeDuration(GetWeaponType(), chargeType);
     }
 
@@ -706,5 +739,35 @@ public class ComboSystem : NetworkBehaviour
 
         _sentanCount.Value += count;
         Debug.Log($"[Combo] {gameObject.name}: 仙箪取得 → 所持数 {_sentanCount.Value}");
+    }
+
+    // ============================================================
+    // 刻印設定（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// C1 刻印を設定する（サーバー専用。UIから呼ばれる想定）
+    /// C1 は突/陣/砕/盾の4種のみ
+    /// </summary>
+    public void SetC1Inscription(InscriptionType type)
+    {
+        if (!IsServer) return;
+        // C1 は突/陣/砕/盾の4種のみ（覇・衛はC6専用）
+        if (type == InscriptionType.Conquer || type == InscriptionType.Guard) return;
+
+        _c1Inscription.Value = (byte)type;
+        Debug.Log($"[Combo] {gameObject.name}: C1刻印 → {type}");
+    }
+
+    /// <summary>
+    /// C6 刻印を設定する（サーバー専用。UIから呼ばれる想定）
+    /// C6 は全6種対応
+    /// </summary>
+    public void SetC6Inscription(InscriptionType type)
+    {
+        if (!IsServer) return;
+
+        _c6Inscription.Value = (byte)type;
+        Debug.Log($"[Combo] {gameObject.name}: C6刻印 → {type}");
     }
 }

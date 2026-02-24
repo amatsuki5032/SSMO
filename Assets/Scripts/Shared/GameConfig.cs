@@ -287,6 +287,30 @@ public static class GameConfig
     public const float TRAINING_BREAK_PER_LEVEL = 5f;      // 1段階あたりの破壊力増加
     public const int DEFAULT_TRAINING_MAX = 24;             // 武器ごとの鍛錬ポイント上限（仮: 大剣24）
 
+    // === 刻印（C1/C6 モーション変更）===
+    // C1 刻印 — 突/陣/砕/盾（倍率・持続時間）
+    public const float INSCRIPTION_C1_THRUST_MULT = 1.8f;       // 突: 突進系。中威力
+    public const float INSCRIPTION_C1_THRUST_DURATION = 0.6f;
+    public const float INSCRIPTION_C1_FORMATION_MULT = 1.2f;    // 陣: 範囲系。低威力・広い
+    public const float INSCRIPTION_C1_FORMATION_DURATION = 0.8f;
+    public const float INSCRIPTION_C1_CRUSH_MULT = 2.5f;        // 砕: 高威力単体
+    public const float INSCRIPTION_C1_CRUSH_DURATION = 0.9f;
+    public const float INSCRIPTION_C1_SHIELD_MULT = 1.5f;       // 盾: 防御付き攻撃
+    public const float INSCRIPTION_C1_SHIELD_DURATION = 0.7f;
+    // C6 刻印 — 突/陣/砕/盾/覇/衛（倍率・持続時間）
+    public const float INSCRIPTION_C6_THRUST_MULT = 2.8f;       // 突: 突進フィニッシュ
+    public const float INSCRIPTION_C6_THRUST_DURATION = 0.9f;
+    public const float INSCRIPTION_C6_FORMATION_MULT = 2.0f;    // 陣: 広範囲フィニッシュ
+    public const float INSCRIPTION_C6_FORMATION_DURATION = 1.1f;
+    public const float INSCRIPTION_C6_CRUSH_MULT = 3.5f;        // 砕: 超高威力フィニッシュ
+    public const float INSCRIPTION_C6_CRUSH_DURATION = 1.2f;
+    public const float INSCRIPTION_C6_SHIELD_MULT = 2.2f;       // 盾: 防御フィニッシュ
+    public const float INSCRIPTION_C6_SHIELD_DURATION = 1.0f;
+    public const float INSCRIPTION_C6_CONQUER_MULT = 2.5f;      // 覇: 超範囲フィニッシュ
+    public const float INSCRIPTION_C6_CONQUER_DURATION = 1.3f;
+    public const float INSCRIPTION_C6_GUARD_MULT = 2.0f;        // 衛: カウンター系フィニッシュ
+    public const float INSCRIPTION_C6_GUARD_DURATION = 0.8f;
+
     // === ミニマップ ===
     public const float MINIMAP_SIZE = 200f;              // ミニマップ表示サイズ (px)
     public const float MINIMAP_RANGE = 50f;              // ミニマップ表示範囲 (m、プレイヤー中心からの半径)

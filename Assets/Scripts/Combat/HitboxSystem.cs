@@ -104,8 +104,8 @@ public class HitboxSystem : NetworkBehaviour
 
         if (comboStep == 0 && chargeType == 0 && !isDash) return;
 
-        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映、エボリューション対応）
-        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvolution);
+        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映、エボリューション・刻印対応）
+        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvolution, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
         if (hitbox.ActiveEndFrame == 0) return; // データが無い
 
         // 現在のフレーム番号を計算（経過時間 → フレーム）
@@ -277,7 +277,7 @@ public class HitboxSystem : NetworkBehaviour
         {
             bool isRush = _comboSystem.IsRush;
             bool isEvo = _comboSystem.IsEvolution;
-            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvo);
+            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvo, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
 
             // 被弾者のステートから空中かを判定
             var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
@@ -394,8 +394,8 @@ public class HitboxSystem : NetworkBehaviour
         Debug.Log($"[Hit-NPC] {gameObject.name} → {npcSoldier.gameObject.name} ヒット確定" +
                   $" (N{comboStep}/C{chargeType}/D={isDash})");
 
-        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし）
-        float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType());
+        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし、刻印対応）
+        float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), false, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
         int damage = Mathf.Max(1, Mathf.RoundToInt(GameConfig.DEFAULT_ATK * motionMultiplier));
 
         npcSoldier.TakeDamage(damage);

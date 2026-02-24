@@ -146,6 +146,7 @@
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
 | 連撃強化 | `MAX_COMBO_ENHANCE_LEVEL(3)` |
 | 鍛錬 | `TRAINING_ATK_PER_LEVEL(5)`, `TRAINING_DEF_PER_LEVEL(5)`, `TRAINING_HP_PER_LEVEL(50)`, `TRAINING_MUSOU_PER_LEVEL(5)`, `TRAINING_BREAK_PER_LEVEL(5)`, `DEFAULT_TRAINING_MAX(24)` |
+| 刻印 | `INSCRIPTION_C1_THRUST/FORMATION/CRUSH/SHIELD_MULT/DURATION`, `INSCRIPTION_C6_THRUST/FORMATION/CRUSH/SHIELD/CONQUER/GUARD_MULT/DURATION` |
 | 仙箪 | `SENTAN_DROP_RATE(1.0)`, `SENTAN_PICKUP_RADIUS(2.0)`, `SENTAN_LIFETIME(30)`, `SENTAN_REQUIRED_FOR_ENHANCE(7)` |
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
 | 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
@@ -171,7 +172,7 @@
 | 名前 | 説明 |
 |------|------|
 | `DamageResult Calculate(float, float, float, float, ElementType, int, bool)` | メインのダメージ計算（ATK×倍率→防御→空中→根性→斬保証→クリ） |
-| `float GetMotionMultiplier(int, int, bool, bool, WeaponType, bool)` | 攻撃種別に応じたモーション倍率を返す（武器種対応・エボリューション対応） |
+| `float GetMotionMultiplier(int, int, bool, bool, WeaponType, bool, InscriptionType, InscriptionType)` | 攻撃種別に応じたモーション倍率を返す（武器種・エボリューション・刻印対応） |
 | `float GetElementDamageMultiplier(ElementType, int)` | 属性レベルに応じたダメージ倍率を返す |
 | `float GetGutsDivisor(float)` | HP帯による根性補正除数を返す |
 | `float GetSlashMinDamage(int)` | 斬属性のレベル別最低保証ダメージを返す |
@@ -212,6 +213,12 @@ NetworkVariable / RPC / GetComponent なし。
 | `float GetEvolutionMultiplier(WeaponType, int)` | 武器種のE攻撃モーション倍率を返す（E6-E9） |
 | `float GetEvolutionDuration(WeaponType, int)` | 武器種のE攻撃持続時間を返す（E6-E9） |
 | `HitboxData GetEvolutionHitbox(WeaponType, int)` | 武器種のエボリューション攻撃ヒットボックスを生成（E6-E9） |
+| `float GetInscriptionC1Multiplier(InscriptionType)` | 刻印C1のモーション倍率を返す |
+| `float GetInscriptionC1Duration(InscriptionType)` | 刻印C1の持続時間を返す |
+| `float GetInscriptionC6Multiplier(InscriptionType)` | 刻印C6のモーション倍率を返す |
+| `float GetInscriptionC6Duration(InscriptionType)` | 刻印C6の持続時間を返す |
+| `HitboxData GetInscriptionC1Hitbox(WeaponType, InscriptionType)` | 刻印C1のヒットボックスを生成 |
+| `HitboxData GetInscriptionC6Hitbox(WeaponType, InscriptionType)` | 刻印C6のヒットボックスを生成 |
 | `GreatSword` | 大剣パラメータ（static readonly） |
 | `DualBlades` | 双剣パラメータ（static readonly） |
 | `Spear` | 槍パラメータ（static readonly） |
@@ -275,6 +282,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `BaseStatus : byte` | 拠点の所属チーム状態（Neutral=0, Red=1, Blue=2） |
 | `GamePhase : byte` | ゲームフェーズ（WaitingForPlayers, InProgress, GameOver） |
 | `WeaponType` | 武器種（GreatSword, DualBlades, Spear, Halberd, Fists, Bow） |
+| `InscriptionType : byte` | 刻印種別（Thrust=突, Formation=陣, Crush=砕, Shield=盾, Conquer=覇, Guard=衛） |
 
 ---
 
@@ -337,6 +345,10 @@ NetworkVariable / RPC / GetComponent なし。
 | `void ResetEnhancements()` | 全強化をリセットする（死亡時リセット。仙箪カウントはリセットしない。サーバー専用） |
 | `void AddSentan(int)` | 仙箪を追加する（SentanItem から呼ばれる。サーバー専用） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
+| `InscriptionType C1Inscription` | C1刻印種別（読み取り専用プロパティ） |
+| `InscriptionType C6Inscription` | C6刻印種別（読み取り専用プロパティ） |
+| `void SetC1Inscription(InscriptionType)` | C1刻印を設定する（突/陣/砕/盾の4種。サーバー専用） |
+| `void SetC6Inscription(InscriptionType)` | C6刻印を設定する（全6種。サーバー専用） |
 
 **NetworkVariable**
 
@@ -345,6 +357,8 @@ NetworkVariable / RPC / GetComponent なし。
 | `_networkComboStep` | `NetworkVariable<byte>` | 現在のコンボ段数（UI・他プレイヤー表示用） |
 | `_comboEnhanceLevel` | `NetworkVariable<int>` | 連撃強化レベル（0〜3。サーバー権威） |
 | `_sentanCount` | `NetworkVariable<int>` | 所持仙箪数（サーバー権威。死亡時リセットなし） |
+| `_c1Inscription` | `NetworkVariable<byte>` | C1刻印種別（サーバー権威） |
+| `_c6Inscription` | `NetworkVariable<byte>` | C6刻印種別（サーバー権威） |
 
 **ServerRpc / ClientRpc**
 
@@ -501,7 +515,7 @@ NetworkVariable / RPC / GetComponent なし。
 
 | 名前 | 説明 |
 |------|------|
-| `static HitboxData GetHitboxData(int, int, bool, bool, WeaponType)` | 攻撃状態に応じた HitboxData を返す（WeaponData に委譲） |
+| `static HitboxData GetHitboxData(int, int, bool, bool, WeaponType, bool, InscriptionType, InscriptionType)` | 攻撃状態に応じた HitboxData を返す（WeaponData に委譲、刻印対応） |
 
 NetworkVariable / RPC / GetComponent なし。
 

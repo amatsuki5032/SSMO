@@ -183,6 +183,21 @@ public enum GamePhase : byte
 }
 
 /// <summary>
+/// 刻印種別（C1/C6 モーション変更）
+/// C1: 突/陣/砕/盾 の4種
+/// C6: 突/陣/砕/盾/覇/衛 の6種
+/// </summary>
+public enum InscriptionType : byte
+{
+    Thrust,     // 突 - 突進系
+    Formation,  // 陣 - 範囲系
+    Crush,      // 砕 - 高威力単体
+    Shield,     // 盾 - 防御付き攻撃
+    Conquer,    // 覇 - C6専用・超範囲
+    Guard,      // 衛 - C6専用・カウンター系
+}
+
+/// <summary>
 /// 武器種
 /// </summary>
 public enum WeaponType

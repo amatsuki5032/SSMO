@@ -679,6 +679,161 @@ public static class WeaponData
         };
     }
 
+    // ============================================================
+    // 刻印パラメータ（C1/C6 モーション変更）
+    // ============================================================
+
+    /// <summary>
+    /// 刻印に応じた C1 の倍率を返す
+    /// </summary>
+    public static float GetInscriptionC1Multiplier(InscriptionType inscription)
+    {
+        return inscription switch
+        {
+            InscriptionType.Thrust => GameConfig.INSCRIPTION_C1_THRUST_MULT,
+            InscriptionType.Formation => GameConfig.INSCRIPTION_C1_FORMATION_MULT,
+            InscriptionType.Crush => GameConfig.INSCRIPTION_C1_CRUSH_MULT,
+            InscriptionType.Shield => GameConfig.INSCRIPTION_C1_SHIELD_MULT,
+            _ => GameConfig.INSCRIPTION_C1_THRUST_MULT,
+        };
+    }
+
+    /// <summary>
+    /// 刻印に応じた C1 の持続時間を返す
+    /// </summary>
+    public static float GetInscriptionC1Duration(InscriptionType inscription)
+    {
+        return inscription switch
+        {
+            InscriptionType.Thrust => GameConfig.INSCRIPTION_C1_THRUST_DURATION,
+            InscriptionType.Formation => GameConfig.INSCRIPTION_C1_FORMATION_DURATION,
+            InscriptionType.Crush => GameConfig.INSCRIPTION_C1_CRUSH_DURATION,
+            InscriptionType.Shield => GameConfig.INSCRIPTION_C1_SHIELD_DURATION,
+            _ => GameConfig.INSCRIPTION_C1_THRUST_DURATION,
+        };
+    }
+
+    /// <summary>
+    /// 刻印に応じた C6 の倍率を返す
+    /// </summary>
+    public static float GetInscriptionC6Multiplier(InscriptionType inscription)
+    {
+        return inscription switch
+        {
+            InscriptionType.Thrust => GameConfig.INSCRIPTION_C6_THRUST_MULT,
+            InscriptionType.Formation => GameConfig.INSCRIPTION_C6_FORMATION_MULT,
+            InscriptionType.Crush => GameConfig.INSCRIPTION_C6_CRUSH_MULT,
+            InscriptionType.Shield => GameConfig.INSCRIPTION_C6_SHIELD_MULT,
+            InscriptionType.Conquer => GameConfig.INSCRIPTION_C6_CONQUER_MULT,
+            InscriptionType.Guard => GameConfig.INSCRIPTION_C6_GUARD_MULT,
+            _ => GameConfig.INSCRIPTION_C6_THRUST_MULT,
+        };
+    }
+
+    /// <summary>
+    /// 刻印に応じた C6 の持続時間を返す
+    /// </summary>
+    public static float GetInscriptionC6Duration(InscriptionType inscription)
+    {
+        return inscription switch
+        {
+            InscriptionType.Thrust => GameConfig.INSCRIPTION_C6_THRUST_DURATION,
+            InscriptionType.Formation => GameConfig.INSCRIPTION_C6_FORMATION_DURATION,
+            InscriptionType.Crush => GameConfig.INSCRIPTION_C6_CRUSH_DURATION,
+            InscriptionType.Shield => GameConfig.INSCRIPTION_C6_SHIELD_DURATION,
+            InscriptionType.Conquer => GameConfig.INSCRIPTION_C6_CONQUER_DURATION,
+            InscriptionType.Guard => GameConfig.INSCRIPTION_C6_GUARD_DURATION,
+            _ => GameConfig.INSCRIPTION_C6_THRUST_DURATION,
+        };
+    }
+
+    /// <summary>
+    /// 刻印に応じた C1 ヒットボックスを生成する
+    /// 刻印タイプごとに範囲特性が異なる
+    /// </summary>
+    public static HitboxData GetInscriptionC1Hitbox(WeaponType type, InscriptionType inscription)
+    {
+        var p = GetHitboxProfile(type);
+        // 刻印ごとのスケール: 突=前方特化、陣=広範囲、砕=狭い高威力、盾=標準
+        float radiusScale = inscription switch
+        {
+            InscriptionType.Thrust => 0.8f,     // 突: 狭め
+            InscriptionType.Formation => 1.6f,   // 陣: 広範囲
+            InscriptionType.Crush => 0.7f,       // 砕: 最も狭い
+            InscriptionType.Shield => 1.0f,      // 盾: 標準
+            _ => 1.0f,
+        };
+        float lengthScale = inscription switch
+        {
+            InscriptionType.Thrust => 1.5f,      // 突: 前方に長い
+            InscriptionType.Formation => 1.2f,    // 陣: やや長め
+            InscriptionType.Crush => 0.9f,        // 砕: 短い
+            InscriptionType.Shield => 1.0f,       // 盾: 標準
+            _ => 1.0f,
+        };
+        int start = p.ChargeStartFrame + 2; // C1は少し遅め
+        int active = (int)(p.ChargeActiveFrames * 1.0f);
+        return new HitboxData
+        {
+            Radius = p.ChargeRadius * radiusScale,
+            Length = p.ChargeLength * lengthScale,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = start,
+            ActiveEndFrame = start + active,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 刻印に応じた C6 ヒットボックスを生成する
+    /// C6は最大級の攻撃なので全体的に大きめ
+    /// </summary>
+    public static HitboxData GetInscriptionC6Hitbox(WeaponType type, InscriptionType inscription)
+    {
+        var p = GetHitboxProfile(type);
+        // 刻印ごとのスケール: 突=前方特化、陣=最大範囲、砕=高威力中範囲、盾=標準、覇=超範囲、衛=小さめ高速
+        float radiusScale = inscription switch
+        {
+            InscriptionType.Thrust => 1.2f,
+            InscriptionType.Formation => 2.0f,
+            InscriptionType.Crush => 1.4f,
+            InscriptionType.Shield => 1.5f,
+            InscriptionType.Conquer => 2.2f,    // 覇: 最大範囲
+            InscriptionType.Guard => 1.0f,      // 衛: コンパクト
+            _ => 1.5f,
+        };
+        float lengthScale = inscription switch
+        {
+            InscriptionType.Thrust => 2.0f,
+            InscriptionType.Formation => 1.5f,
+            InscriptionType.Crush => 1.3f,
+            InscriptionType.Shield => 1.5f,
+            InscriptionType.Conquer => 1.8f,
+            InscriptionType.Guard => 1.2f,
+            _ => 1.5f,
+        };
+        int startOffset = inscription switch
+        {
+            InscriptionType.Guard => 2,     // 衛: 早め
+            InscriptionType.Conquer => 6,   // 覇: 遅め
+            InscriptionType.Crush => 5,     // 砕: やや遅め
+            _ => 4,                         // 標準
+        };
+        int start = p.ChargeStartFrame + startOffset;
+        int active = (int)(p.ChargeActiveFrames * 1.8f); // C6は長め
+        return new HitboxData
+        {
+            Radius = p.ChargeRadius * radiusScale,
+            Length = p.ChargeLength * lengthScale,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = start,
+            ActiveEndFrame = start + active,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
     /// <summary>
     /// 武器種のジャンプチャージヒットボックスを生成する
     /// </summary>
