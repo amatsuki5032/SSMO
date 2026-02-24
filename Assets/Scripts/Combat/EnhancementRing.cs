@@ -110,6 +110,7 @@ public class EnhancementRing : NetworkBehaviour
     // ============================================================
 
     private ComboSystem _comboSystem;
+    private UltimateEnhancement _ultimateEnhancement;
     private float _rotationTimer; // リング回転用タイマー
 
     // ============================================================
@@ -119,6 +120,7 @@ public class EnhancementRing : NetworkBehaviour
     private void Awake()
     {
         _comboSystem = GetComponent<ComboSystem>();
+        _ultimateEnhancement = GetComponent<UltimateEnhancement>();
         InitializeSlots();
     }
 
@@ -239,11 +241,20 @@ public class EnhancementRing : NetworkBehaviour
                 break;
 
             case SlotEffect.ComboEnhance:
-                if (_comboSystem != null)
+                // 連撃Lv3到達済み → 究極強化に切り替え
+                if (_comboSystem != null && _comboSystem.ComboEnhanceLevel >= GameConfig.MAX_COMBO_ENHANCE_LEVEL)
+                {
+                    if (_ultimateEnhancement != null)
+                    {
+                        _ultimateEnhancement.Activate();
+                        Debug.Log($"[Ring] {gameObject.name}: 究極強化発動！（連撃Lv{_comboSystem.ComboEnhanceLevel}到達済み）");
+                    }
+                }
+                else if (_comboSystem != null)
                 {
                     _comboSystem.EnhanceCombo();
+                    Debug.Log($"[Ring] {gameObject.name}: 連撃強化 → Lv{_comboSystem.ComboEnhanceLevel}");
                 }
-                Debug.Log($"[Ring] {gameObject.name}: 連撃強化 → Lv{_comboSystem?.ComboEnhanceLevel}");
                 break;
         }
     }
@@ -273,6 +284,12 @@ public class EnhancementRing : NetworkBehaviour
             _comboSystem.ResetEnhancements();
         }
 
+        // 究極強化もリセット
+        if (_ultimateEnhancement != null)
+        {
+            _ultimateEnhancement.ResetOnDeath();
+        }
+
         Debug.Log($"[Ring] {gameObject.name}: 全強化リセット");
     }
 
@@ -286,6 +303,13 @@ public class EnhancementRing : NetworkBehaviour
     public string GetSlotName(int index)
     {
         if (index < 0 || index >= _slots.Length) return "?";
+        // 連撃Lv3到達済みのスロット7は「究極」と表示
+        if (_slots[index] == SlotEffect.ComboEnhance
+            && _comboSystem != null
+            && _comboSystem.ComboEnhanceLevel >= GameConfig.MAX_COMBO_ENHANCE_LEVEL)
+        {
+            return "ULT";
+        }
         return _slots[index] switch
         {
             SlotEffect.AtkUp => "ATK",

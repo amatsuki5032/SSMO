@@ -287,6 +287,12 @@ public static class GameConfig
     public const float TRAINING_BREAK_PER_LEVEL = 5f;      // 1段階あたりの破壊力増加
     public const int DEFAULT_TRAINING_MAX = 24;             // 武器ごとの鍛錬ポイント上限（仮: 大剣24）
 
+    // === 究極強化 ===
+    public const float ULTIMATE_DURATION = 30f;         // 究極強化持続時間（秒）
+    public const float ULTIMATE_ATK_MULT = 1.5f;        // 究極強化ATK倍率
+    public const float ULTIMATE_DEF_MULT = 1.5f;        // 究極強化DEF倍率
+    public const float ULTIMATE_SPEED_MULT = 1.2f;      // 究極強化移動速度倍率
+
     // === 刻印（C1/C6 モーション変更）===
     // C1 刻印 — 突/陣/砕/盾（倍率・持続時間）
     public const float INSCRIPTION_C1_THRUST_MULT = 1.8f;       // 突: 突進系。中威力

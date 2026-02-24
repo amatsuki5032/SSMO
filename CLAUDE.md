@@ -45,7 +45,8 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/EGSystem.cs` | EGSystem | エレメンタルガード（準備・完成・カウンター・無双ゲージ連携） |
 | `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
 | `Combat/SentanItem.cs` | SentanItem | 仙箪アイテム（NPC死亡時ドロップ・自動拾い・サーバー権威） |
-| `Combat/EnhancementRing.cs` | EnhancementRing | 仙箪強化リング（7スロット・ATK/DEFバフ・連撃強化・サーバー権威） |
+| `Combat/EnhancementRing.cs` | EnhancementRing | 仙箪強化リング（7スロット・ATK/DEFバフ・連撃強化・究極強化・サーバー権威） |
+| `Combat/UltimateEnhancement.cs` | UltimateEnhancement | 究極強化（30秒バフ・ATK/DEF/SPD/アーマー・サーバー権威） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
 | `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
 | `Shared/TrainingSystem.cs` | TrainingSystem | 鍛錬システム（三角数コスト・ステータス振り分け計算・static） |
@@ -85,7 +86,8 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 13. ElementSystem（属性管理）
 14. StatusEffectManager（状態異常管理）
 15. EnhancementRing（仙箪強化リング）
-16. DebugTestHelper（デバッグ用、Editor限定）
+16. UltimateEnhancement（究極強化）
+17. DebugTestHelper（デバッグ用、Editor限定）
 
 ### ドキュメント構成
 

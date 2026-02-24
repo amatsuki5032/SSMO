@@ -146,6 +146,7 @@
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
 | 連撃強化 | `MAX_COMBO_ENHANCE_LEVEL(3)` |
 | 鍛錬 | `TRAINING_ATK_PER_LEVEL(5)`, `TRAINING_DEF_PER_LEVEL(5)`, `TRAINING_HP_PER_LEVEL(50)`, `TRAINING_MUSOU_PER_LEVEL(5)`, `TRAINING_BREAK_PER_LEVEL(5)`, `DEFAULT_TRAINING_MAX(24)` |
+| 究極強化 | `ULTIMATE_DURATION(30)`, `ULTIMATE_ATK_MULT(1.5)`, `ULTIMATE_DEF_MULT(1.5)`, `ULTIMATE_SPEED_MULT(1.2)` |
 | 刻印 | `INSCRIPTION_C1_THRUST/FORMATION/CRUSH/SHIELD_MULT/DURATION`, `INSCRIPTION_C6_THRUST/FORMATION/CRUSH/SHIELD/CONQUER/GUARD_MULT/DURATION` |
 | 仙箪 | `SENTAN_DROP_RATE(1.0)`, `SENTAN_PICKUP_RADIUS(2.0)`, `SENTAN_LIFETIME(30)`, `SENTAN_REQUIRED_FOR_ENHANCE(7)` |
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
@@ -477,6 +478,40 @@ NetworkVariable / RPC / GetComponent なし。
 | 取得先 | 用途 |
 |--------|------|
 | `ComboSystem` | 仙箪カウント参照・連撃強化 |
+
+---
+
+### UltimateEnhancement.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `UltimateEnhancement : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `bool IsUltimateActive` | 究極強化発動中か（読み取り専用） |
+| `float UltimateRemainingTime` | 残り時間（秒。読み取り専用） |
+| `float AtkMultiplier` | ATK倍率（発動中1.5、非発動時1.0） |
+| `float DefMultiplier` | DEF倍率（発動中1.5、非発動時1.0） |
+| `float SpeedMultiplier` | 移動速度倍率（発動中1.2、非発動時1.0） |
+| `void Activate()` | 究極強化を発動する（サーバー専用。30秒バフ） |
+| `void Deactivate()` | 究極強化を解除する（時間切れ・死亡時） |
+| `void ResetOnDeath()` | 死亡時のリセット |
+
+**NetworkVariable**
+
+| 変数名 | 型 | 説明 |
+|--------|-----|------|
+| `_isUltimateActive` | `NetworkVariable<bool>` | 究極強化発動中フラグ |
+| `_ultimateRemainingTime` | `NetworkVariable<float>` | 残り時間（秒） |
+
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `ArmorSystem` | アーマーレベル+1の適用/復元 |
 
 ---
 
