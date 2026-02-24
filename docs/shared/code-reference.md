@@ -195,6 +195,13 @@ NetworkVariable / RPC / GetComponent なし。
 | `float GetChargeMultiplier(WeaponType, int)` | 武器種のC攻撃モーション倍率を返す |
 | `float GetChargeDuration(WeaponType, int)` | 武器種のC攻撃持続時間を返す |
 | `float GetDashMultiplier(WeaponType, bool)` | 武器種のダッシュ攻撃モーション倍率を返す |
+| `HitboxData GetNormalHitbox(WeaponType, int)` | 武器種のN攻撃ヒットボックスを生成 |
+| `HitboxData GetChargeHitbox(WeaponType, int)` | 武器種のC攻撃ヒットボックスを生成 |
+| `HitboxData GetC3RushHitbox(WeaponType)` | 武器種のC3ラッシュヒットボックスを生成 |
+| `HitboxData GetDashHitbox(WeaponType)` | 武器種のダッシュ攻撃ヒットボックスを生成 |
+| `HitboxData GetDashRushHitbox(WeaponType)` | 武器種のダッシュラッシュヒットボックスを生成 |
+| `HitboxData GetJumpAttackHitbox(WeaponType)` | 武器種のジャンプ攻撃ヒットボックスを生成 |
+| `HitboxData GetJumpChargeHitbox(WeaponType)` | 武器種のジャンプチャージヒットボックスを生成 |
 | `GreatSword` | 大剣パラメータ（static readonly） |
 | `DualBlades` | 双剣パラメータ（static readonly） |
 | `Spear` | 槍パラメータ（static readonly） |
@@ -362,7 +369,7 @@ NetworkVariable / RPC / GetComponent なし。
 
 | 名前 | 説明 |
 |------|------|
-| `static HitboxData GetHitboxData(int, int, bool, bool, WeaponType)` | 攻撃状態に応じた HitboxData を返す（武器種リーチ反映） |
+| `static HitboxData GetHitboxData(int, int, bool, bool, WeaponType)` | 攻撃状態に応じた HitboxData を返す（WeaponData に委譲） |
 
 NetworkVariable / RPC / GetComponent なし。
 

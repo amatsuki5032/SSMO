@@ -344,4 +344,262 @@ public static class WeaponData
         // ラッシュ追加ヒットは倍率半分
         return isRush ? p.DashAttackMultiplier * 0.5f : p.DashAttackMultiplier;
     }
+
+    // ============================================================
+    // ヒットボックスプロファイル（武器種別基本値）
+    // ============================================================
+
+    /// <summary>
+    /// 武器種ごとのヒットボックス基本値
+    /// N/C/D 攻撃の基本判定サイズ・フレーム情報を定義する
+    /// 個別の step/chargeType に応じたスケーリングは生成メソッドで行う
+    /// </summary>
+    private struct HitboxProfile
+    {
+        // --- 通常攻撃 ---
+        public float NormalRadius;      // N攻撃の基本判定半径
+        public float NormalLength;      // N攻撃の基本判定長さ
+        public int NormalStartFrame;    // N攻撃の基本アクティブ開始フレーム
+        public int NormalActiveFrames;  // N攻撃の基本アクティブフレーム数
+
+        // --- チャージ攻撃 ---
+        public float ChargeRadius;      // C攻撃の基本判定半径
+        public float ChargeLength;      // C攻撃の基本判定長さ
+        public int ChargeStartFrame;    // C攻撃の基本アクティブ開始フレーム
+        public int ChargeActiveFrames;  // C攻撃の基本アクティブフレーム数
+
+        // --- ダッシュ攻撃 ---
+        public float DashRadius;        // D攻撃の判定半径
+        public float DashLength;        // D攻撃の判定長さ
+        public int DashStartFrame;      // D攻撃のアクティブ開始フレーム
+        public int DashActiveFrames;    // D攻撃のアクティブフレーム数
+    }
+
+    // 大剣: 広範囲・高威力・遅い
+    private static readonly HitboxProfile _greatSwordHitbox = new()
+    {
+        NormalRadius = 0.5f, NormalLength = 1.5f, NormalStartFrame = 5, NormalActiveFrames = 10,
+        ChargeRadius = 0.6f, ChargeLength = 2.0f, ChargeStartFrame = 8, ChargeActiveFrames = 12,
+        DashRadius = 0.6f, DashLength = 2.0f, DashStartFrame = 5, DashActiveFrames = 13,
+    };
+
+    // 双剣: 狭範囲・高速・手数型
+    private static readonly HitboxProfile _dualBladesHitbox = new()
+    {
+        NormalRadius = 0.3f, NormalLength = 0.8f, NormalStartFrame = 3, NormalActiveFrames = 6,
+        ChargeRadius = 0.4f, ChargeLength = 1.0f, ChargeStartFrame = 5, ChargeActiveFrames = 8,
+        DashRadius = 0.35f, DashLength = 1.0f, DashStartFrame = 3, DashActiveFrames = 10,
+    };
+
+    // 槍: 前方特化・リーチ最長・判定狭い
+    private static readonly HitboxProfile _spearHitbox = new()
+    {
+        NormalRadius = 0.25f, NormalLength = 3.0f, NormalStartFrame = 5, NormalActiveFrames = 8,
+        ChargeRadius = 0.3f, ChargeLength = 3.5f, ChargeStartFrame = 7, ChargeActiveFrames = 10,
+        DashRadius = 0.3f, DashLength = 3.0f, DashStartFrame = 5, DashActiveFrames = 12,
+    };
+
+    // 戟: バランス型・回転斬り
+    private static readonly HitboxProfile _halberdHitbox = new()
+    {
+        NormalRadius = 0.45f, NormalLength = 1.8f, NormalStartFrame = 5, NormalActiveFrames = 9,
+        ChargeRadius = 0.55f, ChargeLength = 2.2f, ChargeStartFrame = 7, ChargeActiveFrames = 11,
+        DashRadius = 0.5f, DashLength = 2.0f, DashStartFrame = 5, DashActiveFrames = 12,
+    };
+
+    // 拳: 超近距離・最速フレーム
+    private static readonly HitboxProfile _fistsHitbox = new()
+    {
+        NormalRadius = 0.3f, NormalLength = 0.5f, NormalStartFrame = 2, NormalActiveFrames = 4,
+        ChargeRadius = 0.35f, ChargeLength = 0.7f, ChargeStartFrame = 4, ChargeActiveFrames = 6,
+        DashRadius = 0.3f, DashLength = 0.7f, DashStartFrame = 2, DashActiveFrames = 8,
+    };
+
+    // 弓: 近接は控えめ（遠距離は将来実装）
+    private static readonly HitboxProfile _bowHitbox = new()
+    {
+        NormalRadius = 0.3f, NormalLength = 1.2f, NormalStartFrame = 5, NormalActiveFrames = 8,
+        ChargeRadius = 0.35f, ChargeLength = 1.5f, ChargeStartFrame = 7, ChargeActiveFrames = 10,
+        DashRadius = 0.35f, DashLength = 1.5f, DashStartFrame = 5, DashActiveFrames = 11,
+    };
+
+    /// <summary>武器種に対応するヒットボックスプロファイルを返す</summary>
+    private static HitboxProfile GetHitboxProfile(WeaponType type)
+    {
+        return type switch
+        {
+            WeaponType.GreatSword => _greatSwordHitbox,
+            WeaponType.DualBlades => _dualBladesHitbox,
+            WeaponType.Spear => _spearHitbox,
+            WeaponType.Halberd => _halberdHitbox,
+            WeaponType.Fists => _fistsHitbox,
+            WeaponType.Bow => _bowHitbox,
+            _ => _greatSwordHitbox,
+        };
+    }
+
+    // ============================================================
+    // ヒットボックス生成メソッド（HitboxData 用）
+    // ============================================================
+
+    /// <summary>
+    /// 武器種の通常攻撃ヒットボックスを生成する
+    /// step が大きいほど範囲が広がり、アクティブフレームが遅く・長くなる
+    /// </summary>
+    /// <param name="type">武器種</param>
+    /// <param name="step">コンボ段数（1-6）</param>
+    public static HitboxData GetNormalHitbox(WeaponType type, int step)
+    {
+        var p = GetHitboxProfile(type);
+        // step ごとのスケーリング: 1段ごとに +10% 範囲, +1F 開始遅延, +2F 持続延長
+        float scale = 1.0f + (step - 1) * 0.1f;
+        int start = p.NormalStartFrame + (step - 1);
+        int active = p.NormalActiveFrames + (step - 1) * 2;
+        return new HitboxData
+        {
+            Radius = p.NormalRadius * scale,
+            Length = p.NormalLength * scale,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = start,
+            ActiveEndFrame = start + active,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のチャージ攻撃ヒットボックスを生成する
+    /// chargeType ごとに特性が異なる（C3=小範囲ラッシュ、C4=広範囲吹き飛ばし、C6=最大範囲）
+    /// </summary>
+    /// <param name="type">武器種</param>
+    /// <param name="chargeType">チャージ技番号（1-6）</param>
+    public static HitboxData GetChargeHitbox(WeaponType type, int chargeType)
+    {
+        var p = GetHitboxProfile(type);
+        // C技ごとの範囲スケール（C3は小さめ、C4/C6は大きめ）
+        float typeScale = chargeType switch
+        {
+            1 => 1.0f,  // C1: 基本
+            2 => 1.1f,  // C2: やや広い（打ち上げ）
+            3 => 0.8f,  // C3: ラッシュ初段なので小さめ
+            4 => 1.4f,  // C4: 吹き飛ばし・広範囲
+            5 => 1.5f,  // C5: かなり広い
+            6 => 1.8f,  // C6: 最大範囲
+            _ => 1.0f
+        };
+        int startOffset = chargeType switch
+        {
+            1 => 2,   // C1: やや遅め
+            2 => 0,   // C2: 基本
+            3 => -3,  // C3: 早め
+            4 => 2,   // C4: 遅め
+            5 => 0,   // C5: 基本
+            6 => 4,   // C6: 最も遅い
+            _ => 0
+        };
+        int start = p.ChargeStartFrame + startOffset;
+        int active = (int)(p.ChargeActiveFrames * typeScale);
+        return new HitboxData
+        {
+            Radius = p.ChargeRadius * typeScale,
+            Length = p.ChargeLength * typeScale,
+            Offset = new UnityEngine.Vector3(0f, chargeType == 2 ? 0.8f : 1f, 0f),
+            ActiveStartFrame = start,
+            ActiveEndFrame = start + active,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のC3ラッシュ（追加ヒット）ヒットボックスを生成する
+    /// ラッシュヒットは即座にアクティブ（短い区間）
+    /// </summary>
+    public static HitboxData GetC3RushHitbox(WeaponType type)
+    {
+        var p = GetHitboxProfile(type);
+        return new HitboxData
+        {
+            Radius = p.ChargeRadius * 0.8f,
+            Length = p.ChargeLength * 0.8f,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = 2,
+            ActiveEndFrame = 2 + (int)(p.ChargeActiveFrames * 0.5f),
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のダッシュ攻撃ヒットボックスを生成する
+    /// </summary>
+    public static HitboxData GetDashHitbox(WeaponType type)
+    {
+        var p = GetHitboxProfile(type);
+        return new HitboxData
+        {
+            Radius = p.DashRadius,
+            Length = p.DashLength,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = p.DashStartFrame,
+            ActiveEndFrame = p.DashStartFrame + p.DashActiveFrames,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のダッシュラッシュ（追加ヒット）ヒットボックスを生成する
+    /// ラッシュヒットは即座にアクティブ（短い区間）
+    /// </summary>
+    public static HitboxData GetDashRushHitbox(WeaponType type)
+    {
+        var p = GetHitboxProfile(type);
+        return new HitboxData
+        {
+            Radius = p.DashRadius,
+            Length = p.DashLength,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = 2,
+            ActiveEndFrame = 2 + (int)(p.DashActiveFrames * 0.5f),
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のジャンプ攻撃ヒットボックスを生成する
+    /// </summary>
+    public static HitboxData GetJumpAttackHitbox(WeaponType type)
+    {
+        var p = GetHitboxProfile(type);
+        return new HitboxData
+        {
+            Radius = p.NormalRadius * 0.9f,
+            Length = p.NormalLength * 0.9f,
+            Offset = new UnityEngine.Vector3(0f, 0.5f, 0f),
+            ActiveStartFrame = p.NormalStartFrame,
+            ActiveEndFrame = p.NormalStartFrame + p.NormalActiveFrames,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のジャンプチャージヒットボックスを生成する
+    /// </summary>
+    public static HitboxData GetJumpChargeHitbox(WeaponType type)
+    {
+        var p = GetHitboxProfile(type);
+        return new HitboxData
+        {
+            Radius = p.ChargeRadius * 1.2f,
+            Length = p.ChargeLength * 1.2f,
+            Offset = new UnityEngine.Vector3(0f, 0.5f, 0f),
+            ActiveStartFrame = p.ChargeStartFrame,
+            ActiveEndFrame = p.ChargeStartFrame + (int)(p.ChargeActiveFrames * 1.2f),
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
 }
