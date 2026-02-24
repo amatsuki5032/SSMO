@@ -30,6 +30,7 @@ public class HitboxSystem : NetworkBehaviour
     private ComboSystem _comboSystem;
     private CharacterStateMachine _stateMachine;
     private CharacterController _characterController;
+    private PlayerMovement _playerMovement;
 
     // ============================================================
     // ヒット管理
@@ -53,6 +54,13 @@ public class HitboxSystem : NetworkBehaviour
         _comboSystem = GetComponent<ComboSystem>();
         _stateMachine = GetComponent<CharacterStateMachine>();
         _characterController = GetComponent<CharacterController>();
+        _playerMovement = GetComponent<PlayerMovement>();
+    }
+
+    /// <summary>現在の武器種を取得する</summary>
+    private WeaponType GetWeaponType()
+    {
+        return _playerMovement != null ? _playerMovement.CurrentWeaponType : WeaponType.GreatSword;
     }
 
     /// <summary>
@@ -91,8 +99,8 @@ public class HitboxSystem : NetworkBehaviour
 
         if (comboStep == 0 && chargeType == 0 && !isDash) return;
 
-        // 現在の攻撃に対応する HitboxData を取得
-        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush);
+        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映）
+        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType());
         if (hitbox.ActiveEndFrame == 0) return; // データが無い
 
         // 現在のフレーム番号を計算（経過時間 → フレーム）
@@ -263,7 +271,7 @@ public class HitboxSystem : NetworkBehaviour
         if (targetHealth != null)
         {
             bool isRush = _comboSystem.IsRush;
-            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
+            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType());
 
             // 被弾者のステートから空中かを判定
             var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
@@ -334,7 +342,7 @@ public class HitboxSystem : NetworkBehaviour
                   $" (N{comboStep}/C{chargeType}/D={isDash})");
 
         // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし）
-        float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush);
+        float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType());
         int damage = Mathf.Max(1, Mathf.RoundToInt(GameConfig.DEFAULT_ATK * motionMultiplier));
 
         npcSoldier.TakeDamage(damage);

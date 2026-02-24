@@ -51,6 +51,7 @@ public class ComboSystem : NetworkBehaviour
     // ============================================================
 
     private CharacterStateMachine _stateMachine;
+    private PlayerMovement _playerMovement;
     private int _comboStep;             // 現在のコンボ段数（0 = 非攻撃）
     private float _attackTimer;         // 現在の攻撃モーションの残り時間
     private bool _comboWindowOpen;      // コンボ受付ウィンドウが開いているか
@@ -109,6 +110,13 @@ public class ComboSystem : NetworkBehaviour
     private void Awake()
     {
         _stateMachine = GetComponent<CharacterStateMachine>();
+        _playerMovement = GetComponent<PlayerMovement>();
+    }
+
+    /// <summary>現在の武器種を取得する</summary>
+    private WeaponType GetWeaponType()
+    {
+        return _playerMovement != null ? _playerMovement.CurrentWeaponType : WeaponType.GreatSword;
     }
 
     /// <summary>
@@ -358,7 +366,7 @@ public class ComboSystem : NetworkBehaviour
         ResetCombo();
 
         _isDashAttacking = true;
-        _dashAttackTimer = GameConfig.DASH_ATTACK_DURATION;
+        _dashAttackTimer = WeaponData.GetWeaponParams(GetWeaponType()).DashAttackDuration;
         _dashRushHitCount = 0;
         _attackSequence++;
         _segmentElapsed = 0f;
@@ -503,38 +511,22 @@ public class ComboSystem : NetworkBehaviour
     }
 
     // ============================================================
-    // 持続時間テーブル
+    // 持続時間テーブル（武器種対応）
     // ============================================================
 
     /// <summary>
-    /// コンボ段数に応じた通常攻撃持続時間を返す
+    /// コンボ段数に応じた通常攻撃持続時間を返す（武器種から取得）
     /// </summary>
-    public static float GetAttackDuration(int step)
+    private float GetAttackDuration(int step)
     {
-        return step switch
-        {
-            1 => GameConfig.N1_DURATION,
-            2 => GameConfig.N2_DURATION,
-            3 => GameConfig.N3_DURATION,
-            4 => GameConfig.N4_DURATION,
-            _ => 0.5f, // 安全策: 未定義段はデフォルト値
-        };
+        return WeaponData.GetNormalDuration(GetWeaponType(), step);
     }
 
     /// <summary>
-    /// チャージ技番号に応じた持続時間を返す
+    /// チャージ技番号に応じた持続時間を返す（武器種から取得）
     /// </summary>
-    public static float GetChargeDuration(int chargeType)
+    private float GetChargeDuration(int chargeType)
     {
-        return chargeType switch
-        {
-            1 => GameConfig.C1_DURATION,
-            2 => GameConfig.C2_DURATION,
-            3 => GameConfig.C3_DURATION,
-            4 => GameConfig.C4_DURATION,
-            5 => GameConfig.C5_DURATION,
-            6 => GameConfig.C6_DURATION,
-            _ => 0.7f, // 安全策: 未定義はデフォルト値
-        };
+        return WeaponData.GetChargeDuration(GetWeaponType(), chargeType);
     }
 }

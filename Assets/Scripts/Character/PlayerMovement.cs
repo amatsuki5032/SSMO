@@ -69,6 +69,19 @@ public class PlayerMovement : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    /// <summary>
+    /// プレイヤーの武器種（サーバー権威、全クライアント参照用）
+    /// 現時点では全プレイヤーが大剣。武器選択UIはM4後半で追加
+    /// </summary>
+    private readonly NetworkVariable<WeaponType> _netWeaponType = new(
+        WeaponType.GreatSword,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    /// <summary>現在の武器種（読み取り専用）</summary>
+    public WeaponType CurrentWeaponType => _netWeaponType.Value;
+
     // ============================================================
     // ローカル状態
     // ============================================================
@@ -544,7 +557,9 @@ public class PlayerMovement : NetworkBehaviour
         if (!canJump) return;
 
         _isJumping = true;
-        _verticalVelocity = GameConfig.JUMP_FORCE;
+        // 武器種ごとのジャンプ力（JumpHeight と重力から初速を導出）
+        float jumpHeight = WeaponData.GetWeaponParams(_netWeaponType.Value).JumpHeight;
+        _verticalVelocity = Mathf.Sqrt(2f * Mathf.Abs(GameConfig.JUMP_GRAVITY) * jumpHeight);
 
         // 離陸時の水平方向を保存（ジャンプ中は方向転換不可）
         _jumpLaunchDir = new Vector3(input.MoveInput.x, 0f, input.MoveInput.y);
@@ -780,8 +795,9 @@ public class PlayerMovement : NetworkBehaviour
             _verticalVelocity += GameConfig.JUMP_GRAVITY * GameConfig.FIXED_DELTA_TIME;
         }
 
-        // 移動（固定デルタタイム使用で決定論的）
-        Vector3 velocity = inputDir * (GameConfig.MOVE_SPEED * speedMultiplier);
+        // 移動（武器種ごとの速度を使用、固定デルタタイム使用で決定論的）
+        float moveSpeed = WeaponData.GetWeaponParams(_netWeaponType.Value).MoveSpeed;
+        Vector3 velocity = inputDir * (moveSpeed * speedMultiplier);
         velocity.y = _verticalVelocity;
         _controller.Move(velocity * GameConfig.FIXED_DELTA_TIME);
 

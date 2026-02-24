@@ -41,6 +41,7 @@
 | 名前 | 説明 |
 |------|------|
 | `bool IsDashing` | 連続移動時間が閾値超過でダッシュ状態か返す（プロパティ） |
+| `WeaponType CurrentWeaponType` | 現在の武器種（読み取り専用プロパティ、NetworkVariable同期） |
 
 **NetworkVariable**
 
@@ -48,6 +49,7 @@
 |--------|-----|------|
 | `_netPosition` | `NetworkVariable<Vector3>` | サーバー権威の位置（他プレイヤー表示用） |
 | `_netRotationY` | `NetworkVariable<float>` | サーバー権威のY回転（他プレイヤー表示用） |
+| `_netWeaponType` | `NetworkVariable<WeaponType>` | プレイヤーの武器種（サーバー権威） |
 
 **ServerRpc / ClientRpc**
 
@@ -162,7 +164,7 @@
 | 名前 | 説明 |
 |------|------|
 | `DamageResult Calculate(float, float, float, float, ElementType, int, bool)` | メインのダメージ計算（ATK×倍率→防御→空中→根性→斬保証→クリ） |
-| `float GetMotionMultiplier(int, int, bool, bool)` | 攻撃種別に応じたモーション倍率を返す |
+| `float GetMotionMultiplier(int, int, bool, bool, WeaponType)` | 攻撃種別に応じたモーション倍率を返す（武器種対応） |
 | `float GetElementDamageMultiplier(ElementType, int)` | 属性レベルに応じたダメージ倍率を返す |
 | `float GetGutsDivisor(float)` | HP帯による根性補正除数を返す |
 | `float GetSlashMinDamage(int)` | 斬属性のレベル別最低保証ダメージを返す |
@@ -281,8 +283,6 @@ NetworkVariable / RPC / GetComponent なし。
 | `void TryStartAttack()` | 通常攻撃入力を処理（サーバー権威） |
 | `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威。最終段からは派生不可） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
-| `static float GetAttackDuration(int)` | コンボ段数に応じた通常攻撃持続時間を返す |
-| `static float GetChargeDuration(int)` | チャージ技番号に応じた持続時間を返す |
 
 **NetworkVariable**
 
@@ -299,6 +299,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 取得先 | 用途 |
 |--------|------|
 | `CharacterStateMachine` | ステート判定・遷移 |
+| `PlayerMovement` | 武器種取得（WeaponData参照用） |
 
 ---
 
@@ -330,6 +331,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `ComboSystem` | 攻撃状態・セグメント経過の参照 |
 | `CharacterStateMachine` | 無双ステート判定（攻撃レベル決定用） |
 | `CharacterController` | 攻撃前進移動 |
+| `PlayerMovement` | 武器種取得（HitboxData/DamageCalculator連携用） |
 
 ※ ヒット対象（`hurtbox.GetComponent`）から以下も取得:
 `HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`
@@ -360,7 +362,7 @@ NetworkVariable / RPC / GetComponent なし。
 
 | 名前 | 説明 |
 |------|------|
-| `static HitboxData GetHitboxData(int, int, bool, bool)` | 攻撃状態に応じた HitboxData を返す |
+| `static HitboxData GetHitboxData(int, int, bool, bool, WeaponType)` | 攻撃状態に応じた HitboxData を返す（武器種リーチ反映） |
 
 NetworkVariable / RPC / GetComponent なし。
 

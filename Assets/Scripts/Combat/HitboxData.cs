@@ -15,17 +15,39 @@ public struct HitboxData
     public int MaxHitCount;       // 多段の場合の最大ヒット数
 
     /// <summary>
-    /// 現在の攻撃状態に応じた HitboxData を返す
+    /// 現在の攻撃状態に応じた HitboxData を返す（武器種対応）
+    /// 武器種のAttackRangeに基づきリーチをスケーリングする
     /// </summary>
-    public static HitboxData GetHitboxData(int comboStep, int chargeType, bool isDashAttacking, bool isRush)
+    public static HitboxData GetHitboxData(int comboStep, int chargeType, bool isDashAttacking, bool isRush, WeaponType weaponType = WeaponType.GreatSword)
     {
+        HitboxData hitbox;
         if (isDashAttacking)
-            return isRush ? DashRushHitbox() : DashHitbox();
-        if (chargeType > 0)
-            return (chargeType == 3 && isRush) ? C3RushHitbox() : ChargeHitbox(chargeType);
-        if (comboStep > 0)
-            return NormalHitbox(comboStep);
-        return default;
+            hitbox = isRush ? DashRushHitbox() : DashHitbox();
+        else if (chargeType > 0)
+            hitbox = (chargeType == 3 && isRush) ? C3RushHitbox() : ChargeHitbox(chargeType);
+        else if (comboStep > 0)
+            hitbox = NormalHitbox(comboStep);
+        else
+            return default;
+
+        // 武器種のリーチに応じてスケーリング
+        ApplyWeaponScale(ref hitbox, weaponType);
+        return hitbox;
+    }
+
+    /// <summary>
+    /// 武器種のAttackRangeに基づいてヒットボックスをスケーリングする
+    /// 大剣（3.0m）を基準に、Length/Radius をリーチ比率で調整する
+    /// 弓の100mは射撃用のため、近接スケールは最大2倍に制限
+    /// </summary>
+    private static void ApplyWeaponScale(ref HitboxData hitbox, WeaponType weaponType)
+    {
+        float baseRange = WeaponData.GreatSword.AttackRange; // 3.0m
+        float weaponRange = WeaponData.GetWeaponParams(weaponType).AttackRange;
+        float rangeScale = Mathf.Min(weaponRange / baseRange, 2.0f);
+
+        hitbox.Length *= rangeScale;
+        hitbox.Radius *= rangeScale;
     }
 
     // ============================================================
