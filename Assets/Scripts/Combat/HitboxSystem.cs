@@ -413,6 +413,9 @@ public class HitboxSystem : NetworkBehaviour
         // TODO: ヒットエフェクト・SE の再生（M2-6 以降で実装）
         Debug.Log($"[Hit-Client] ヒット通知受信: attacker={attackerNetId} → target={targetNetId}" +
                   $" pos={hitPosition}");
+
+        // BattleHUD にターゲット通知
+        BattleHUD.OnHitNotified?.Invoke(attackerNetId, targetNetId);
     }
 
     /// <summary>

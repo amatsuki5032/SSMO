@@ -589,6 +589,35 @@ NetworkVariable / RPC / GetComponent なし。
 - 0.5秒間隔で RTT(ms) / PacketLoss(%) を更新表示
 - 半透明黒背景で視認性確保
 
+---
+
+### BattleHUD.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `BattleHUD : MonoBehaviour`（クライアント専用UI） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static Action<ulong, ulong> OnHitNotified` | ヒット通知コールバック（HitboxSystem から呼ばれる） |
+
+**主な機能**
+- 画面下部中央: 自キャラHP バー（青/黄/赤の3帯色変化）
+- 画面下部中央: 無双ゲージバー（MAX時金色）
+- 画面上部中央: ターゲットHP（最後に攻撃した/された敵）
+- プレイヤー・NPC両対応のターゲット表示
+- OnGUI ベース（NetworkStatsHUD左上・DebugTestHelper右上と非重複）
+
+**依存**
+
+| 取得先 | 用途 |
+|--------|------|
+| `HealthSystem`（ローカルプレイヤー） | 自キャラHP表示 |
+| `MusouGauge`（ローカルプレイヤー） | 無双ゲージ表示 |
+| `HealthSystem` / `NPCSoldier`（ターゲット） | ターゲットHP表示 |
+
 **NetworkVariable / ServerRpc / ClientRpc**
 
 なし（MonoBehaviour。NetworkBehaviour ではない）
