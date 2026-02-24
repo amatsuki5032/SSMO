@@ -43,8 +43,25 @@ public class ComboSystem : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    /// <summary>
+    /// 連撃強化レベル（0〜3、サーバー権威）
+    /// Lv0: N4まで（デフォルト）
+    /// Lv1: N5まで解放
+    /// Lv2: N6まで解放
+    /// Lv3: エボリューション攻撃解放（M4-3bで実装）
+    /// 仙箪強化で段階的に解放される。死亡時にリセット
+    /// </summary>
+    private readonly NetworkVariable<int> _comboEnhanceLevel = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     /// <summary>現在のコンボ段数（読み取り専用）</summary>
     public int ComboStep => _networkComboStep.Value;
+
+    /// <summary>連撃強化レベル（0〜3。読み取り専用）</summary>
+    public int ComboEnhanceLevel => _comboEnhanceLevel.Value;
 
     // ============================================================
     // サーバー側管理データ — 通常攻撃
@@ -57,7 +74,7 @@ public class ComboSystem : NetworkBehaviour
     private bool _comboWindowOpen;      // コンボ受付ウィンドウが開いているか
     private bool _hasBufferedAttack;    // 先行入力バッファに攻撃入力があるか
     private float _inputBufferTimer;    // 先行入力の残り有効時間（INPUT_BUFFER_SEC で初期化、0 で無効）
-    private int _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
+    private int _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE; // 連撃強化レベルに応じて動的に変化
 
     // ============================================================
     // サーバー側管理データ — チャージ攻撃
@@ -111,6 +128,22 @@ public class ComboSystem : NetworkBehaviour
     {
         _stateMachine = GetComponent<CharacterStateMachine>();
         _playerMovement = GetComponent<PlayerMovement>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            // 初期状態: 連撃強化なし
+            _comboEnhanceLevel.Value = 0;
+            _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
+        }
+
+        // クライアント側: NetworkVariable の変更を監視して _maxComboStep を同期
+        _comboEnhanceLevel.OnValueChanged += (oldVal, newVal) =>
+        {
+            _maxComboStep = GetMaxComboStep(newVal);
+        };
     }
 
     /// <summary>現在の武器種を取得する</summary>
@@ -528,5 +561,51 @@ public class ComboSystem : NetworkBehaviour
     private float GetChargeDuration(int chargeType)
     {
         return WeaponData.GetChargeDuration(GetWeaponType(), chargeType);
+    }
+
+    // ============================================================
+    // 連撃強化（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// 連撃強化レベルに応じた最大コンボ段数を返す
+    /// Lv0: N4, Lv1: N5, Lv2+: N6
+    /// </summary>
+    private int GetMaxComboStep(int enhanceLevel)
+    {
+        return enhanceLevel switch
+        {
+            0 => GameConfig.MAX_COMBO_STEP_BASE,  // N4
+            1 => GameConfig.MAX_COMBO_STEP_BASE + 1, // N5
+            _ => GameConfig.MAX_COMBO_STEP_BASE + 2, // N6（Lv2以上）
+        };
+    }
+
+    /// <summary>
+    /// 連撃強化を+1する（仙箪強化から呼ばれる。サーバー専用）
+    /// Lv3が上限。Lv3ではエボリューション攻撃が解放される（M4-3b）
+    /// </summary>
+    public void EnhanceCombo()
+    {
+        if (!IsServer) return;
+
+        int newLevel = _comboEnhanceLevel.Value + 1;
+        if (newLevel > GameConfig.MAX_COMBO_ENHANCE_LEVEL) return;
+
+        _comboEnhanceLevel.Value = newLevel;
+        _maxComboStep = GetMaxComboStep(newLevel);
+        Debug.Log($"[Combo] {gameObject.name}: 連撃強化 Lv{newLevel}（最大N{_maxComboStep}）");
+    }
+
+    /// <summary>
+    /// 全強化をリセットする（死亡時に呼ばれる。サーバー専用）
+    /// </summary>
+    public void ResetEnhancements()
+    {
+        if (!IsServer) return;
+
+        _comboEnhanceLevel.Value = 0;
+        _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
+        Debug.Log($"[Combo] {gameObject.name}: 連撃強化リセット（N{_maxComboStep}まで）");
     }
 }

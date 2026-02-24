@@ -221,6 +221,11 @@ public class SpawnManager : NetworkBehaviour
         if (statusEffect != null)
             statusEffect.ClearAllEffects();
 
+        // 連撃強化リセット（死亡で仙箪強化が失われる）
+        var comboSystem = playerObject.GetComponent<ComboSystem>();
+        if (comboSystem != null)
+            comboSystem.ResetEnhancements();
+
         Debug.Log($"[SpawnManager] Client {clientId} リスポーン完了 → {spawnPos} (HP全回復 / 無双MAX)");
     }
 }

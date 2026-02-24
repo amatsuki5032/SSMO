@@ -144,6 +144,7 @@
 | NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)`, `NPC_DETECT_RANGE(8)`, `NPC_ATTACK_RANGE(1.5)`, `NPC_ATK_INTERVAL(1.5)`, `NPC_DETECT_INTERVAL(0.167)` |
 | ミニマップ | `MINIMAP_SIZE(200)`, `MINIMAP_RANGE(50)` |
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
+| 連撃強化 | `MAX_COMBO_ENHANCE_LEVEL(3)` |
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
 | 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
 | 凍結 | `FREEZE_PROBABILITY(0.3)`, `FREEZE_DURATION(2.0)` |
@@ -292,7 +293,10 @@ NetworkVariable / RPC / GetComponent なし。
 | `bool IsDashAttacking` | ダッシュ攻撃中か |
 | `bool IsRush` | ラッシュ中か（C3ラッシュ or ダッシュラッシュ） |
 | `void TryStartAttack()` | 通常攻撃入力を処理（サーバー権威） |
+| `int ComboEnhanceLevel` | 連撃強化レベル（0〜3。読み取り専用プロパティ。サーバー権威） |
 | `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威。最終段からは派生不可） |
+| `void EnhanceCombo()` | 連撃強化を+1する（仙箪強化用。サーバー専用。Lv3上限） |
+| `void ResetEnhancements()` | 全強化をリセットする（死亡時リセット。サーバー専用） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
 
 **NetworkVariable**
@@ -300,6 +304,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 変数名 | 型 | 説明 |
 |--------|-----|------|
 | `_networkComboStep` | `NetworkVariable<byte>` | 現在のコンボ段数（UI・他プレイヤー表示用） |
+| `_comboEnhanceLevel` | `NetworkVariable<int>` | 連撃強化レベル（0〜3。サーバー権威） |
 
 **ServerRpc / ClientRpc**
 

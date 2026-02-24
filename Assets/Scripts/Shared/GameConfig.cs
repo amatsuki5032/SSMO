@@ -234,6 +234,7 @@ public static class GameConfig
 
     // === M2-3a: 通常攻撃コンボ ===
     public const int MAX_COMBO_STEP_BASE = 4;    // 無強化での最大コンボ段数（N1〜N4）
+    public const int MAX_COMBO_ENHANCE_LEVEL = 3; // 連撃強化の最大レベル（Lv1:N5, Lv2:N6, Lv3:エボリューション解放）
 
     // 各コンボ段の持続時間（秒）— 大剣デフォルト値。武器種別は WeaponData.cs を参照
     public const float N1_DURATION = 0.5f;
