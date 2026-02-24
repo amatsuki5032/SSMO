@@ -138,7 +138,7 @@
 | カメラ | `CAMERA_DISTANCE(3.0)`, `CAMERA_HEIGHT(2.0)`, `CAMERA_SENSITIVITY(2.0)`, `CAMERA_MIN/MAX_PITCH(-10/60)` |
 | 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
 | 拠点システム | `BASE_COUNT(5)`, `BASE_CAPTURE_TIME(10)`, `BASE_CAPTURE_RADIUS(5)`, `BASE_HP_REGEN_RATE(20)` |
-| NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)` |
+| NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)`, `NPC_DETECT_RANGE(8)`, `NPC_ATTACK_RANGE(1.5)`, `NPC_ATK_INTERVAL(1.5)`, `NPC_DETECT_INTERVAL(0.167)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -751,6 +751,14 @@ NetworkVariable / RPC / GetComponent なし。
 | `bool IsDead` | 死亡フラグ |
 | `void Initialize(Team, int, Vector3)` | サーバー専用初期設定（チーム・拠点番号・移動先） |
 | `void TakeDamage(int)` | ダメージ適用（サーバー専用。HP0でデスポーン） |
+
+**AI行動（サーバー専用・FixedUpdate）**
+
+| 処理 | 説明 |
+|------|------|
+| `ScanForEnemy()` | NPC_DETECT_INTERVAL間隔でOverlapSphereNonAlloc。敵プレイヤー/敵NPCを検出 |
+| `TryAttack()` | NPC_ATK_INTERVAL間隔。前方OverlapSphereで敵にNPC_ATKダメージ。ガード判定あり |
+| `MoveToward(Vector3)` | 目標地点へ水平直線移動 |
 
 **NetworkVariable**
 

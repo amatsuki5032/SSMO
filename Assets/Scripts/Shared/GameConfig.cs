@@ -238,6 +238,10 @@ public static class GameConfig
     public const float NPC_SCALE = 0.6f;               // NPC表示スケール（プレイヤー比）
     public const float NPC_DESPAWN_DELAY = 1.5f;       // 死亡後デスポーンまでの遅延（秒）
     public const float NPC_SPAWN_OFFSET = 3f;          // 拠点中心からのスポーンオフセット（m）
+    public const float NPC_DETECT_RANGE = 8f;          // 敵検出範囲（m）
+    public const float NPC_ATTACK_RANGE = 1.5f;        // 攻撃範囲（m）
+    public const float NPC_ATK_INTERVAL = 1.5f;        // 攻撃間隔（秒）
+    public const float NPC_DETECT_INTERVAL = 0.167f;   // 敵スキャン間隔（秒。約10フレーム@60Hz）
 
     // === M2-Visual-B: 攻撃前進距離 (m) ===
     // アクティブフレーム中にキャラ前方へ移動する合計距離

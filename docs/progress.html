@@ -166,7 +166,7 @@ const PROGRESS_DATA = {
     m0: { progress: 100, status: "done" },
     m1: { progress: 100, status: "done" },
     m2: { progress: 100, status: "done" },
-    m3: { progress: 20, status: "active" },
+    m3: { progress: 25, status: "active" },
     m4: { progress: 0, status: "locked" },
     m5: { progress: 0, status: "locked" },
     m6: { progress: 0, status: "locked" },
@@ -501,10 +501,10 @@ const PROGRESS_DATA = {
     {
       id: "m3-3",
       title: "NPC AI（サーバー実行）",
-      status: "todo",
+      status: "inprogress",
       desc: "雑兵AI + 武将AI。サーバーで全AI計算",
       details: [
-        { text: "雑兵AI（最寄り敵に接近→攻撃）", done: false },
+        { text: "雑兵AI（最寄り敵に接近→攻撃）", done: true },
         { text: "武将AI（ガード/回避/コンボ/スキル）", done: false },
         { text: "AI状態の全クライアント同期", done: false },
         { text: "Spatial Hashing（多AI最適化）", done: false },
