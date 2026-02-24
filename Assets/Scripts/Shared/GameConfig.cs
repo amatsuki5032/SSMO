@@ -279,6 +279,14 @@ public static class GameConfig
     public const float ATK_BUFF_PER_ENHANCE = 0.1f;           // 攻撃バフ（+10%）
     public const float DEF_BUFF_PER_ENHANCE = 0.1f;           // 防御バフ（+10%）
 
+    // === 鍛錬（ステータス振り分け）===
+    public const float TRAINING_ATK_PER_LEVEL = 5f;        // 1段階あたりのATK増加
+    public const float TRAINING_DEF_PER_LEVEL = 5f;        // 1段階あたりのDEF増加
+    public const float TRAINING_HP_PER_LEVEL = 50f;        // 1段階あたりのHP増加
+    public const float TRAINING_MUSOU_PER_LEVEL = 5f;      // 1段階あたりの無双増加
+    public const float TRAINING_BREAK_PER_LEVEL = 5f;      // 1段階あたりの破壊力増加
+    public const int DEFAULT_TRAINING_MAX = 24;             // 武器ごとの鍛錬ポイント上限（仮: 大剣24）
+
     // === ミニマップ ===
     public const float MINIMAP_SIZE = 200f;              // ミニマップ表示サイズ (px)
     public const float MINIMAP_RANGE = 50f;              // ミニマップ表示範囲 (m、プレイヤー中心からの半径)

@@ -48,6 +48,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/EnhancementRing.cs` | EnhancementRing | 仙箪強化リング（7スロット・ATK/DEFバフ・連撃強化・サーバー権威） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
 | `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
+| `Shared/TrainingSystem.cs` | TrainingSystem | 鍛錬システム（三角数コスト・ステータス振り分け計算・static） |
 | `Shared/WeaponData.cs` | WeaponData | 武器種パラメータ管理（6種の倍率・持続時間・速度・リーチ） |
 | `Shared/CharacterState.cs` | CharacterState等 | enum定義（CharacterState・HitReaction・AttackLevel・ArmorLevel・ElementType・GamePhase等） |
 | `Shared/PlayerInput.cs` | PlayerInput | 入力構造体（INetworkSerializable。移動・攻撃・ガード・チャージ等） |

@@ -145,6 +145,7 @@
 | ミニマップ | `MINIMAP_SIZE(200)`, `MINIMAP_RANGE(50)` |
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
 | 連撃強化 | `MAX_COMBO_ENHANCE_LEVEL(3)` |
+| 鍛錬 | `TRAINING_ATK_PER_LEVEL(5)`, `TRAINING_DEF_PER_LEVEL(5)`, `TRAINING_HP_PER_LEVEL(50)`, `TRAINING_MUSOU_PER_LEVEL(5)`, `TRAINING_BREAK_PER_LEVEL(5)`, `DEFAULT_TRAINING_MAX(24)` |
 | 仙箪 | `SENTAN_DROP_RATE(1.0)`, `SENTAN_PICKUP_RADIUS(2.0)`, `SENTAN_LIFETIME(30)`, `SENTAN_REQUIRED_FOR_ENHANCE(7)` |
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
 | 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
@@ -217,6 +218,36 @@ NetworkVariable / RPC / GetComponent なし。
 | `Halberd` | 戟パラメータ（static readonly） |
 | `Fists` | 拳パラメータ（static readonly） |
 | `Bow` | 弓パラメータ（static readonly） |
+
+NetworkVariable / RPC / GetComponent なし。
+
+---
+
+### TrainingSystem.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `TrainingSystem`（static クラス） |
+
+**内部構造体**
+
+| 名前 | 説明 |
+|------|------|
+| `TrainingAllocation` | 鍛錬振り分け構造体（AtkLevel, BreakLevel, DefLevel, HpLevel, MusouLevel） |
+
+**主要 public メソッド**
+
+| 名前 | 説明 |
+|------|------|
+| `int CalcCost(int)` | 指定段階までの累積コスト（三角数: n×(n+1)÷2） |
+| `int CalcTotalCost(TrainingAllocation)` | 振り分け全体の合計コスト |
+| `bool IsValid(TrainingAllocation, int)` | 振り分けが上限内か判定 |
+| `float CalcStatBonus(int, float)` | 段階に応じたボーナス値（level × basePerLevel） |
+| `float GetAtkBonus(TrainingAllocation)` | ATKボーナスを返す |
+| `float GetDefBonus(TrainingAllocation)` | DEFボーナスを返す |
+| `float GetHpBonus(TrainingAllocation)` | HPボーナスを返す |
+| `float GetMusouBonus(TrainingAllocation)` | 無双ゲージボーナスを返す |
+| `float GetBreakBonus(TrainingAllocation)` | 破壊力ボーナスを返す |
 
 NetworkVariable / RPC / GetComponent なし。
 
