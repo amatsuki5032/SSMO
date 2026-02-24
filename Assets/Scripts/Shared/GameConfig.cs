@@ -273,6 +273,12 @@ public static class GameConfig
     public const float SENTAN_LIFETIME = 30f;              // 消滅までの時間 (秒)
     public const int SENTAN_REQUIRED_FOR_ENHANCE = 7;      // 強化に必要な仙箪数
 
+    // === 仙箪強化リング ===
+    public const int SENTAN_SLOTS = 7;                        // リングスロット数
+    public const float RING_ROTATION_SPEED = 2f;              // リング回転速度（スロット/秒）
+    public const float ATK_BUFF_PER_ENHANCE = 0.1f;           // 攻撃バフ（+10%）
+    public const float DEF_BUFF_PER_ENHANCE = 0.1f;           // 防御バフ（+10%）
+
     // === ミニマップ ===
     public const float MINIMAP_SIZE = 200f;              // ミニマップ表示サイズ (px)
     public const float MINIMAP_RANGE = 50f;              // ミニマップ表示範囲 (m、プレイヤー中心からの半径)

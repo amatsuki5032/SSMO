@@ -16,6 +16,7 @@ public struct PlayerInput : INetworkSerializable
     public bool ChargeHeld;         // △ 長押し（EG準備用）
     public bool MusouPressed;       // ○ 押した瞬間（無双発動）
     public bool MusouHeld;          // ○ 長押し（無双チャージ）
+    public bool EnhancePressed;     // R1（Eキー）仙箪強化リング発動
     public uint Tick;               // ティック番号
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -28,6 +29,7 @@ public struct PlayerInput : INetworkSerializable
         serializer.SerializeValue(ref ChargeHeld);
         serializer.SerializeValue(ref MusouPressed);
         serializer.SerializeValue(ref MusouHeld);
+        serializer.SerializeValue(ref EnhancePressed);
         serializer.SerializeValue(ref Tick);
     }
 }

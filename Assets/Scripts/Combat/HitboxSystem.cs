@@ -32,6 +32,7 @@ public class HitboxSystem : NetworkBehaviour
     private CharacterController _characterController;
     private PlayerMovement _playerMovement;
     private ElementSystem _elementSystem;
+    private EnhancementRing _enhancementRing;
 
     // ============================================================
     // ヒット管理
@@ -57,6 +58,7 @@ public class HitboxSystem : NetworkBehaviour
         _characterController = GetComponent<CharacterController>();
         _playerMovement = GetComponent<PlayerMovement>();
         _elementSystem = GetComponent<ElementSystem>();
+        _enhancementRing = GetComponent<EnhancementRing>();
     }
 
     /// <summary>現在の武器種を取得する</summary>
@@ -292,10 +294,20 @@ public class HitboxSystem : NetworkBehaviour
             if (_elementSystem != null)
                 _elementSystem.GetAttackElement(chargeType, out attackElement, out attackElementLevel);
 
+            // ATK/DEFバフ倍率を適用（強化リングによるバフ）
+            float attackerATK = GameConfig.DEFAULT_ATK;
+            if (_enhancementRing != null)
+                attackerATK *= _enhancementRing.AtkMultiplier;
+
+            float defenderDEF = GameConfig.DEFAULT_DEF;
+            var targetRing = hurtbox.GetComponent<EnhancementRing>();
+            if (targetRing != null)
+                defenderDEF *= targetRing.DefMultiplier;
+
             var damageResult = DamageCalculator.Calculate(
-                GameConfig.DEFAULT_ATK,
+                attackerATK,
                 motionMultiplier,
-                GameConfig.DEFAULT_DEF,
+                defenderDEF,
                 targetHealth.GetHpRatio(),
                 element: attackElement,
                 elementLevel: attackElementLevel,

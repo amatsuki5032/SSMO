@@ -45,6 +45,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/EGSystem.cs` | EGSystem | エレメンタルガード（準備・完成・カウンター・無双ゲージ連携） |
 | `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
 | `Combat/SentanItem.cs` | SentanItem | 仙箪アイテム（NPC死亡時ドロップ・自動拾い・サーバー権威） |
+| `Combat/EnhancementRing.cs` | EnhancementRing | 仙箪強化リング（7スロット・ATK/DEFバフ・連撃強化・サーバー権威） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
 | `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
 | `Shared/WeaponData.cs` | WeaponData | 武器種パラメータ管理（6種の倍率・持続時間・速度・リーチ） |
@@ -54,6 +55,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Netcode/HelloNetwork.cs` | HelloNetwork | 接続確認用（M0で作成） |
 | `UI/NetworkStatsHUD.cs` | NetworkStatsHUD | ネットワーク統計表示（RTT・PacketLoss） |
 | `UI/BattleHUD.cs` | BattleHUD | 戦闘HUD（自キャラHP・無双ゲージ・ターゲットHP） |
+| `UI/EnhancementRingHUD.cs` | EnhancementRingHUD | 強化リングHUD（仙箪カウント・スロット表示・クライアント専用） |
 | `UI/MinimapHUD.cs` | MinimapHUD | ミニマップ（プレイヤー位置・拠点表示・全体マップ切替） |
 | `UI/ScoreboardHUD.cs` | ScoreboardHUD | スコアボード（タイマー・チーム撃破数・勝敗表示） |
 | `Server/TeamManager.cs` | TeamManager | チーム管理（サーバー権威・自動振り分け・NetworkList同期） |
@@ -81,7 +83,8 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 12. ReactionSystem（被弾リアクション）
 13. ElementSystem（属性管理）
 14. StatusEffectManager（状態異常管理）
-15. DebugTestHelper（デバッグ用、Editor限定）
+15. EnhancementRing（仙箪強化リング）
+16. DebugTestHelper（デバッグ用、Editor限定）
 
 ### ドキュメント構成
 

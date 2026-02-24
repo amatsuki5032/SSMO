@@ -91,6 +91,7 @@ public class PlayerMovement : NetworkBehaviour
     private ComboSystem _comboSystem;
     private EGSystem _egSystem;
     private MusouGauge _musouGauge;
+    private EnhancementRing _enhancementRing;
     private CameraController _cameraController; // オーナーのみ使用（カメラ基準移動用）
     private float _verticalVelocity;
 
@@ -130,6 +131,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool _chargeHeld;      // チャージ長押し（EG準備用）
     private bool _musouPressed;    // 無双（押した瞬間のみ、消費後リセット）
     private bool _musouHeld;       // 無双長押し（MusouCharge用）
+    private bool _enhancePressed;  // R1（Eキー、押した瞬間のみ、消費後リセット）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -158,6 +160,7 @@ public class PlayerMovement : NetworkBehaviour
         _comboSystem = GetComponent<ComboSystem>();
         _egSystem = GetComponent<EGSystem>();
         _musouGauge = GetComponent<MusouGauge>();
+        _enhancementRing = GetComponent<EnhancementRing>();
         if (_stateMachine == null)
         {
             Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterStateMachine が見つかりません");
@@ -263,6 +266,10 @@ public class PlayerMovement : NetworkBehaviour
 
         // 無双長押し（MusouCharge 用）
         _musouHeld = Input.GetKey(KeyCode.Q) || Input.GetMouseButton(2);
+
+        // R1（Eキー）: 仙箪強化リング発動
+        if (Input.GetKeyDown(KeyCode.E))
+            _enhancePressed = true;
     }
 
     /// <summary>
@@ -413,6 +420,7 @@ public class PlayerMovement : NetworkBehaviour
             ChargeHeld = _chargeHeld,
             MusouPressed = _musouPressed,
             MusouHeld = _musouHeld,
+            EnhancePressed = _enhancePressed,
             Tick = _currentTick
         };
 
@@ -421,6 +429,7 @@ public class PlayerMovement : NetworkBehaviour
         _attackPressed = false;
         _chargePressed = false;
         _musouPressed = false;
+        _enhancePressed = false;
 
         if (IsServer)
         {
@@ -451,6 +460,9 @@ public class PlayerMovement : NetworkBehaviour
                 if (input.MusouPressed) _musouGauge.TryActivateMusou();
                 _musouGauge.ProcessMusouCharge(input.MusouHeld);
             }
+            // R1: 仙箪強化リング発動
+            if (input.EnhancePressed && _enhancementRing != null)
+                _enhancementRing.TryActivateSlot();
             Vector2 move = GetEffectiveMove(input);
             float speedMul = GetSpeedMultiplier();
             if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
@@ -888,6 +900,10 @@ public class PlayerMovement : NetworkBehaviour
             if (input.MusouPressed) _musouGauge.TryActivateMusou();
             _musouGauge.ProcessMusouCharge(input.MusouHeld);
         }
+
+        // R1: 仙箪強化リング発動（サーバー権威）
+        if (input.EnhancePressed && _enhancementRing != null)
+            _enhancementRing.TryActivateSlot();
 
         // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
         Vector2 move = GetEffectiveMove(input);

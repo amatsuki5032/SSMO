@@ -265,6 +265,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `ChargeHeld` | `bool` | △ 長押し（EG準備用） |
 | `MusouPressed` | `bool` | ○（押した瞬間） |
 | `MusouHeld` | `bool` | ○ 長押し（無双チャージ用） |
+| `EnhancePressed` | `bool` | R1（Eキー）仙箪強化リング発動 |
 | `Tick` | `uint` | ティック番号 |
 
 **主要 public メソッド**
@@ -392,6 +393,58 @@ NetworkVariable / RPC / GetComponent なし。
 | 取得先 | 用途 |
 |--------|------|
 | `ComboSystem`（プレイヤー） | 仙箪カウント加算 |
+
+---
+
+### EnhancementRing.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `EnhancementRing : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `bool IsRingActive` | リング回転中か（読み取り専用） |
+| `int RingPosition` | 現在のリング位置 0〜6（読み取り専用） |
+| `int EnhanceCount` | 発動済み回数（読み取り専用） |
+| `int AtkBuffCount` | 攻撃バフ回数（読み取り専用） |
+| `int DefBuffCount` | 防御バフ回数（読み取り専用） |
+| `float AtkMultiplier` | ATK倍率 = 1.0 + バフ回数 × 0.1 |
+| `float DefMultiplier` | DEF倍率 = 1.0 + バフ回数 × 0.1 |
+| `void TryActivateSlot()` | R1入力によるスロット発動（サーバー権威） |
+| `void ResetAllEnhancements()` | 全強化リセット（死亡時。ComboSystem.ResetEnhancements も内部で呼ぶ。サーバー専用） |
+| `string GetSlotName(int)` | スロット効果名を返す（UI用） |
+
+**NetworkVariable**
+
+| 名前 | 型 | 説明 |
+|------|-----|------|
+| `_isRingActive` | `NetworkVariable<bool>` | リング回転中フラグ |
+| `_ringPosition` | `NetworkVariable<int>` | 現在のリング位置 |
+| `_enhanceCount` | `NetworkVariable<int>` | 発動済み回数 |
+| `_atkBuffCount` | `NetworkVariable<int>` | ATKバフ回数 |
+| `_defBuffCount` | `NetworkVariable<int>` | DEFバフ回数 |
+
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `ComboSystem` | 仙箪カウント参照・連撃強化 |
+
+---
+
+### EnhancementRingHUD.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `EnhancementRingHUD : MonoBehaviour` |
+
+**主な機能**
+- クライアント専用UI（OnGUI）
+- 画面右下に仙箪カウント・リングスロット表示
+- リング回転中は現在スロットをハイライト
 
 ---
 
