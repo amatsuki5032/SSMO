@@ -34,6 +34,7 @@
 | 項目 | 内容 |
 |------|------|
 | クラス名 | `PlayerMovement : NetworkBehaviour` |
+| 実行順序 | `[DefaultExecutionOrder(-10)]` — ComboSystem より先に入力処理を実行 |
 
 **主要 public メソッド / プロパティ**
 
@@ -129,7 +130,7 @@
 | マップ | `MAP_SIZE(100)`, `MAP_HALF(50)`, `WALL_HEIGHT(10)`, `BASE_SIZE(3)`, `BASE_POSITIONS[5]` (readonly Vector3[]) |
 | スポーン座標 | `TEAM_RED_SPAWN_POS_1/2` (readonly Vector3), `TEAM_BLUE_SPAWN_POS_1/2` (readonly Vector3) |
 | 戦闘 | `INPUT_BUFFER_SEC(0.15)`, `COMBO_WINDOW_RATIO(0.3)` |
-| ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_KNOCKBACK_DISTANCE(0.3)` |
+| ガード | `GUARD_ANGLE(180)`, `EG_CHARGE_SEC(1.0)`, `GUARD_KNOCKBACK_DISTANCE(0.1)` |
 | ジャンプ | `JUMP_FORCE(8)`, `JUMP_GRAVITY(-20)` |
 | 無双ゲージ | `MUSOU_GAUGE_MAX(100)`, `MUSOU_DURATION_SEC(4)` |
 | HP・ダメージ | `DEFAULT_MAX_HP(1000)`, `DEFAULT_ATK(100)`, `DEFAULT_DEF(50)` |
@@ -232,6 +233,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 項目 | 内容 |
 |------|------|
 | クラス名 | `ComboSystem : NetworkBehaviour` |
+| 実行順序 | `[DefaultExecutionOrder(10)]` — PlayerMovement の入力処理後にタイマー更新 |
 
 **主要 public メソッド / プロパティ**
 
@@ -244,7 +246,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `bool IsDashAttacking` | ダッシュ攻撃中か |
 | `bool IsRush` | ラッシュ中か（C3ラッシュ or ダッシュラッシュ） |
 | `void TryStartAttack()` | 通常攻撃入力を処理（サーバー権威） |
-| `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威） |
+| `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威。最終段からは派生不可） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
 | `static float GetAttackDuration(int)` | コンボ段数に応じた通常攻撃持続時間を返す |
 | `static float GetChargeDuration(int)` | チャージ技番号に応じた持続時間を返す |
