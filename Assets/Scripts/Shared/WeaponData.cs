@@ -66,6 +66,12 @@ public static class WeaponData
         public float JumpAttackMultiplier;
         /// <summary>ジャンプチャージ (JC) のモーション倍率</summary>
         public float JumpChargeMultiplier;
+
+        // --- エボリューション攻撃 E6-E9 ---
+        /// <summary>E6-E9 のモーション倍率（連撃Lv3+無双MAX時に解放）</summary>
+        public float[] EvolutionMultipliers;
+        /// <summary>E6-E9 の持続時間（秒）</summary>
+        public float[] EvolutionDurations;
     }
 
     // ============================================================
@@ -123,6 +129,10 @@ public static class WeaponData
         // ジャンプ攻撃
         JumpAttackMultiplier = 0.8f,
         JumpChargeMultiplier = 1.5f,
+
+        // エボリューション E6-E9（大剣: 高威力フィニッシュ重視）
+        EvolutionMultipliers = new[] { 1.3f, 1.5f, 1.7f, 2.0f },
+        EvolutionDurations   = new[] { 0.5f, 0.5f, 0.55f, 0.8f }, // E9はC4モーション流用で長め
     };
 
     // ============================================================
@@ -153,6 +163,10 @@ public static class WeaponData
 
         JumpAttackMultiplier = 0.5f,
         JumpChargeMultiplier = 1.0f,
+
+        // エボリューション E6-E9（双剣: 手数型・高速）
+        EvolutionMultipliers = new[] { 0.9f, 1.0f, 1.2f, 1.5f },
+        EvolutionDurations   = new[] { 0.35f, 0.35f, 0.35f, 0.6f },
     };
 
     // ============================================================
@@ -183,6 +197,10 @@ public static class WeaponData
 
         JumpAttackMultiplier = 0.7f,
         JumpChargeMultiplier = 1.3f,
+
+        // エボリューション E6-E9（槍: リーチ突き連撃）
+        EvolutionMultipliers = new[] { 1.1f, 1.3f, 1.5f, 1.8f },
+        EvolutionDurations   = new[] { 0.45f, 0.45f, 0.5f, 0.7f },
     };
 
     // ============================================================
@@ -213,6 +231,10 @@ public static class WeaponData
 
         JumpAttackMultiplier = 0.7f,
         JumpChargeMultiplier = 1.4f,
+
+        // エボリューション E6-E9（戟: 回転斬りフィニッシュ）
+        EvolutionMultipliers = new[] { 1.2f, 1.4f, 1.6f, 1.9f },
+        EvolutionDurations   = new[] { 0.45f, 0.45f, 0.5f, 0.75f },
     };
 
     // ============================================================
@@ -243,6 +265,10 @@ public static class WeaponData
 
         JumpAttackMultiplier = 0.5f,
         JumpChargeMultiplier = 0.9f,
+
+        // エボリューション E6-E9（拳: 超高速ラッシュフィニッシュ）
+        EvolutionMultipliers = new[] { 0.8f, 0.9f, 1.1f, 1.4f },
+        EvolutionDurations   = new[] { 0.3f, 0.3f, 0.3f, 0.55f },
     };
 
     // ============================================================
@@ -273,6 +299,10 @@ public static class WeaponData
 
         JumpAttackMultiplier = 0.7f,
         JumpChargeMultiplier = 1.2f,
+
+        // エボリューション E6-E9（弓: 近接フィニッシュ）
+        EvolutionMultipliers = new[] { 1.1f, 1.3f, 1.5f, 1.8f },
+        EvolutionDurations   = new[] { 0.5f, 0.5f, 0.55f, 0.75f },
     };
 
     // ============================================================
@@ -333,6 +363,34 @@ public static class WeaponData
         int idx = chargeType - 1;
         if (idx < 0 || idx >= p.ChargeDurations.Length) return 0.7f;
         return p.ChargeDurations[idx];
+    }
+
+    /// <summary>
+    /// 武器種のE攻撃モーション倍率を返す（DamageCalculator 連携用）
+    /// </summary>
+    /// <param name="type">武器種</param>
+    /// <param name="evoStep">エボリューション段数（6-9）</param>
+    /// <returns>モーション倍率。範囲外は 1.0f</returns>
+    public static float GetEvolutionMultiplier(WeaponType type, int evoStep)
+    {
+        var p = GetWeaponParams(type);
+        int idx = evoStep - 6; // E6=index0, E9=index3
+        if (idx < 0 || p.EvolutionMultipliers == null || idx >= p.EvolutionMultipliers.Length) return 1.0f;
+        return p.EvolutionMultipliers[idx];
+    }
+
+    /// <summary>
+    /// 武器種のE攻撃持続時間を返す（ComboSystem 連携用）
+    /// </summary>
+    /// <param name="type">武器種</param>
+    /// <param name="evoStep">エボリューション段数（6-9）</param>
+    /// <returns>持続時間（秒）。範囲外は 0.5f</returns>
+    public static float GetEvolutionDuration(WeaponType type, int evoStep)
+    {
+        var p = GetWeaponParams(type);
+        int idx = evoStep - 6;
+        if (idx < 0 || p.EvolutionDurations == null || idx >= p.EvolutionDurations.Length) return 0.5f;
+        return p.EvolutionDurations[idx];
     }
 
     /// <summary>
@@ -580,6 +638,42 @@ public static class WeaponData
             Offset = new UnityEngine.Vector3(0f, 0.5f, 0f),
             ActiveStartFrame = p.NormalStartFrame,
             ActiveEndFrame = p.NormalStartFrame + p.NormalActiveFrames,
+            MultiHit = false,
+            MaxHitCount = 1
+        };
+    }
+
+    /// <summary>
+    /// 武器種のエボリューション攻撃ヒットボックスを生成する
+    /// E6=N1流用, E7=N2流用, E8=N3流用, E9=C4流用（フィニッシュ）
+    /// チャージ攻撃レベルとして扱うため、チャージプロファイルベースでスケーリング
+    /// </summary>
+    /// <param name="type">武器種</param>
+    /// <param name="evoStep">エボリューション段数（6-9）</param>
+    public static HitboxData GetEvolutionHitbox(WeaponType type, int evoStep)
+    {
+        var p = GetHitboxProfile(type);
+        // E6-E8: N攻撃モーション流用（段数ごとにスケーリング）
+        // E9: C4モーション流用（フィニッシュ、広範囲）
+        if (evoStep == 9)
+        {
+            // E9 = C4ヒットボックス流用
+            return GetChargeHitbox(type, 4);
+        }
+
+        // E6=N1相当, E7=N2相当, E8=N3相当 だが、チャージ攻撃レベルなので少し広め
+        int normalStep = evoStep - 5; // E6→1, E7→2, E8→3
+        float scale = 1.0f + (normalStep - 1) * 0.1f;
+        float evoScale = 1.15f; // チャージ攻撃レベルなので通常より15%広い
+        int start = p.NormalStartFrame + (normalStep - 1);
+        int active = p.NormalActiveFrames + (normalStep - 1) * 2;
+        return new HitboxData
+        {
+            Radius = p.NormalRadius * scale * evoScale,
+            Length = p.NormalLength * scale * evoScale,
+            Offset = new UnityEngine.Vector3(0f, 1f, 0f),
+            ActiveStartFrame = start,
+            ActiveEndFrame = start + active,
             MultiHit = false,
             MaxHitCount = 1
         };

@@ -98,11 +98,12 @@ public class HitboxSystem : NetworkBehaviour
         int chargeType = _comboSystem.ChargeType;
         bool isDash = _comboSystem.IsDashAttacking;
         bool isRush = _comboSystem.IsRush;
+        bool isEvolution = _comboSystem.IsEvolution;
 
         if (comboStep == 0 && chargeType == 0 && !isDash) return;
 
-        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映）
-        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType());
+        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映、エボリューション対応）
+        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvolution);
         if (hitbox.ActiveEndFrame == 0) return; // データが無い
 
         // 現在のフレーム番号を計算（経過時間 → フレーム）
@@ -273,7 +274,8 @@ public class HitboxSystem : NetworkBehaviour
         if (targetHealth != null)
         {
             bool isRush = _comboSystem.IsRush;
-            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType());
+            bool isEvo = _comboSystem.IsEvolution;
+            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvo);
 
             // 被弾者のステートから空中かを判定
             var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
@@ -403,7 +405,7 @@ public class HitboxSystem : NetworkBehaviour
 
     /// <summary>
     /// 攻撃種別に応じた攻撃レベルを返す（アーマー判定用）
-    /// 無双中は Musou、チャージは Charge、それ以外は Normal
+    /// 無双中は Musou、チャージ/エボリューションは Charge、それ以外は Normal
     /// </summary>
     private AttackLevel GetAttackLevel(int comboStep, int chargeType)
     {
@@ -414,6 +416,10 @@ public class HitboxSystem : NetworkBehaviour
 
         // チャージ攻撃は攻撃レベル3
         if (chargeType > 0)
+            return AttackLevel.Charge;
+
+        // エボリューション攻撃もチャージ攻撃レベル（combat-spec準拠）
+        if (_comboSystem.IsEvolution)
             return AttackLevel.Charge;
 
         // 通常攻撃・ダッシュ攻撃は攻撃レベル2

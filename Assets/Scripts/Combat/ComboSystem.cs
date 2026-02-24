@@ -121,6 +121,16 @@ public class ComboSystem : NetworkBehaviour
                        || (_isDashAttacking && _dashRushHitCount > 0);
 
     // ============================================================
+    // サーバー側管理データ — エボリューション攻撃
+    // ============================================================
+
+    private bool _isEvolution;  // エボリューション攻撃中フラグ（E6-E9）
+    private MusouGauge _musouGauge;
+
+    /// <summary>エボリューション攻撃中か（HitboxSystem 用。E はチャージ攻撃レベル）</summary>
+    public bool IsEvolution => _isEvolution;
+
+    // ============================================================
     // ライフサイクル
     // ============================================================
 
@@ -128,6 +138,7 @@ public class ComboSystem : NetworkBehaviour
     {
         _stateMachine = GetComponent<CharacterStateMachine>();
         _playerMovement = GetComponent<PlayerMovement>();
+        _musouGauge = GetComponent<MusouGauge>();
     }
 
     public override void OnNetworkSpawn()
@@ -174,6 +185,7 @@ public class ComboSystem : NetworkBehaviour
     /// - Idle/Move → N1 開始
     /// - Attack + コンボウィンドウ → 次の段に進む
     /// - Attack + ウィンドウ前 → 先行入力バッファに保存
+    /// - N5 完了 + 連撃Lv3 + 無双MAX → E6 に移行（エボリューション）
     /// </summary>
     public void TryStartAttack()
     {
@@ -191,19 +203,29 @@ public class ComboSystem : NetworkBehaviour
         }
         else if (current == CharacterState.Attack)
         {
-            if (_comboWindowOpen && _comboStep < _maxComboStep)
+            int effectiveMax = GetEffectiveMaxStep();
+
+            if (_comboWindowOpen && _comboStep < effectiveMax)
             {
-                // コンボウィンドウ内: 次の段に進む
-                StartComboStep(_comboStep + 1);
+                int nextStep = _comboStep + 1;
+
+                // N5 → E6 移行判定（エボリューション開始）
+                if (nextStep == 6 && !_isEvolution && CanStartEvolution())
+                {
+                    _isEvolution = true;
+                    Debug.Log($"[Combo] {gameObject.name}: エボリューション開始！");
+                }
+
+                StartComboStep(nextStep);
             }
-            else if (!_comboWindowOpen && _comboStep < _maxComboStep)
+            else if (!_comboWindowOpen && _comboStep < effectiveMax)
             {
                 // ウィンドウ前: 先行入力バッファに保存（150ms 有効）
                 _hasBufferedAttack = true;
                 _inputBufferTimer = GameConfig.INPUT_BUFFER_SEC;
                 Debug.Log($"[Combo] {gameObject.name}: 先行入力バッファリング");
             }
-            // _comboStep >= _maxComboStep: 最大段数なので受け付けない
+            // effectiveMax 以上: 最大段数なので受け付けない
         }
     }
 
@@ -315,10 +337,20 @@ public class ComboSystem : NetworkBehaviour
                 _comboWindowOpen = true;
 
                 // 先行入力バッファを消費
-                if (_hasBufferedAttack && _comboStep < _maxComboStep)
+                int effectiveMax = GetEffectiveMaxStep();
+                if (_hasBufferedAttack && _comboStep < effectiveMax)
                 {
                     int nextStep = _comboStep + 1;
-                    Debug.Log($"[Combo] {gameObject.name}: バッファ消費 → N{nextStep}");
+
+                    // N5 → E6 移行判定（バッファ消費時のエボリューション開始）
+                    if (nextStep == 6 && !_isEvolution && CanStartEvolution())
+                    {
+                        _isEvolution = true;
+                        Debug.Log($"[Combo] {gameObject.name}: エボリューション開始（バッファ）！");
+                    }
+
+                    string label = (_isEvolution && nextStep >= 6) ? $"E{nextStep}" : $"N{nextStep}";
+                    Debug.Log($"[Combo] {gameObject.name}: バッファ消費 → {label}");
                     StartComboStep(nextStep);
                     return;
                 }
@@ -442,7 +474,7 @@ public class ComboSystem : NetworkBehaviour
     // ============================================================
 
     /// <summary>
-    /// 新しいコンボ段を開始する
+    /// 新しいコンボ段を開始する（N攻撃・E攻撃共通）
     /// </summary>
     private void StartComboStep(int step)
     {
@@ -454,11 +486,13 @@ public class ComboSystem : NetworkBehaviour
         _networkComboStep.Value = (byte)step;
         _attackSequence++;
         _segmentElapsed = 0f;
-        Debug.Log($"[Combo] {gameObject.name}: N{step} 開始");
+
+        string label = (_isEvolution && step >= 6) ? $"E{step}" : $"N{step}";
+        Debug.Log($"[Combo] {gameObject.name}: {label} 開始");
     }
 
     /// <summary>
-    /// 通常攻撃コンボ状態をリセットする
+    /// 通常攻撃コンボ状態をリセットする（エボリューションもリセット）
     /// </summary>
     private void ResetCombo()
     {
@@ -467,6 +501,7 @@ public class ComboSystem : NetworkBehaviour
         _comboWindowOpen = false;
         _hasBufferedAttack = false;
         _inputBufferTimer = 0f;
+        _isEvolution = false;
         _networkComboStep.Value = 0;
     }
 
@@ -548,10 +583,13 @@ public class ComboSystem : NetworkBehaviour
     // ============================================================
 
     /// <summary>
-    /// コンボ段数に応じた通常攻撃持続時間を返す（武器種から取得）
+    /// コンボ段数に応じた攻撃持続時間を返す（N攻撃 or エボリューション、武器種対応）
     /// </summary>
     private float GetAttackDuration(int step)
     {
+        // エボリューション攻撃 E6-E9
+        if (_isEvolution && step >= 6)
+            return WeaponData.GetEvolutionDuration(GetWeaponType(), step);
         return WeaponData.GetNormalDuration(GetWeaponType(), step);
     }
 
@@ -561,6 +599,37 @@ public class ComboSystem : NetworkBehaviour
     private float GetChargeDuration(int chargeType)
     {
         return WeaponData.GetChargeDuration(GetWeaponType(), chargeType);
+    }
+
+    // ============================================================
+    // エボリューション攻撃（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>エボリューション攻撃の最大段数（E9）</summary>
+    private const int MAX_EVOLUTION_STEP = 9;
+
+    /// <summary>
+    /// エボリューション攻撃の発動条件を満たすか判定する
+    /// 条件: 連撃強化Lv3 + 無双ゲージMAX
+    /// </summary>
+    private bool CanStartEvolution()
+    {
+        if (_comboEnhanceLevel.Value < GameConfig.MAX_COMBO_ENHANCE_LEVEL) return false;
+        return _musouGauge != null && _musouGauge.IsGaugeFull;
+    }
+
+    /// <summary>
+    /// 現在のコンボの実効最大段数を返す
+    /// エボリューション中は E9(=9)、N5でエボリューション開始可能なら9、それ以外は _maxComboStep
+    /// </summary>
+    private int GetEffectiveMaxStep()
+    {
+        if (_isEvolution) return MAX_EVOLUTION_STEP;
+
+        // N5 時点でエボリューション発動可能なら、E9 まで継続可能
+        if (_comboStep == 5 && CanStartEvolution()) return MAX_EVOLUTION_STEP;
+
+        return _maxComboStep;
     }
 
     // ============================================================

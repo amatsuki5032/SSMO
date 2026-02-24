@@ -105,7 +105,7 @@ public static class DamageCalculator
     /// 攻撃の種類に応じたモーション倍率を返す（武器種対応）
     /// WeaponData から各武器種のパラメータを参照する
     /// </summary>
-    public static float GetMotionMultiplier(int comboStep, int chargeType, bool isDash, bool isRush, WeaponType weaponType = WeaponType.GreatSword)
+    public static float GetMotionMultiplier(int comboStep, int chargeType, bool isDash, bool isRush, WeaponType weaponType = WeaponType.GreatSword, bool isEvolution = false)
     {
         // ダッシュ攻撃
         if (isDash)
@@ -114,6 +114,10 @@ public static class DamageCalculator
         // チャージ攻撃
         if (chargeType > 0)
             return WeaponData.GetChargeMultiplier(weaponType, chargeType);
+
+        // エボリューション攻撃（E6-E9）
+        if (isEvolution && comboStep >= 6)
+            return WeaponData.GetEvolutionMultiplier(weaponType, comboStep);
 
         // 通常攻撃
         return WeaponData.GetNormalMultiplier(weaponType, comboStep);

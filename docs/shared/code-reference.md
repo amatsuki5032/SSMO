@@ -169,7 +169,7 @@
 | 名前 | 説明 |
 |------|------|
 | `DamageResult Calculate(float, float, float, float, ElementType, int, bool)` | メインのダメージ計算（ATK×倍率→防御→空中→根性→斬保証→クリ） |
-| `float GetMotionMultiplier(int, int, bool, bool, WeaponType)` | 攻撃種別に応じたモーション倍率を返す（武器種対応） |
+| `float GetMotionMultiplier(int, int, bool, bool, WeaponType, bool)` | 攻撃種別に応じたモーション倍率を返す（武器種対応・エボリューション対応） |
 | `float GetElementDamageMultiplier(ElementType, int)` | 属性レベルに応じたダメージ倍率を返す |
 | `float GetGutsDivisor(float)` | HP帯による根性補正除数を返す |
 | `float GetSlashMinDamage(int)` | 斬属性のレベル別最低保証ダメージを返す |
@@ -207,6 +207,9 @@ NetworkVariable / RPC / GetComponent なし。
 | `HitboxData GetDashRushHitbox(WeaponType)` | 武器種のダッシュラッシュヒットボックスを生成 |
 | `HitboxData GetJumpAttackHitbox(WeaponType)` | 武器種のジャンプ攻撃ヒットボックスを生成 |
 | `HitboxData GetJumpChargeHitbox(WeaponType)` | 武器種のジャンプチャージヒットボックスを生成 |
+| `float GetEvolutionMultiplier(WeaponType, int)` | 武器種のE攻撃モーション倍率を返す（E6-E9） |
+| `float GetEvolutionDuration(WeaponType, int)` | 武器種のE攻撃持続時間を返す（E6-E9） |
+| `HitboxData GetEvolutionHitbox(WeaponType, int)` | 武器種のエボリューション攻撃ヒットボックスを生成（E6-E9） |
 | `GreatSword` | 大剣パラメータ（static readonly） |
 | `DualBlades` | 双剣パラメータ（static readonly） |
 | `Spear` | 槍パラメータ（static readonly） |
@@ -295,6 +298,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `void TryStartAttack()` | 通常攻撃入力を処理（サーバー権威） |
 | `int ComboEnhanceLevel` | 連撃強化レベル（0〜3。読み取り専用プロパティ。サーバー権威） |
 | `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威。最終段からは派生不可） |
+| `bool IsEvolution` | エボリューション攻撃中か（E6-E9。HitboxSystem用。読み取り専用プロパティ） |
 | `void EnhanceCombo()` | 連撃強化を+1する（仙箪強化用。サーバー専用。Lv3上限） |
 | `void ResetEnhancements()` | 全強化をリセットする（死亡時リセット。サーバー専用） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
