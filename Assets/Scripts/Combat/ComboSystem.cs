@@ -23,6 +23,9 @@ using UnityEngine;
 /// コンボウィンドウ: 各攻撃モーションの最後 30% の区間
 /// 先行入力: ウィンドウ前に押された攻撃入力をバッファし、ウィンドウ到達時に自動消費（150ms）
 /// </summary>
+// 実行順序: PlayerMovement(-10) → CharacterStateMachine(0) → ComboSystem(10)
+// PlayerMovement が入力をディスパッチした後にタイマーを更新する
+[DefaultExecutionOrder(10)]
 [RequireComponent(typeof(CharacterStateMachine))]
 public class ComboSystem : NetworkBehaviour
 {

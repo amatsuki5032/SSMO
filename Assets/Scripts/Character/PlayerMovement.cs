@@ -12,6 +12,10 @@ using UnityEngine;
 ///
 /// 参考: Gabriel Gambetta "Client-Side Prediction and Server Reconciliation"
 /// </summary>
+// 実行順序: PlayerMovement(-10) → CharacterStateMachine(0) → ComboSystem(10)
+// 入力処理（PlayerMovement）がタイマー更新（ComboSystem）より先に走ることを保証
+// これによりコンボタイマー満了とチャージ入力が同一フレームに重なった場合のレースコンディションを防ぐ
+[DefaultExecutionOrder(-10)]
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(CharacterStateMachine))]
 public class PlayerMovement : NetworkBehaviour
