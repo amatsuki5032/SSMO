@@ -202,19 +202,25 @@ public class ComboSystem : NetworkBehaviour
             || current == CharacterState.EGPrepare || current == CharacterState.EGReady)
             return;
 
-        // チャージタイプ決定: _comboStep に応じて C1〜C5
+        // チャージタイプ決定: _comboStep に応じて C1〜C6
         // バッファされた□入力がある場合、実効コンボ段数を+1して計算
         // これにより□□□△で必ず C4 が出る（バッファ消費タイミングに依存しない）
         // _comboStep == 0 → C1（Idle/Move から直接）
         // _comboStep == 1 → C2（N1 から派生）
         // _comboStep == 2 → C3（N2 から派生）
         // _comboStep == 3 → C4（N3 から派生）
-        // _comboStep == 4 → C5（N4 から派生）
+        // 最終段（無強化N4 / 連撃1回N5 / 連撃2回N6）からはチャージ派生不可
         int effectiveStep = _comboStep;
         if (_hasBufferedAttack && effectiveStep < _maxComboStep)
         {
             effectiveStep++;
         }
+
+        // 最終段からはチャージ派生不可
+        // 例: 無強化時はN4が最終段→C5不可（C5にはN5解放=連撃強化1回が必要）
+        if (effectiveStep >= _maxComboStep)
+            return;
+
         int chargeType = (effectiveStep == 0) ? 1 : effectiveStep + 1;
 
         StartCharge(chargeType, moveInput);
