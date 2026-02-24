@@ -171,6 +171,39 @@ NetworkVariable / RPC / GetComponent なし。
 
 ---
 
+### WeaponData.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `WeaponData`（static クラス） |
+
+**内部構造体**
+
+| 名前 | 説明 |
+|------|------|
+| `WeaponParams` | 武器種パラメータ一式（MoveSpeed, JumpHeight, AttackRange, NormalMultipliers[], ChargeDurations[] 等） |
+
+**主要 public メソッド / フィールド**
+
+| 名前 | 説明 |
+|------|------|
+| `WeaponParams GetWeaponParams(WeaponType)` | 武器種に対応するパラメータを返す |
+| `float GetNormalMultiplier(WeaponType, int)` | 武器種のN攻撃モーション倍率を返す |
+| `float GetNormalDuration(WeaponType, int)` | 武器種のN攻撃持続時間を返す |
+| `float GetChargeMultiplier(WeaponType, int)` | 武器種のC攻撃モーション倍率を返す |
+| `float GetChargeDuration(WeaponType, int)` | 武器種のC攻撃持続時間を返す |
+| `float GetDashMultiplier(WeaponType, bool)` | 武器種のダッシュ攻撃モーション倍率を返す |
+| `GreatSword` | 大剣パラメータ（static readonly） |
+| `DualBlades` | 双剣パラメータ（static readonly） |
+| `Spear` | 槍パラメータ（static readonly） |
+| `Halberd` | 戟パラメータ（static readonly） |
+| `Fists` | 拳パラメータ（static readonly） |
+| `Bow` | 弓パラメータ（static readonly） |
+
+NetworkVariable / RPC / GetComponent なし。
+
+---
+
 ### CharacterState.cs
 
 | 項目 | 内容 |

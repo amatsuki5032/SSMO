@@ -44,6 +44,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
 | `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
+| `Shared/WeaponData.cs` | WeaponData | 武器種パラメータ管理（6種の倍率・持続時間・速度・リーチ） |
 | `Shared/CharacterState.cs` | CharacterState等 | enum定義（CharacterState・HitReaction・AttackLevel・ArmorLevel・ElementType・GamePhase等） |
 | `Shared/PlayerInput.cs` | PlayerInput | 入力構造体（INetworkSerializable。移動・攻撃・ガード・チャージ等） |
 | `Netcode/LagCompensationManager.cs` | LagCompensationManager | ラグコンペンセーション（ワールドスナップショット・Rewindスコープ） |

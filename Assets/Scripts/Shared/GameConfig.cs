@@ -214,21 +214,22 @@ public static class GameConfig
     // === M2-3a: 通常攻撃コンボ ===
     public const int MAX_COMBO_STEP_BASE = 4;    // 無強化での最大コンボ段数（N1〜N4）
 
-    // 各コンボ段の持続時間（秒）※仮値。将来アニメーションに合わせて調整
+    // 各コンボ段の持続時間（秒）— 大剣デフォルト値。武器種別は WeaponData.cs を参照
     public const float N1_DURATION = 0.5f;
     public const float N2_DURATION = 0.5f;
     public const float N3_DURATION = 0.55f;
     public const float N4_DURATION = 0.65f;
 
     // === M2-4a: チャージ攻撃 ===
-    public const float C1_DURATION = 0.7f;           // C1 持続時間（仮値）
-    public const float C2_DURATION = 0.6f;           // C2 打ち上げ
-    public const float C3_DURATION = 0.5f;           // C3 ラッシュ初段
-    public const float C3_RUSH_DURATION = 0.2f;      // C3 ラッシュ追加ヒット間隔
-    public const int C3_RUSH_MAX_HITS = 8;           // C3 ラッシュ最大追加ヒット数
-    public const float C4_DURATION = 0.8f;           // C4 吹き飛ばし
-    public const float C5_DURATION = 0.7f;           // C5 チャージシュート
-    public const float C6_DURATION = 1.0f;           // C6 最大技
+    // 持続時間 — 大剣デフォルト値。武器種別は WeaponData.cs を参照
+    public const float C1_DURATION = 0.7f;
+    public const float C2_DURATION = 0.6f;
+    public const float C3_DURATION = 0.5f;
+    public const float C3_RUSH_DURATION = 0.2f;      // C3 ラッシュ追加ヒット間隔（全武器共通）
+    public const int C3_RUSH_MAX_HITS = 8;           // C3 ラッシュ最大追加ヒット数（全武器共通）
+    public const float C4_DURATION = 0.8f;
+    public const float C5_DURATION = 0.7f;
+    public const float C6_DURATION = 1.0f;
 
     // === NPC兵士 ===
     public const float NPC_SPAWN_INTERVAL = 5f;       // スポーン間隔（秒）
