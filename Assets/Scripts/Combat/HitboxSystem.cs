@@ -31,6 +31,7 @@ public class HitboxSystem : NetworkBehaviour
     private CharacterStateMachine _stateMachine;
     private CharacterController _characterController;
     private PlayerMovement _playerMovement;
+    private ElementSystem _elementSystem;
 
     // ============================================================
     // ヒット管理
@@ -55,6 +56,7 @@ public class HitboxSystem : NetworkBehaviour
         _stateMachine = GetComponent<CharacterStateMachine>();
         _characterController = GetComponent<CharacterController>();
         _playerMovement = GetComponent<PlayerMovement>();
+        _elementSystem = GetComponent<ElementSystem>();
     }
 
     /// <summary>現在の武器種を取得する</summary>
@@ -282,15 +284,35 @@ public class HitboxSystem : NetworkBehaviour
                  targetStateMachine.CurrentState == CharacterState.JumpAttack ||
                  targetStateMachine.CurrentState == CharacterState.Jump);
 
+            // 属性情報取得（チャージ攻撃の場合のみ属性が乗る）
+            ElementType attackElement = ElementType.None;
+            int attackElementLevel = 0;
+            if (_elementSystem != null)
+                _elementSystem.GetAttackElement(chargeType, out attackElement, out attackElementLevel);
+
             var damageResult = DamageCalculator.Calculate(
                 GameConfig.DEFAULT_ATK,
                 motionMultiplier,
                 GameConfig.DEFAULT_DEF,
                 targetHealth.GetHpRatio(),
+                element: attackElement,
+                elementLevel: attackElementLevel,
                 isAirborne: isAirborne
             );
 
             targetHealth.TakeDamage(damageResult.HpDamage);
+
+            // 斬属性: 無双ゲージにもダメージ + 攻撃側も無双減少
+            if (damageResult.MusouDamage > 0)
+            {
+                var targetGaugeForSlash = hurtbox.GetComponent<MusouGauge>();
+                if (targetGaugeForSlash != null)
+                    targetGaugeForSlash.ConsumeGauge(damageResult.MusouDamage);
+
+                var attackerGaugeForSlash = GetComponent<MusouGauge>();
+                if (attackerGaugeForSlash != null)
+                    attackerGaugeForSlash.ConsumeGauge(damageResult.AttackerMusouCost);
+            }
 
             // ダメージ通知（クリティカル情報を含む）
             NotifyDamageClientRpc(hurtbox.NetworkObjectId, damageResult.HpDamage, damageResult.IsCritical);

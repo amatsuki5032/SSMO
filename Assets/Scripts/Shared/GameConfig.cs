@@ -114,6 +114,15 @@ public static class GameConfig
     public const float CRITICAL_RATE = 0.05f;          // クリティカル率 5%
     public const float CRITICAL_MULTIPLIER = 1.5f;     // クリティカル倍率
 
+    // === 属性倍率（1レベルあたりの倍率増分）===
+    // 属性レベル別倍率: 1.0 + (perLv × level)
+    public const float ELEMENT_FIRE_MULT_PER_LV    = 0.175f;  // 炎: Lv1=×1.175, Lv4=×1.70
+    public const float ELEMENT_ICE_MULT_PER_LV     = 0.25f;   // 氷: Lv1=×1.25,  Lv4=×2.00
+    public const float ELEMENT_THUNDER_MULT_PER_LV = 0.50f;   // 雷: Lv1=×1.50,  Lv4=×3.00
+    public const float ELEMENT_WIND_MULT_PER_LV    = 0.50f;   // 風: Lv1=×1.50,  Lv4=×3.00
+    // 斬属性: レベル別最低保証ダメージ（index=レベル。0は未使用）
+    public static readonly int[] SLASH_MIN_DAMAGE = new int[] { 0, 10, 20, 30, 40 };
+
     // === 空中補正 ===
     public const float AIR_DAMAGE_DIVISOR = 2f;       // 空中被弾ダメージ ÷2
 

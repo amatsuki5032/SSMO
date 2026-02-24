@@ -143,6 +143,7 @@
 | 拠点システム | `BASE_COUNT(5)`, `BASE_CAPTURE_TIME(10)`, `BASE_CAPTURE_RADIUS(5)`, `BASE_HP_REGEN_RATE(20)` |
 | NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)`, `NPC_DETECT_RANGE(8)`, `NPC_ATTACK_RANGE(1.5)`, `NPC_ATK_INTERVAL(1.5)`, `NPC_DETECT_INTERVAL(0.167)` |
 | ミニマップ | `MINIMAP_SIZE(200)`, `MINIMAP_RANGE(50)` |
+| 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -339,6 +340,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `CharacterStateMachine` | 無双ステート判定（攻撃レベル決定用） |
 | `CharacterController` | 攻撃前進移動 |
 | `PlayerMovement` | 武器種取得（HitboxData/DamageCalculator連携用） |
+| `ElementSystem` | 攻撃時の属性情報取得（チャージ攻撃のみ属性付与） |
 
 ※ ヒット対象（`hurtbox.GetComponent`）から以下も取得:
 `HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`
@@ -522,6 +524,38 @@ NetworkVariable / RPC / GetComponent なし。
 |--------|------|
 | `CharacterStateMachine` | ステート判定・遷移 |
 | `MusouGauge` | ゲージ消費（EG維持・カウンター） |
+
+---
+
+### ElementSystem.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `ElementSystem : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `ElementType CurrentElement` | 現在の装備属性（読み取り専用プロパティ） |
+| `int ElementLevel` | 現在の属性レベル（0=なし、1〜4。読み取り専用プロパティ） |
+| `void SetElement(ElementType, int)` | 装備属性を設定する（サーバー専用） |
+| `void GetAttackElement(int, out ElementType, out int)` | チャージ攻撃時の属性情報を取得（chargeType > 0 でのみ属性付与） |
+
+**NetworkVariable**
+
+| 変数名 | 型 | 説明 |
+|--------|-----|------|
+| `_elementType` | `NetworkVariable<ElementType>` | 装備属性の種別 |
+| `_elementLevel` | `NetworkVariable<int>` | 属性レベル（1〜4） |
+
+**ServerRpc / ClientRpc**
+
+なし
+
+**依存（GetComponent）**
+
+なし（自己完結）
 
 ---
 

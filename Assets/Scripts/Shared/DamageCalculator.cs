@@ -133,13 +133,13 @@ public static class DamageCalculator
     {
         if (level <= 0) return 1.0f;
 
-        // 各属性の1レベルあたりの倍率増分
+        // 各属性の1レベルあたりの倍率増分（GameConfig から参照）
         float perLevel = element switch
         {
-            ElementType.Fire    => 0.175f,  // Lv1: ×1.175, Lv4: ×1.70
-            ElementType.Ice     => 0.25f,   // Lv1: ×1.25,  Lv4: ×2.00
-            ElementType.Thunder => 0.50f,   // Lv1: ×1.50,  Lv4: ×3.00
-            ElementType.Wind    => 0.50f,   // Lv1: ×1.50,  Lv4: ×3.00
+            ElementType.Fire    => GameConfig.ELEMENT_FIRE_MULT_PER_LV,
+            ElementType.Ice     => GameConfig.ELEMENT_ICE_MULT_PER_LV,
+            ElementType.Thunder => GameConfig.ELEMENT_THUNDER_MULT_PER_LV,
+            ElementType.Wind    => GameConfig.ELEMENT_WIND_MULT_PER_LV,
             ElementType.Slash   => 0f,      // 斬は倍率ではなく最低保証で処理
             _                   => 0f,
         };
@@ -174,13 +174,9 @@ public static class DamageCalculator
     /// </summary>
     public static float GetSlashMinDamage(int level)
     {
-        return level switch
-        {
-            1 => 10f,
-            2 => 20f,
-            3 => 30f,
-            4 => 40f,
-            _ => 0f,
-        };
+        // GameConfig.SLASH_MIN_DAMAGE 配列から取得（範囲外は0）
+        if (level >= 0 && level < GameConfig.SLASH_MIN_DAMAGE.Length)
+            return GameConfig.SLASH_MIN_DAMAGE[level];
+        return 0f;
     }
 }
