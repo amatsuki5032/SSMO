@@ -243,6 +243,10 @@ public static class GameConfig
     public const float NPC_ATK_INTERVAL = 1.5f;        // 攻撃間隔（秒）
     public const float NPC_DETECT_INTERVAL = 0.167f;   // 敵スキャン間隔（秒。約10フレーム@60Hz）
 
+    // === ミニマップ ===
+    public const float MINIMAP_SIZE = 200f;              // ミニマップ表示サイズ (px)
+    public const float MINIMAP_RANGE = 50f;              // ミニマップ表示範囲 (m、プレイヤー中心からの半径)
+
     // === M2-Visual-B: 攻撃前進距離 (m) ===
     // アクティブフレーム中にキャラ前方へ移動する合計距離
     public const float ADVANCE_N1 = 0.3f;

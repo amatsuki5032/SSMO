@@ -139,6 +139,7 @@
 | 予測・補間 | `PREDICTION_BUFFER_SIZE(1024)`, `INTERPOLATION_DELAY(0.1)` |
 | 拠点システム | `BASE_COUNT(5)`, `BASE_CAPTURE_TIME(10)`, `BASE_CAPTURE_RADIUS(5)`, `BASE_HP_REGEN_RATE(20)` |
 | NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)`, `NPC_DETECT_RANGE(8)`, `NPC_ATTACK_RANGE(1.5)`, `NPC_ATK_INTERVAL(1.5)`, `NPC_DETECT_INTERVAL(0.167)` |
+| ミニマップ | `MINIMAP_SIZE(200)`, `MINIMAP_RANGE(50)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -625,6 +626,37 @@ NetworkVariable / RPC / GetComponent なし。
 **依存（GetComponent）**
 
 なし（`NetworkManager.Singleton` を直接参照）
+
+---
+
+### MinimapHUD.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `MinimapHUD : MonoBehaviour`（クライアント専用UI） |
+
+**主要 public メソッド / プロパティ**
+
+なし（全て private。OnGUI でミニマップを描画）
+
+**主な機能**
+- 画面右下にミニマップ表示（OnGUI ベース）
+- 自分（白）・味方（青）・敵（赤）のプレイヤー位置をドット表示
+- 拠点の所属チーム色（赤/青/灰）を四角で表示
+- Mキーで全体マップ⇔ミニマップ切替
+- ワールド座標→ミニマップ座標変換
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存**
+
+| 取得先 | 用途 |
+|--------|------|
+| `TeamManager.Instance` | プレイヤーのチーム判定 |
+| `HealthSystem`（スポーン済みオブジェクト） | プレイヤー識別 |
+| `BasePoint[]`（FindObjectsByType） | 拠点位置・所属表示 |
 
 ---
 
