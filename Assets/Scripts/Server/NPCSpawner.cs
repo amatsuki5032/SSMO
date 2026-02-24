@@ -22,6 +22,9 @@ public class NPCSpawner : NetworkBehaviour
     [Header("NPC Prefab（エディタで設定）")]
     [SerializeField] private GameObject _npcSoldierPrefab;
 
+    [Header("仙箪 Prefab（エディタで設定）")]
+    [SerializeField] private GameObject _sentanItemPrefab;
+
     // ============================================================
     // シングルトン
     // ============================================================
@@ -216,6 +219,41 @@ public class NPCSpawner : NetworkBehaviour
         }
 
         return nearestPos;
+    }
+
+    // ============================================================
+    // 仙箪アイテムスポーン
+    // ============================================================
+
+    /// <summary>
+    /// NPC死亡地点に仙箪アイテムをスポーンする
+    /// NPCSoldier.OnDeath() から呼ばれる（サーバー専用）
+    /// </summary>
+    /// <param name="position">ドロップ位置</param>
+    public void SpawnSentanItem(Vector3 position)
+    {
+        if (!IsServer) return;
+
+        if (_sentanItemPrefab == null)
+        {
+            Debug.LogWarning("[NPCSpawner] SentanItem Prefab が未設定です");
+            return;
+        }
+
+        // ドロップ確率判定
+        if (Random.value > GameConfig.SENTAN_DROP_RATE) return;
+
+        var sentanObj = Instantiate(_sentanItemPrefab, position, Quaternion.identity);
+        var netObj = sentanObj.GetComponent<NetworkObject>();
+        if (netObj == null)
+        {
+            Debug.LogError("[NPCSpawner] SentanItem Prefab に NetworkObject がありません");
+            Destroy(sentanObj);
+            return;
+        }
+
+        netObj.Spawn();
+        Debug.Log($"[NPCSpawner] 仙箪ドロップ: {position}");
     }
 
     // ============================================================

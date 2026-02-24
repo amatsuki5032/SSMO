@@ -145,6 +145,7 @@
 | ミニマップ | `MINIMAP_SIZE(200)`, `MINIMAP_RANGE(50)` |
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
 | 連撃強化 | `MAX_COMBO_ENHANCE_LEVEL(3)` |
+| 仙箪 | `SENTAN_DROP_RATE(1.0)`, `SENTAN_PICKUP_RADIUS(2.0)`, `SENTAN_LIFETIME(30)`, `SENTAN_REQUIRED_FOR_ENHANCE(7)` |
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
 | 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
 | 凍結 | `FREEZE_PROBABILITY(0.3)`, `FREEZE_DURATION(2.0)` |
@@ -299,8 +300,10 @@ NetworkVariable / RPC / GetComponent なし。
 | `int ComboEnhanceLevel` | 連撃強化レベル（0〜3。読み取り専用プロパティ。サーバー権威） |
 | `void TryStartCharge(Vector2)` | チャージ攻撃入力を処理（サーバー権威。最終段からは派生不可） |
 | `bool IsEvolution` | エボリューション攻撃中か（E6-E9。HitboxSystem用。読み取り専用プロパティ） |
+| `int SentanCount` | 所持仙箪数（読み取り専用プロパティ。サーバー権威） |
 | `void EnhanceCombo()` | 連撃強化を+1する（仙箪強化用。サーバー専用。Lv3上限） |
-| `void ResetEnhancements()` | 全強化をリセットする（死亡時リセット。サーバー専用） |
+| `void ResetEnhancements()` | 全強化をリセットする（死亡時リセット。仙箪カウントはリセットしない。サーバー専用） |
+| `void AddSentan(int)` | 仙箪を追加する（SentanItem から呼ばれる。サーバー専用） |
 | `void TryStartDashAttack()` | ダッシュ攻撃入力を処理（サーバー権威） |
 
 **NetworkVariable**
@@ -309,6 +312,7 @@ NetworkVariable / RPC / GetComponent なし。
 |--------|-----|------|
 | `_networkComboStep` | `NetworkVariable<byte>` | 現在のコンボ段数（UI・他プレイヤー表示用） |
 | `_comboEnhanceLevel` | `NetworkVariable<int>` | 連撃強化レベル（0〜3。サーバー権威） |
+| `_sentanCount` | `NetworkVariable<int>` | 所持仙箪数（サーバー権威。死亡時リセットなし） |
 
 **ServerRpc / ClientRpc**
 
@@ -358,6 +362,36 @@ NetworkVariable / RPC / GetComponent なし。
 `HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`, `StatusEffectManager`
 
 ※ NPC兵士ヒット対象（`GetComponent<NPCSoldier>`）: `NPCSoldier.TakeDamage()` で簡易ダメージ適用（ガード・リアクションなし）
+
+---
+
+### SentanItem.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `SentanItem : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+なし（全て private。OnTriggerEnter で自動取得、FixedUpdate で寿命管理）
+
+**主な機能**
+- NPC兵士死亡時にドロップされる仙箪アイテム
+- プレイヤーが SENTAN_PICKUP_RADIUS 内に入ると自動取得（OnTriggerEnter）
+- 取得時に ComboSystem.AddSentan(1) で仙箪カウント+1
+- SENTAN_LIFETIME 秒経過で自動消滅（サーバー権威）
+- 金色の小さな球体で視覚表現（CreateVisual）
+- SphereCollider（trigger）と Kinematic Rigidbody を Awake で自動追加
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし
+
+**依存（GetComponent — トリガー対象から取得）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `ComboSystem`（プレイヤー） | 仙箪カウント加算 |
 
 ---
 
@@ -965,7 +999,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `int SpawnBaseIndex` | スポーン元拠点番号 |
 | `bool IsDead` | 死亡フラグ |
 | `void Initialize(Team, int, Vector3)` | サーバー専用初期設定（チーム・拠点番号・移動先） |
-| `void TakeDamage(int)` | ダメージ適用（サーバー専用。HP0でデスポーン） |
+| `void TakeDamage(int)` | ダメージ適用（サーバー専用。HP0で仙箪ドロップ→デスポーン） |
 
 **AI行動（サーバー専用・FixedUpdate）**
 
@@ -1003,12 +1037,14 @@ NetworkVariable / RPC / GetComponent なし。
 | 名前 | 説明 |
 |------|------|
 | `static NPCSpawner Instance` | シングルトン |
+| `void SpawnSentanItem(Vector3)` | NPC死亡地点に仙箪アイテムをスポーンする（サーバー専用。ドロップ確率判定あり） |
 
 **設定**
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
 | `_npcSoldierPrefab` | `GameObject` | NPCSoldier Prefab（エディタで設定） |
+| `_sentanItemPrefab` | `GameObject` | SentanItem Prefab（エディタで設定） |
 
 **NetworkVariable / ServerRpc / ClientRpc**
 

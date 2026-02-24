@@ -438,15 +438,17 @@ public class NPCSoldier : NetworkBehaviour
     }
 
     /// <summary>
-    /// 死亡処理: 一定時間後にデスポーン
-    /// M4向け: ここで仙箪アイテムドロップフラグを立てる（未実装）
+    /// 死亡処理: 仙箪ドロップ → 一定時間後にデスポーン
     /// </summary>
     private void OnDeath()
     {
         IsDead = true;
 
-        // TODO: M4 仙箪アイテムドロップ
-        // DropItem();
+        // 仙箪アイテムドロップ（NPCSpawner 経由でスポーン）
+        if (NPCSpawner.Instance != null)
+        {
+            NPCSpawner.Instance.SpawnSentanItem(transform.position);
+        }
 
         Debug.Log($"[NPC] {gameObject.name} 死亡");
 

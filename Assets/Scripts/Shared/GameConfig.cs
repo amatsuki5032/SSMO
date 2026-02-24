@@ -267,6 +267,12 @@ public static class GameConfig
     public const float NPC_ATK_INTERVAL = 1.5f;        // 攻撃間隔（秒）
     public const float NPC_DETECT_INTERVAL = 0.167f;   // 敵スキャン間隔（秒。約10フレーム@60Hz）
 
+    // === 仙箪 ===
+    public const float SENTAN_DROP_RATE = 1.0f;            // ドロップ確率 (1.0 = 100%)
+    public const float SENTAN_PICKUP_RADIUS = 2.0f;        // 拾い判定半径 (m)
+    public const float SENTAN_LIFETIME = 30f;              // 消滅までの時間 (秒)
+    public const int SENTAN_REQUIRED_FOR_ENHANCE = 7;      // 強化に必要な仙箪数
+
     // === ミニマップ ===
     public const float MINIMAP_SIZE = 200f;              // ミニマップ表示サイズ (px)
     public const float MINIMAP_RANGE = 50f;              // ミニマップ表示範囲 (m、プレイヤー中心からの半径)

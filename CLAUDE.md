@@ -44,6 +44,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/StatusEffectManager.cs` | StatusEffectManager | 状態異常管理（燃焼・鈍足・感電の付与/解除/tick処理・サーバー権威） |
 | `Combat/EGSystem.cs` | EGSystem | エレメンタルガード（準備・完成・カウンター・無双ゲージ連携） |
 | `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
+| `Combat/SentanItem.cs` | SentanItem | 仙箪アイテム（NPC死亡時ドロップ・自動拾い・サーバー権威） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
 | `Shared/DamageCalculator.cs` | DamageCalculator | ダメージ計算（サーバー専用。モーション倍率・属性・根性補正・空中補正） |
 | `Shared/WeaponData.cs` | WeaponData | 武器種パラメータ管理（6種の倍率・持続時間・速度・リーチ） |

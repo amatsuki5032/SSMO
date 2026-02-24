@@ -60,8 +60,23 @@ public class ComboSystem : NetworkBehaviour
     /// <summary>現在のコンボ段数（読み取り専用）</summary>
     public int ComboStep => _networkComboStep.Value;
 
+    /// <summary>
+    /// 所持仙箪数（サーバー権威）
+    /// NPC兵士撃破時にドロップされた仙箪アイテムを拾うと+1
+    /// SENTAN_REQUIRED_FOR_ENHANCE 個で連撃強化1回分
+    /// 死亡時もリセットしない（試合中は永続）
+    /// </summary>
+    private readonly NetworkVariable<int> _sentanCount = new(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
     /// <summary>連撃強化レベル（0〜3。読み取り専用）</summary>
     public int ComboEnhanceLevel => _comboEnhanceLevel.Value;
+
+    /// <summary>所持仙箪数（読み取り専用）</summary>
+    public int SentanCount => _sentanCount.Value;
 
     // ============================================================
     // サーバー側管理データ — 通常攻撃
@@ -145,8 +160,9 @@ public class ComboSystem : NetworkBehaviour
     {
         if (IsServer)
         {
-            // 初期状態: 連撃強化なし
+            // 初期状態: 連撃強化なし、仙箪0個
             _comboEnhanceLevel.Value = 0;
+            _sentanCount.Value = 0;
             _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
         }
 
@@ -668,6 +684,7 @@ public class ComboSystem : NetworkBehaviour
 
     /// <summary>
     /// 全強化をリセットする（死亡時に呼ばれる。サーバー専用）
+    /// 仙箪カウントはリセットしない（試合中は永続）
     /// </summary>
     public void ResetEnhancements()
     {
@@ -676,5 +693,18 @@ public class ComboSystem : NetworkBehaviour
         _comboEnhanceLevel.Value = 0;
         _maxComboStep = GameConfig.MAX_COMBO_STEP_BASE;
         Debug.Log($"[Combo] {gameObject.name}: 連撃強化リセット（N{_maxComboStep}まで）");
+    }
+
+    /// <summary>
+    /// 仙箪を追加する（SentanItem から呼ばれる。サーバー専用）
+    /// </summary>
+    /// <param name="count">追加数</param>
+    public void AddSentan(int count)
+    {
+        if (!IsServer) return;
+        if (count <= 0) return;
+
+        _sentanCount.Value += count;
+        Debug.Log($"[Combo] {gameObject.name}: 仙箪取得 → 所持数 {_sentanCount.Value}");
     }
 }
