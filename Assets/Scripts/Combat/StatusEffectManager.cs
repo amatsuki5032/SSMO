@@ -4,13 +4,13 @@ using UnityEngine;
 /// <summary>
 /// 状態異常マネージャー（★サーバー権威★）
 ///
-/// 状態異常（燃焼・鈍足・感電等）の付与・解除・tick処理を一元管理する。
+/// 状態異常（燃焼・鈍足・感電・凍結）の付与・解除・tick処理を一元管理する。
 /// CharacterStateMachine の StatusEffect フラグと連携して状態を同期する。
 ///
-/// 燃焼: 持続ダメージ（HPを0にはしない）。地上行動可能になったら解除
-/// 鈍足: 移動速度低下 + ジャンプ不可。時間経過で解除
-/// 感電: 受け身不可（M4-2c で実装）
-/// 凍結: ステート遷移で処理（CharacterStateMachine が管理）
+/// 燃焼: 持続ダメージ（HPを0にはしない）。タイマー満了で解除
+/// 鈍足: 移動速度低下 + ジャンプ不可。タイマー満了で解除
+/// 感電: 受け身不可。攻撃を受けなければ自然解除 / コンボ上限で解除 / ダウンで解除
+/// 凍結: Freeze ステートへ強制遷移（確率発動）。CharacterStateMachine のタイマーで解除
 /// </summary>
 public class StatusEffectManager : NetworkBehaviour
 {
@@ -28,6 +28,15 @@ public class StatusEffectManager : NetworkBehaviour
     private float _burnTimer;           // 燃焼残り時間
     private float _burnTickTimer;       // 燃焼ダメージ適用までの残り時間
     private float _slowTimer;           // 鈍足残り時間
+    private float _electrifiedTimer;    // 感電残り時間（攻撃なし時の自然解除タイマー）
+    private int _electrifiedComboCount; // 感電中に受けたコンボ数
+
+    // ============================================================
+    // 公開プロパティ
+    // ============================================================
+
+    /// <summary>感電中か（ReactionSystem が受け身判定に使用）</summary>
+    public bool IsElectrified => _stateMachine != null && _stateMachine.HasStatusEffect(StatusEffect.Electrified);
 
     // ============================================================
     // ライフサイクル
@@ -39,6 +48,23 @@ public class StatusEffectManager : NetworkBehaviour
         _healthSystem = GetComponent<HealthSystem>();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            // ダウンステートへの遷移で感電を解除するためのイベント登録
+            _stateMachine.OnStateChanged += OnStateChangedServer;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer)
+        {
+            _stateMachine.OnStateChanged -= OnStateChangedServer;
+        }
+    }
+
     /// <summary>
     /// サーバーのみ: 毎 FixedUpdate で状態異常 tick 処理
     /// </summary>
@@ -48,6 +74,31 @@ public class StatusEffectManager : NetworkBehaviour
 
         UpdateBurn();
         UpdateSlow();
+        UpdateElectrified();
+    }
+
+    // ============================================================
+    // ステート変更コールバック（サーバーのみ）
+    // ============================================================
+
+    /// <summary>
+    /// ダウンステートへの遷移で感電を自動解除する
+    /// </summary>
+    private void OnStateChangedServer(CharacterState oldState, CharacterState newState)
+    {
+        if (!IsServer) return;
+
+        // ダウン系ステートに入ったら感電を解除
+        if (newState == CharacterState.FaceDownDown ||
+            newState == CharacterState.CrumbleDown ||
+            newState == CharacterState.SprawlDown)
+        {
+            if (_electrifiedTimer > 0f)
+            {
+                ClearElectrified();
+                Debug.Log($"[StatusEffect] {gameObject.name}: 感電解除（ダウン遷移）");
+            }
+        }
     }
 
     // ============================================================
@@ -60,7 +111,8 @@ public class StatusEffectManager : NetworkBehaviour
     /// </summary>
     /// <param name="element">攻撃の属性</param>
     /// <param name="level">属性レベル（1〜4）</param>
-    public void ApplyElementEffect(ElementType element, int level)
+    /// <param name="isTargetAirborne">被弾者が空中か（雷の気絶判定に使用）</param>
+    public void ApplyElementEffect(ElementType element, int level, bool isTargetAirborne = false)
     {
         if (!IsServer) return;
         if (element == ElementType.None || level <= 0) return;
@@ -73,8 +125,36 @@ public class StatusEffectManager : NetworkBehaviour
             case ElementType.Wind:
                 ApplySlow();
                 break;
-            // Ice, Thunder は M4-2c で実装
+            case ElementType.Ice:
+                TryApplyFreeze();
+                break;
+            case ElementType.Thunder:
+                ApplyElectrified();
+                // 地上ヒット時のみ気絶も付与（空中では気絶しない）
+                if (!isTargetAirborne)
+                    ApplyStun();
+                break;
             // Slash は状態異常なし（ダメージ計算で処理済み）
+        }
+    }
+
+    /// <summary>
+    /// 感電中にヒットを受けた時のコンボカウント増加（HitboxSystem から呼ばれる）
+    /// コンボ上限に達したら感電を解除する
+    /// </summary>
+    public void OnElectrifiedHit()
+    {
+        if (!IsServer) return;
+        if (_electrifiedTimer <= 0f) return;
+
+        _electrifiedComboCount++;
+        // 攻撃を受けるたびに自然解除タイマーをリセット（攻撃し続ける限り感電継続）
+        _electrifiedTimer = GameConfig.ELECTRIFIED_DURATION;
+
+        if (_electrifiedComboCount >= GameConfig.ELECTRIFIED_MAX_COMBO)
+        {
+            ClearElectrified();
+            Debug.Log($"[StatusEffect] {gameObject.name}: 感電解除（コンボ上限 {GameConfig.ELECTRIFIED_MAX_COMBO}）");
         }
     }
 
@@ -177,6 +257,91 @@ public class StatusEffectManager : NetworkBehaviour
     }
 
     // ============================================================
+    // 凍結（氷属性）
+    // ============================================================
+
+    /// <summary>
+    /// 凍結を確率で付与する。成功なら Freeze ステートへ強制遷移
+    /// 凍結のタイマー管理は CharacterStateMachine が行う（FREEZE_DURATION で自動解除→Idle）
+    /// </summary>
+    private void TryApplyFreeze()
+    {
+        // 既に凍結中なら無視
+        if (_stateMachine.CurrentState == CharacterState.Freeze) return;
+
+        // 確率判定
+        if (Random.value > GameConfig.FREEZE_PROBABILITY) return;
+
+        // Freeze ステートへ強制遷移（CharacterStateMachine のタイマーで FREEZE_DURATION 後に Idle へ）
+        _stateMachine.ForceState(CharacterState.Freeze);
+
+        Debug.Log($"[StatusEffect] {gameObject.name}: 凍結発動！（{GameConfig.FREEZE_DURATION}秒）");
+    }
+
+    // ============================================================
+    // 感電（雷属性）
+    // ============================================================
+
+    /// <summary>
+    /// 感電を付与する。既に感電中の場合はタイマーをリセット（上書き）
+    /// 感電中は受け身が取れなくなる（ReactionSystem が IsElectrified を参照）
+    /// </summary>
+    private void ApplyElectrified()
+    {
+        _electrifiedTimer = GameConfig.ELECTRIFIED_DURATION;
+        _electrifiedComboCount = 0;
+        _stateMachine.AddStatusEffect(StatusEffect.Electrified);
+
+        Debug.Log($"[StatusEffect] {gameObject.name}: 感電付与（受け身不可）");
+    }
+
+    /// <summary>
+    /// 感電の tick 処理
+    /// 攻撃を受けなければ自然解除タイマーで解除
+    /// （攻撃を受けるたびに OnElectrifiedHit でタイマーリセットされる）
+    /// </summary>
+    private void UpdateElectrified()
+    {
+        if (_electrifiedTimer <= 0f) return;
+
+        _electrifiedTimer -= GameConfig.FIXED_DELTA_TIME;
+
+        if (_electrifiedTimer <= 0f)
+        {
+            ClearElectrified();
+            Debug.Log($"[StatusEffect] {gameObject.name}: 感電解除（自然解除）");
+        }
+    }
+
+    /// <summary>感電状態をクリアする（内部ヘルパー）</summary>
+    private void ClearElectrified()
+    {
+        _electrifiedTimer = 0f;
+        _electrifiedComboCount = 0;
+        _stateMachine.RemoveStatusEffect(StatusEffect.Electrified);
+    }
+
+    // ============================================================
+    // 気絶（雷属性・地上のみ）
+    // ============================================================
+
+    /// <summary>
+    /// 気絶を付与する。Stun ステートへ強制遷移
+    /// 気絶のタイマー管理は CharacterStateMachine が行う（STUN_DURATION で自動解除→Idle）
+    /// 地上で雷属性を受けた時のみ発動（空中では気絶しない）
+    /// </summary>
+    private void ApplyStun()
+    {
+        // 既に気絶中なら無視
+        if (_stateMachine.CurrentState == CharacterState.Stun) return;
+
+        // Stun ステートへ強制遷移（CharacterStateMachine のタイマーで STUN_DURATION 後に Idle へ）
+        _stateMachine.ForceState(CharacterState.Stun);
+
+        Debug.Log($"[StatusEffect] {gameObject.name}: 気絶発動！（{GameConfig.STUN_DURATION}秒）");
+    }
+
+    // ============================================================
     // 外部からの強制解除（リスポーン時等）
     // ============================================================
 
@@ -191,6 +356,8 @@ public class StatusEffectManager : NetworkBehaviour
         _burnTimer = 0f;
         _burnTickTimer = 0f;
         _slowTimer = 0f;
+        _electrifiedTimer = 0f;
+        _electrifiedComboCount = 0;
 
         _stateMachine.RemoveStatusEffect(StatusEffect.Burn);
         _stateMachine.RemoveStatusEffect(StatusEffect.Slow);

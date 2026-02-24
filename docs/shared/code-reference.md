@@ -146,6 +146,7 @@
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
 | 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
+| 凍結 | `FREEZE_PROBABILITY(0.3)`, `FREEZE_DURATION(2.0)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -539,7 +540,9 @@ NetworkVariable / RPC / GetComponent なし。
 
 | 名前 | 説明 |
 |------|------|
-| `void ApplyElementEffect(ElementType, int)` | 属性に応じた状態異常を付与する（サーバー専用） |
+| `bool IsElectrified` | 感電中か（ReactionSystem が受け身判定に使用。読み取り専用プロパティ） |
+| `void ApplyElementEffect(ElementType, int, bool)` | 属性に応じた状態異常を付与する（サーバー専用。isTargetAirborne で気絶判定） |
+| `void OnElectrifiedHit()` | 感電中にヒットを受けた時のコンボカウント増加（上限で感電解除） |
 | `void ClearAllEffects()` | 全状態異常を解除する（サーバー専用。リスポーン時等） |
 
 **NetworkVariable**

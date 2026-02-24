@@ -331,7 +331,14 @@ public class HitboxSystem : NetworkBehaviour
             {
                 var targetStatusEffect = hurtbox.GetComponent<StatusEffectManager>();
                 if (targetStatusEffect != null)
-                    targetStatusEffect.ApplyElementEffect(attackElement, attackElementLevel);
+                    targetStatusEffect.ApplyElementEffect(attackElement, attackElementLevel, isAirborne);
+            }
+
+            // 感電中のコンボカウント更新（受け身不可の解除条件）
+            {
+                var targetStatusEffect = hurtbox.GetComponent<StatusEffectManager>();
+                if (targetStatusEffect != null && targetStatusEffect.IsElectrified)
+                    targetStatusEffect.OnElectrifiedHit();
             }
         }
     }

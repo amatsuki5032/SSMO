@@ -286,8 +286,9 @@ public class CharacterStateMachine : NetworkBehaviour
 
             // Launch/AirHitstun: 受け身のみ（不能時間後）
             // 不能時間の判定は呼び出し側（コンボシステム）が行う
-            CharacterState.Launch => input == InputType.Jump,
-            CharacterState.AirHitstun => input == InputType.Jump,
+            // 感電中は受け身不可（StatusEffect.Electrified フラグで判定）
+            CharacterState.Launch => input == InputType.Jump && !HasStatusEffect(StatusEffect.Electrified),
+            CharacterState.AirHitstun => input == InputType.Jump && !HasStatusEffect(StatusEffect.Electrified),
 
             CharacterState.AirRecover => false, // 着地まで入力不可
             CharacterState.Slam => false,       // 叩きつけ中、入力不可

@@ -193,6 +193,9 @@ public static class GameConfig
     // 凍結持続時間（秒）
     public const float FREEZE_DURATION = 2.0f;
 
+    // 凍結発動確率（氷属性チャージヒット時）
+    public const float FREEZE_PROBABILITY = 0.3f;
+
     // 感電持続時間（攻撃なしの場合、秒）
     public const float ELECTRIFIED_DURATION = 2.0f;
 
