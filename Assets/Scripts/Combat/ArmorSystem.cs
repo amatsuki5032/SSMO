@@ -48,11 +48,16 @@ public class ArmorSystem : NetworkBehaviour
     /// <summary>
     /// 攻撃を受けた時にのけぞるか判定する
     /// ★サーバー側で実行★
+    ///
+    /// 判定: 攻撃レベル >= アーマー段階 → のけぞる
+    /// 例: None(1) は Arrow(1) 以上で全てのけぞる
+    ///      ArrowResist(2) は Normal(2) 以上でのけぞる（Arrow(1) は耐える）
+    ///      HA(5) は全て耐える（Musou(4) < 5）
     /// </summary>
     /// <param name="attackLevel">攻撃レベル</param>
     /// <returns>true: のけぞる, false: のけぞらない（アーマーで耐える）</returns>
     public bool ShouldFlinch(AttackLevel attackLevel)
     {
-        return (int)attackLevel > _armorLevel.Value;
+        return (int)attackLevel >= _armorLevel.Value;
     }
 }

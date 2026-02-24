@@ -436,7 +436,7 @@ NetworkVariable / RPC / GetComponent なし。
 |------|------|
 | `ArmorLevel CurrentArmorLevel` | 現在のアーマー段階（読み取り専用プロパティ） |
 | `void SetArmorLevel(ArmorLevel)` | アーマー段階を設定（サーバー側） |
-| `bool ShouldFlinch(AttackLevel)` | 攻撃を受けた時にのけぞるか判定（サーバー側） |
+| `bool ShouldFlinch(AttackLevel)` | 攻撃を受けた時にのけぞるか判定（攻撃レベル >= アーマー段階でのけぞる）（サーバー側） |
 
 **NetworkVariable**
 
@@ -966,6 +966,8 @@ NetworkVariable / RPC / GetComponent なし。
 | F4 | 相手を EG展開トグル（強制維持+ゲージ補充） |
 | F5 | 相手を自分の正面2mに瞬間移動 |
 | F6 | 相手にガード状態を強制トグル |
+| F7 | 自分のHPを20%に設定（真無双テスト用） |
+| F8 | 相手を自分の背面2mに移動（めくりテスト用） |
 | F9 | 全員のHP全回復 + Dead復活 |
 | F10 | 相手のアーマー段階を+1（ループ） |
 | F12 | GUI表示トグル |

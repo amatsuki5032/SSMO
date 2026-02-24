@@ -422,7 +422,7 @@ const PROGRESS_DATA = {
       desc: "5段階アーマー × 攻撃レベル比較でのけぞり判定",
       details: [
         { text: "ArmorSystem.cs 新規作成（NetworkVariable<byte>）", done: true },
-        { text: "ShouldFlinch 判定（攻撃レベル > アーマー段階）", done: true },
+        { text: "ShouldFlinch 判定（攻撃レベル >= アーマー段階）", done: true },
         { text: "ReactionSystem にアーマー判定追加", done: true },
         { text: "HitboxSystem に攻撃レベル判定（N/C/D/無双）", done: true },
         { text: "アーマーでのけぞり無効時もダメージは通る", done: true },
