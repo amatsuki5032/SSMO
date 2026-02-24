@@ -86,9 +86,21 @@ public class MusouGauge : NetworkBehaviour
     }
 
     /// <summary>
-    /// ゲージを消費する（EGカウンター・EG維持等）
+    /// ゲージを消費する（EGカウンター・EG維持・斬属性の攻撃側コスト等）
     /// </summary>
     public void ConsumeGauge(float amount)
+    {
+        if (!IsServer) return;
+        if (amount <= 0f) return;
+
+        _currentGauge.Value = Mathf.Max(0f, _currentGauge.Value - amount);
+    }
+
+    /// <summary>
+    /// 外部からゲージを減少させる（斬属性の被弾側ダメージ等）
+    /// ConsumeGauge は自発的な消費、ReduceGauge は外部要因による強制減少
+    /// </summary>
+    public void ReduceGauge(float amount)
     {
         if (!IsServer) return;
         if (amount <= 0f) return;

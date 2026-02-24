@@ -609,7 +609,8 @@ NetworkVariable / RPC / GetComponent なし。
 | `bool IsMusouActive` | 無双発動中か |
 | `bool IsGaugeFull` | ゲージMAXか |
 | `void AddGauge(float)` | ゲージを加算（攻撃ヒット・被弾等、サーバー側） |
-| `void ConsumeGauge(float)` | ゲージを消費（EGカウンター・EG維持等、サーバー側） |
+| `void ConsumeGauge(float)` | ゲージを消費（EGカウンター・EG維持・斬属性の攻撃側コスト等、サーバー側） |
+| `void ReduceGauge(float)` | 外部からゲージを減少させる（斬属性の被弾側ダメージ等、サーバー側） |
 | `bool TryActivateMusou()` | 無双乱舞の発動を試みる（サーバー側） |
 | `void ProcessMusouCharge(bool)` | 無双チャージ処理（○長押し中に毎ティック、サーバー側） |
 

@@ -305,10 +305,12 @@ public class HitboxSystem : NetworkBehaviour
             // 斬属性: 無双ゲージにもダメージ + 攻撃側も無双減少
             if (damageResult.MusouDamage > 0)
             {
+                // 被弾側: 外部要因によるゲージ減少（ReduceGauge）
                 var targetGaugeForSlash = hurtbox.GetComponent<MusouGauge>();
                 if (targetGaugeForSlash != null)
-                    targetGaugeForSlash.ConsumeGauge(damageResult.MusouDamage);
+                    targetGaugeForSlash.ReduceGauge(damageResult.MusouDamage);
 
+                // 攻撃側: 斬属性のデメリットとしてゲージ消費（ConsumeGauge）
                 var attackerGaugeForSlash = GetComponent<MusouGauge>();
                 if (attackerGaugeForSlash != null)
                     attackerGaugeForSlash.ConsumeGauge(damageResult.AttackerMusouCost);
