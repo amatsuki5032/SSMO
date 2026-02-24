@@ -41,6 +41,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Combat/ReactionSystem.cs` | ReactionSystem | 被弾リアクション（のけぞり・打ち上げ・吹き飛ばし・ダウン4種） |
 | `Combat/ArmorSystem.cs` | ArmorSystem | 5段階アーマー（攻撃レベル比較でのけぞり判定） |
 | `Combat/ElementSystem.cs` | ElementSystem | 属性システム（装備属性管理・チャージ攻撃のみ属性付与・サーバー権威） |
+| `Combat/StatusEffectManager.cs` | StatusEffectManager | 状態異常管理（燃焼・鈍足・感電の付与/解除/tick処理・サーバー権威） |
 | `Combat/EGSystem.cs` | EGSystem | エレメンタルガード（準備・完成・カウンター・無双ゲージ連携） |
 | `Combat/MusouGauge.cs` | MusouGauge | 無双ゲージ管理（チャージ・消費・乱舞発動・真無双判定） |
 | `Shared/GameConfig.cs` | GameConfig | ゲーム全体の定数・設定値（サーバー/クライアント共有） |
@@ -78,7 +79,8 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 11. ArmorSystem（アーマー）
 12. ReactionSystem（被弾リアクション）
 13. ElementSystem（属性管理）
-14. DebugTestHelper（デバッグ用、Editor限定）
+14. StatusEffectManager（状態異常管理）
+15. DebugTestHelper（デバッグ用、Editor限定）
 
 ### ドキュメント構成
 

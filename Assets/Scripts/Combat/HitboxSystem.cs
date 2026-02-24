@@ -325,6 +325,14 @@ public class HitboxSystem : NetworkBehaviour
             var targetGauge = hurtbox.GetComponent<MusouGauge>();
             if (targetGauge != null)
                 targetGauge.AddGauge(GameConfig.MUSOU_GAIN_ON_DAMAGE);
+
+            // 属性による状態異常付与（チャージ攻撃のみ。属性がNoneなら何もしない）
+            if (attackElement != ElementType.None)
+            {
+                var targetStatusEffect = hurtbox.GetComponent<StatusEffectManager>();
+                if (targetStatusEffect != null)
+                    targetStatusEffect.ApplyElementEffect(attackElement, attackElementLevel);
+            }
         }
     }
 

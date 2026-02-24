@@ -199,6 +199,15 @@ public static class GameConfig
     // 感電解除コンボ数
     public const int ELECTRIFIED_MAX_COMBO = 10;
 
+    // === 燃焼（炎属性）===
+    public const float BURN_DAMAGE_PER_SEC = 10f;       // 燃焼ダメージ/秒
+    public const float BURN_TICK_INTERVAL = 0.5f;        // 燃焼ダメージ適用間隔（秒）
+    public const float BURN_DURATION = 5f;               // 燃焼持続時間（秒）
+
+    // === 鈍足（風属性）===
+    public const float SLOW_DURATION = 5f;               // 鈍足持続時間（秒）
+    public const float SLOW_SPEED_MULT = 0.5f;           // 鈍足時の移動速度倍率（50%）
+
     // ジャンプ離陸無敵フレーム数
     public const int JUMP_INVINCIBLE_FRAMES = 4;
 

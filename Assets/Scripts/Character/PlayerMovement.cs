@@ -452,7 +452,7 @@ public class PlayerMovement : NetworkBehaviour
                 _musouGauge.ProcessMusouCharge(input.MusouHeld);
             }
             Vector2 move = GetEffectiveMove(input);
-            float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+            float speedMul = GetSpeedMultiplier();
             if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
             ApplyMovement(move.x, move.y, speedMul);
             ApplyAttackRotation(input);
@@ -471,7 +471,7 @@ public class PlayerMovement : NetworkBehaviour
             ProcessJump(input, false);
             ProcessDashTracking(input);
             Vector2 move = GetEffectiveMove(input);
-            float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+            float speedMul = GetSpeedMultiplier();
             ApplyMovement(move.x, move.y, speedMul);
             CheckLanding(false);
 
@@ -549,8 +549,11 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void ProcessJump(PlayerInput input, bool isServerAuthority)
     {
-        // ガード中はジャンプ不可（CanAcceptInput でも弾かれるが、予測精度のため早期リターン）
+        // ガード中・鈍足中はジャンプ不可（CanAcceptInput でも弾かれるが、予測精度のため早期リターン）
         if (!input.JumpPressed || _isJumping || _isGuarding) return;
+
+        // 鈍足（Slow）中はジャンプ不可
+        if (_stateMachine != null && _stateMachine.HasStatusEffect(StatusEffect.Slow)) return;
 
         bool canJump = _stateMachine != null
             && _stateMachine.CanAcceptInput(InputType.Jump);
@@ -718,6 +721,24 @@ public class PlayerMovement : NetworkBehaviour
                     _stateMachine.TryChangeState(CharacterState.Idle);
             }
         }
+    }
+
+    // ============================================================
+    // 速度倍率計算
+    // ============================================================
+
+    /// <summary>
+    /// 現在の速度倍率を計算する
+    /// ガード移動・鈍足の倍率を乗算で適用する
+    /// </summary>
+    private float GetSpeedMultiplier()
+    {
+        float mul = 1f;
+        if (_isGuarding)
+            mul *= GameConfig.GUARD_MOVE_SPEED_MULTIPLIER;
+        if (_stateMachine != null && _stateMachine.HasStatusEffect(StatusEffect.Slow))
+            mul *= GameConfig.SLOW_SPEED_MULT;
+        return mul;
     }
 
     // ============================================================
@@ -962,7 +983,7 @@ public class PlayerMovement : NetworkBehaviour
             ProcessJump(replayInput, false);
             ProcessDashTracking(replayInput);
             Vector2 move = GetEffectiveMove(replayInput);
-            float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+            float speedMul = GetSpeedMultiplier();
             ApplyMovement(move.x, move.y, speedMul);
             CheckLanding(false);
 

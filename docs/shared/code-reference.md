@@ -144,6 +144,8 @@
 | NPC兵士 | `NPC_SPAWN_INTERVAL(5)`, `NPC_MAX_PER_BASE(3)`, `NPC_MOVE_SPEED(2)`, `NPC_HP(100)`, `NPC_ATK(20)`, `NPC_SCALE(0.6)`, `NPC_DESPAWN_DELAY(1.5)`, `NPC_SPAWN_OFFSET(3)`, `NPC_DETECT_RANGE(8)`, `NPC_ATTACK_RANGE(1.5)`, `NPC_ATK_INTERVAL(1.5)`, `NPC_DETECT_INTERVAL(0.167)` |
 | ミニマップ | `MINIMAP_SIZE(200)`, `MINIMAP_RANGE(50)` |
 | 属性倍率 | `ELEMENT_FIRE_MULT_PER_LV(0.175)`, `ELEMENT_ICE_MULT_PER_LV(0.25)`, `ELEMENT_THUNDER_MULT_PER_LV(0.50)`, `ELEMENT_WIND_MULT_PER_LV(0.50)`, `SLASH_MIN_DAMAGE[]` (readonly int[]{0,10,20,30,40}) |
+| 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
+| 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -343,7 +345,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `ElementSystem` | 攻撃時の属性情報取得（チャージ攻撃のみ属性付与） |
 
 ※ ヒット対象（`hurtbox.GetComponent`）から以下も取得:
-`HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`
+`HurtboxComponent`, `ReactionSystem`, `HealthSystem`, `MusouGauge`, `EGSystem`, `CharacterStateMachine`, `CharacterController`, `StatusEffectManager`
 
 ※ NPC兵士ヒット対象（`GetComponent<NPCSoldier>`）: `NPCSoldier.TakeDamage()` で簡易ダメージ適用（ガード・リアクションなし）
 
@@ -524,6 +526,36 @@ NetworkVariable / RPC / GetComponent なし。
 |--------|------|
 | `CharacterStateMachine` | ステート判定・遷移 |
 | `MusouGauge` | ゲージ消費（EG維持・カウンター） |
+
+---
+
+### StatusEffectManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `StatusEffectManager : NetworkBehaviour` |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `void ApplyElementEffect(ElementType, int)` | 属性に応じた状態異常を付与する（サーバー専用） |
+| `void ClearAllEffects()` | 全状態異常を解除する（サーバー専用。リスポーン時等） |
+
+**NetworkVariable**
+
+なし（CharacterStateMachine の StatusEffect フラグ経由で同期）
+
+**ServerRpc / ClientRpc**
+
+なし
+
+**依存（GetComponent）**
+
+| 取得先 | 用途 |
+|--------|------|
+| `CharacterStateMachine` | 状態異常フラグの付与/解除 |
+| `HealthSystem` | 燃焼ダメージ適用 |
 
 ---
 
@@ -835,6 +867,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `HealthSystem` | HP全回復 |
 | `MusouGauge` | 無双ゲージMAX |
 | `ReactionSystem` | リアクション物理リセット |
+| `StatusEffectManager` | 全状態異常クリア |
 | `TeamManager.Instance` | チーム情報取得 |
 
 ---

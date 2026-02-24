@@ -216,6 +216,11 @@ public class SpawnManager : NetworkBehaviour
         if (reaction != null)
             reaction.ResetReactionPhysics();
 
+        // 全状態異常を解除（燃焼・鈍足・感電等）
+        var statusEffect = playerObject.GetComponent<StatusEffectManager>();
+        if (statusEffect != null)
+            statusEffect.ClearAllEffects();
+
         Debug.Log($"[SpawnManager] Client {clientId} リスポーン完了 → {spawnPos} (HP全回復 / 無双MAX)");
     }
 }
