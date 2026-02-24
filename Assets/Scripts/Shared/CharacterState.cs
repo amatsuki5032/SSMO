@@ -16,7 +16,7 @@ public enum CharacterState : byte
     DashAttack = 12,    // ダッシュ攻撃
     DashRush = 13,      // ダッシュラッシュ（D→□連打）
     // Evolution = 14,  // M4: エボリューション E6〜E9
-    // BreakCharge = 15,// M4: ブレイクチャージ
+    BreakCharge = 15,   // ブレイクチャージ（武器2の攻撃）
 
     // === ジャンプ ===
     Jump = 20,

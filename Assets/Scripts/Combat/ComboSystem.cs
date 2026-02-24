@@ -172,6 +172,41 @@ public class ComboSystem : NetworkBehaviour
     public bool IsEvolution => _isEvolution;
 
     // ============================================================
+    // サーバー側管理データ — ブレイクチャージ（武器2攻撃）
+    // ============================================================
+
+    /// <summary>
+    /// 武器2の武器種（サーバー権威）
+    /// デフォルトは大剣。武器2選択UIはM6で実装。デバッグヘルパーで変更可能
+    /// </summary>
+    private readonly NetworkVariable<WeaponType> _weapon2Type = new(
+        WeaponType.GreatSword,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server
+    );
+
+    /// <summary>武器2の武器種（読み取り専用）</summary>
+    public WeaponType Weapon2Type => _weapon2Type.Value;
+
+    private bool _isBreakCharging;      // ブレイクチャージ中フラグ
+    private float _breakChargeTimer;    // ブレイクチャージモーションの残り時間
+    private int _breakRushStack;        // ブレイクラッシュスタック数（連続BC回数）
+    private float _breakRushTimer;      // ブレイクラッシュウィンドウタイマー
+    private int _breakChargeVariant;    // ブレイクチャージの種類: 1=BC(地上), 2=DBC(ダッシュ), 3=ABC(空中)
+
+    /// <summary>ブレイクチャージ中か（HitboxSystem 用）</summary>
+    public bool IsBreakCharging => _isBreakCharging;
+
+    /// <summary>ブレイクチャージの種類（1=BC, 2=DBC, 3=ABC）</summary>
+    public int BreakChargeVariant => _breakChargeVariant;
+
+    /// <summary>ブレイクラッシュスタック数（攻撃力ボーナス計算用）</summary>
+    public int BreakRushStack => _breakRushStack;
+
+    /// <summary>ブレイクラッシュATKボーナス倍率（1.0 + BREAK_RUSH_ATK_BONUS * stack）</summary>
+    public float BreakRushAtkMultiplier => 1.0f + GameConfig.BREAK_RUSH_ATK_BONUS * _breakRushStack;
+
+    // ============================================================
     // ライフサイクル
     // ============================================================
 
@@ -215,6 +250,7 @@ public class ComboSystem : NetworkBehaviour
         UpdateCombo();
         UpdateCharge();
         UpdateDashAttack();
+        UpdateBreakCharge();
         UpdateSegmentTimer();
     }
 
@@ -614,7 +650,7 @@ public class ComboSystem : NetworkBehaviour
     /// </summary>
     private void UpdateSegmentTimer()
     {
-        if (_comboStep > 0 || _chargeType > 0 || _isDashAttacking)
+        if (_comboStep > 0 || _chargeType > 0 || _isDashAttacking || _isBreakCharging)
         {
             _segmentElapsed += GameConfig.FIXED_DELTA_TIME;
         }
@@ -769,5 +805,193 @@ public class ComboSystem : NetworkBehaviour
 
         _c6Inscription.Value = (byte)type;
         Debug.Log($"[Combo] {gameObject.name}: C6刻印 → {type}");
+    }
+
+    // ============================================================
+    // ブレイクチャージ入力処理（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// ブレイクチャージ入力を処理する。サーバー権威
+    /// 状況に応じて武器2のパラメータで攻撃する。3パターン:
+    ///   地上通常 (BC)  → 武器2の C3
+    ///   ダッシュ中 (DBC) → 武器2の D
+    ///   空中 (ABC)      → 武器2の JC
+    /// 連続発動でブレイクラッシュ（ATK+10%スタック）
+    /// </summary>
+    /// <param name="isDashing">ダッシュ状態か</param>
+    /// <param name="isAirborne">空中か</param>
+    /// <param name="moveInput">向き設定用の移動入力</param>
+    public void TryStartBreakCharge(bool isDashing, bool isAirborne, Vector2 moveInput)
+    {
+        if (!IsServer) return;
+
+        // ブレイクチャージ中は受け付けない（連打防止）
+        if (_isBreakCharging) return;
+
+        // 入力受付判定
+        if (!_stateMachine.CanAcceptInput(InputType.BreakCharge)) return;
+
+        // 空中ブレイクチャージ（ABC）: Jump ステート中のみ
+        if (isAirborne)
+        {
+            StartBreakCharge(3, moveInput); // ABC = 武器2のJC
+            return;
+        }
+
+        // ダッシュブレイクチャージ（DBC）
+        if (isDashing)
+        {
+            StartBreakCharge(2, moveInput); // DBC = 武器2のD
+            return;
+        }
+
+        // 地上ブレイクチャージ（BC）
+        StartBreakCharge(1, moveInput); // BC = 武器2のC3
+    }
+
+    /// <summary>
+    /// ブレイクチャージを開始する
+    /// </summary>
+    /// <param name="variant">1=BC(地上), 2=DBC(ダッシュ), 3=ABC(空中)</param>
+    /// <param name="moveInput">向き設定用の移動入力</param>
+    private void StartBreakCharge(int variant, Vector2 moveInput)
+    {
+        // 他の攻撃状態をリセット
+        ResetCombo();
+        ResetCharge();
+        ResetDashAttack();
+
+        _isBreakCharging = true;
+        _breakChargeVariant = variant;
+        _breakChargeTimer = GetBreakChargeDuration(variant);
+        _attackSequence++;
+        _segmentElapsed = 0f;
+
+        // ブレイクラッシュ: ウィンドウ内の連続BCならスタック加算
+        if (_breakRushTimer > 0f && _breakRushStack < GameConfig.BREAK_RUSH_MAX_STACK)
+        {
+            _breakRushStack++;
+            Debug.Log($"[BreakCharge] {gameObject.name}: ブレイクラッシュ {_breakRushStack}スタック（ATK+{_breakRushStack * GameConfig.BREAK_RUSH_ATK_BONUS * 100}%）");
+        }
+        else
+        {
+            _breakRushStack = 0; // ウィンドウ外 → リセット
+        }
+
+        _stateMachine.TryChangeState(CharacterState.BreakCharge);
+
+        // 開始時のスティック方向で向きを設定
+        if (moveInput.sqrMagnitude > 0.01f)
+        {
+            Vector3 dir = new Vector3(moveInput.x, 0f, moveInput.y).normalized;
+            float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+        }
+
+        string[] variantNames = { "", "BC(地上)", "DBC(ダッシュ)", "ABC(空中)" };
+        Debug.Log($"[BreakCharge] {gameObject.name}: {variantNames[variant]} 開始（武器2: {_weapon2Type.Value}）");
+    }
+
+    // ============================================================
+    // ブレイクチャージ更新（★サーバー側 FixedUpdate★）
+    // ============================================================
+
+    /// <summary>
+    /// ブレイクチャージタイマーを毎 FixedUpdate で更新する
+    /// </summary>
+    private void UpdateBreakCharge()
+    {
+        // ブレイクラッシュウィンドウタイマー減算（攻撃中でなくても進める）
+        if (_breakRushTimer > 0f)
+        {
+            _breakRushTimer -= GameConfig.FIXED_DELTA_TIME;
+            if (_breakRushTimer <= 0f)
+            {
+                _breakRushTimer = 0f;
+                _breakRushStack = 0;
+            }
+        }
+
+        if (!_isBreakCharging) return;
+
+        // 外部要因で BreakCharge から離脱した場合（被弾等）→ リセット
+        if (_stateMachine.CurrentState != CharacterState.BreakCharge)
+        {
+            ResetBreakCharge(false); // ラッシュウィンドウは維持
+            return;
+        }
+
+        _breakChargeTimer -= GameConfig.FIXED_DELTA_TIME;
+
+        if (_breakChargeTimer <= 0f)
+        {
+            string[] variantNames = { "", "BC", "DBC", "ABC" };
+            Debug.Log($"[BreakCharge] {gameObject.name}: {variantNames[_breakChargeVariant]} 終了");
+            ResetBreakCharge(true); // 正常終了: ラッシュウィンドウ開始
+            _stateMachine.TryChangeState(CharacterState.Idle);
+        }
+    }
+
+    /// <summary>
+    /// ブレイクチャージ状態をリセットする
+    /// </summary>
+    /// <param name="startRushWindow">true: ブレイクラッシュウィンドウを開始</param>
+    private void ResetBreakCharge(bool startRushWindow)
+    {
+        _isBreakCharging = false;
+        _breakChargeTimer = 0f;
+        _breakChargeVariant = 0;
+
+        if (startRushWindow)
+        {
+            // 正常終了時: 次のBC入力をブレイクラッシュとして扱うウィンドウを開始
+            _breakRushTimer = GameConfig.BREAK_RUSH_WINDOW;
+        }
+    }
+
+    // ============================================================
+    // ブレイクチャージ — 持続時間・倍率（武器2パラメータ参照）
+    // ============================================================
+
+    /// <summary>
+    /// ブレイクチャージの種類に応じた持続時間を返す（武器2のパラメータ参照）
+    /// </summary>
+    private float GetBreakChargeDuration(int variant)
+    {
+        var w2 = WeaponData.GetWeaponParams(_weapon2Type.Value);
+        return variant switch
+        {
+            1 => w2.ChargeDurations[2],   // BC = 武器2の C3 持続時間
+            2 => w2.DashAttackDuration,    // DBC = 武器2の D 持続時間
+            3 => w2.ChargeDurations[0],    // ABC = 武器2の C1 持続時間（JC用の独立パラメータがないため C1 流用）
+            _ => 0.5f,
+        };
+    }
+
+    /// <summary>
+    /// ブレイクチャージのモーション倍率を返す（武器2のパラメータ参照。DamageCalculator から呼ばれる）
+    /// </summary>
+    public float GetBreakChargeMultiplier()
+    {
+        var w2 = WeaponData.GetWeaponParams(_weapon2Type.Value);
+        return _breakChargeVariant switch
+        {
+            1 => w2.ChargeMultipliers[2],      // BC = 武器2の C3 倍率
+            2 => w2.DashAttackMultiplier,       // DBC = 武器2の D 倍率
+            3 => w2.JumpChargeMultiplier,       // ABC = 武器2の JC 倍率
+            _ => 1.0f,
+        };
+    }
+
+    /// <summary>
+    /// 武器2の武器種を設定する（サーバー専用。デバッグヘルパー/UIから呼ばれる）
+    /// </summary>
+    public void SetWeapon2Type(WeaponType type)
+    {
+        if (!IsServer) return;
+
+        _weapon2Type.Value = type;
+        Debug.Log($"[BreakCharge] {gameObject.name}: 武器2 → {type}");
     }
 }

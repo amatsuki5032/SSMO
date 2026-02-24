@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 1418043050144386429}
   - component: {fileID: 1669621690293299476}
   - component: {fileID: 5751855391413791224}
+  - component: {fileID: 584153568499206457}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -253,6 +254,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 787fae9b10d96484d89b36dbcd339762, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnhancementRing
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &584153568499206457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1547834380826470383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b9ff68f80ae5ff45b5db6873b782aef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UltimateEnhancement
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2542845171839978957
 GameObject:

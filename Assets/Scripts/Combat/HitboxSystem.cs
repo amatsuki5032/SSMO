@@ -101,11 +101,16 @@ public class HitboxSystem : NetworkBehaviour
         bool isDash = _comboSystem.IsDashAttacking;
         bool isRush = _comboSystem.IsRush;
         bool isEvolution = _comboSystem.IsEvolution;
+        bool isBreak = _comboSystem.IsBreakCharging;
 
-        if (comboStep == 0 && chargeType == 0 && !isDash) return;
+        if (comboStep == 0 && chargeType == 0 && !isDash && !isBreak) return;
 
-        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映、エボリューション・刻印対応）
-        HitboxData hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvolution, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
+        // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映、エボリューション・刻印・ブレイクチャージ対応）
+        HitboxData hitbox;
+        if (isBreak)
+            hitbox = HitboxData.GetBreakChargeHitboxData(_comboSystem.BreakChargeVariant, _comboSystem.Weapon2Type);
+        else
+            hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvolution, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
         if (hitbox.ActiveEndFrame == 0) return; // データが無い
 
         // 現在のフレーム番号を計算（経過時間 → フレーム）
@@ -266,9 +271,11 @@ public class HitboxSystem : NetworkBehaviour
         var targetReaction = hurtbox.GetComponent<ReactionSystem>();
         if (targetReaction != null)
         {
-            HitReaction reaction = ReactionSystem.GetReactionType(comboStep, chargeType, isDash);
+            // ブレイクチャージ時: C3リアクション（のけぞり）を適用
+            int reactionChargeType = _comboSystem.IsBreakCharging ? 3 : chargeType;
+            HitReaction reaction = ReactionSystem.GetReactionType(comboStep, reactionChargeType, isDash);
             AttackLevel attackLevel = GetAttackLevel(comboStep, chargeType);
-            targetReaction.ApplyReaction(reaction, transform.position, comboStep, chargeType, attackLevel);
+            targetReaction.ApplyReaction(reaction, transform.position, comboStep, reactionChargeType, attackLevel);
         }
 
         // ダメージ計算・HP減少（ガード成功時はここに到達しない）
@@ -277,7 +284,14 @@ public class HitboxSystem : NetworkBehaviour
         {
             bool isRush = _comboSystem.IsRush;
             bool isEvo = _comboSystem.IsEvolution;
-            float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvo, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
+            bool isBreakHit = _comboSystem.IsBreakCharging;
+
+            // モーション倍率: ブレイクチャージは武器2パラメータから取得
+            float motionMultiplier;
+            if (isBreakHit)
+                motionMultiplier = _comboSystem.GetBreakChargeMultiplier();
+            else
+                motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvo, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
 
             // 被弾者のステートから空中かを判定
             var targetStateMachine = hurtbox.GetComponent<CharacterStateMachine>();
@@ -288,16 +302,20 @@ public class HitboxSystem : NetworkBehaviour
                  targetStateMachine.CurrentState == CharacterState.JumpAttack ||
                  targetStateMachine.CurrentState == CharacterState.Jump);
 
-            // 属性情報取得（チャージ攻撃の場合のみ属性が乗る）
+            // 属性情報取得（チャージ攻撃の場合のみ属性が乗る。ブレイクチャージもチャージ扱い）
             ElementType attackElement = ElementType.None;
             int attackElementLevel = 0;
+            int effectiveChargeType = isBreakHit ? _comboSystem.BreakChargeVariant : chargeType;
             if (_elementSystem != null)
-                _elementSystem.GetAttackElement(chargeType, out attackElement, out attackElementLevel);
+                _elementSystem.GetAttackElement(effectiveChargeType > 0 ? effectiveChargeType : chargeType, out attackElement, out attackElementLevel);
 
-            // ATK/DEFバフ倍率を適用（強化リングによるバフ）
+            // ATK/DEFバフ倍率を適用（強化リングによるバフ + ブレイクラッシュボーナス）
             float attackerATK = GameConfig.DEFAULT_ATK;
             if (_enhancementRing != null)
                 attackerATK *= _enhancementRing.AtkMultiplier;
+            // ブレイクラッシュATKボーナス（連続BC時に攻撃力UP）
+            if (isBreakHit)
+                attackerATK *= _comboSystem.BreakRushAtkMultiplier;
 
             float defenderDEF = GameConfig.DEFAULT_DEF;
             var targetRing = hurtbox.GetComponent<EnhancementRing>();
@@ -394,9 +412,16 @@ public class HitboxSystem : NetworkBehaviour
         Debug.Log($"[Hit-NPC] {gameObject.name} → {npcSoldier.gameObject.name} ヒット確定" +
                   $" (N{comboStep}/C{chargeType}/D={isDash})");
 
-        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし、刻印対応）
-        float motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), false, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
-        int damage = Mathf.Max(1, Mathf.RoundToInt(GameConfig.DEFAULT_ATK * motionMultiplier));
+        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし、刻印・ブレイクチャージ対応）
+        bool isBreakHitNPC = _comboSystem.IsBreakCharging;
+        float motionMultiplier;
+        if (isBreakHitNPC)
+            motionMultiplier = _comboSystem.GetBreakChargeMultiplier();
+        else
+            motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), false, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
+        float npcATK = GameConfig.DEFAULT_ATK;
+        if (isBreakHitNPC) npcATK *= _comboSystem.BreakRushAtkMultiplier;
+        int damage = Mathf.Max(1, Mathf.RoundToInt(npcATK * motionMultiplier));
 
         npcSoldier.TakeDamage(damage);
 
@@ -428,6 +453,10 @@ public class HitboxSystem : NetworkBehaviour
 
         // チャージ攻撃は攻撃レベル3
         if (chargeType > 0)
+            return AttackLevel.Charge;
+
+        // ブレイクチャージもチャージ攻撃レベル（武器2のチャージ攻撃扱い）
+        if (_comboSystem.IsBreakCharging)
             return AttackLevel.Charge;
 
         // エボリューション攻撃もチャージ攻撃レベル（combat-spec準拠）

@@ -306,6 +306,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `MusouPressed` | `bool` | ○（押した瞬間） |
 | `MusouHeld` | `bool` | ○ 長押し（無双チャージ用） |
 | `EnhancePressed` | `bool` | R1（Eキー）仙箪強化リング発動 |
+| `BreakPressed` | `bool` | L2（Rキー）ブレイクチャージ（武器2攻撃） |
 | `Tick` | `uint` | ティック番号 |
 
 **主要 public メソッド**
@@ -350,6 +351,14 @@ NetworkVariable / RPC / GetComponent なし。
 | `InscriptionType C6Inscription` | C6刻印種別（読み取り専用プロパティ） |
 | `void SetC1Inscription(InscriptionType)` | C1刻印を設定する（突/陣/砕/盾の4種。サーバー専用） |
 | `void SetC6Inscription(InscriptionType)` | C6刻印を設定する（全6種。サーバー専用） |
+| `WeaponType Weapon2Type` | 武器2の武器種（読み取り専用プロパティ。サーバー権威） |
+| `bool IsBreakCharging` | ブレイクチャージ中か（HitboxSystem用。読み取り専用プロパティ） |
+| `int BreakChargeVariant` | ブレイクチャージの種類（1=BC地上, 2=DBCダッシュ, 3=ABC空中） |
+| `int BreakRushStack` | ブレイクラッシュスタック数（0〜5。連続BC回数） |
+| `float BreakRushAtkMultiplier` | ブレイクラッシュATKボーナス倍率（1.0 + 0.1 * stack） |
+| `float GetBreakChargeMultiplier()` | ブレイクチャージのモーション倍率を返す（武器2パラメータ参照） |
+| `void TryStartBreakCharge(bool, bool, Vector2)` | ブレイクチャージ入力を処理（サーバー権威。isDashing/isAirborne/moveInput） |
+| `void SetWeapon2Type(WeaponType)` | 武器2の武器種を設定する（サーバー専用） |
 
 **NetworkVariable**
 
@@ -360,6 +369,7 @@ NetworkVariable / RPC / GetComponent なし。
 | `_sentanCount` | `NetworkVariable<int>` | 所持仙箪数（サーバー権威。死亡時リセットなし） |
 | `_c1Inscription` | `NetworkVariable<byte>` | C1刻印種別（サーバー権威） |
 | `_c6Inscription` | `NetworkVariable<byte>` | C6刻印種別（サーバー権威） |
+| `_weapon2Type` | `NetworkVariable<WeaponType>` | 武器2の武器種（サーバー権威） |
 
 **ServerRpc / ClientRpc**
 

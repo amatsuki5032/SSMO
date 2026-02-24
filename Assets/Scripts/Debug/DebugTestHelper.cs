@@ -49,6 +49,7 @@ public class DebugTestHelper : NetworkBehaviour
         if (Input.GetKeyDown(KeyCode.F8))  DoTeleportTargetBehind();
         if (Input.GetKeyDown(KeyCode.F9))  DoHealAll();
         if (Input.GetKeyDown(KeyCode.F10)) DoCycleArmor();
+        if (Input.GetKeyDown(KeyCode.F11)) DoCycleWeapon2();
     }
 
     // ============================================================
@@ -294,6 +295,22 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
+    // F11: 自分の武器2を変更（ループ）
+    // ============================================================
+
+    private void DoCycleWeapon2()
+    {
+        var combo = GetComponent<ComboSystem>();
+        if (combo == null) return;
+
+        // WeaponType: GreatSword(0) → DualBlades(1) → Spear(2) → Halberd(3) → Fists(4) → Bow(5) → GreatSword(0)
+        int current = (int)combo.Weapon2Type;
+        int next = (current + 1) % 6;
+        combo.SetWeapon2Type((WeaponType)next);
+        _lastAction = $"自分: 武器2 → {(WeaponType)next}";
+    }
+
+    // ============================================================
     // OnGUI: コマンド一覧 + 現在状態を常時表示
     // ============================================================
 
@@ -303,7 +320,7 @@ public class DebugTestHelper : NetworkBehaviour
 
         // プレイヤー数に応じた高さ計算（デバッグコマンド + 操作キー + ステータス）
         int playerCount = NetworkManager.Singleton.ConnectedClientsList.Count;
-        float boxHeight = 390f + playerCount * 20f;
+        float boxHeight = 440f + playerCount * 40f;
 
         float w = 340f;
         float x = Screen.width - w - 10f; // 右上に配置
@@ -340,6 +357,7 @@ public class DebugTestHelper : NetworkBehaviour
             "F8 : 相手を背面2mに移動(めくり)",
             "F9 : 全員HP全回復 + 復活",
             "F10: 相手 アーマー+1(ループ)",
+            "F11: 自分 武器2変更(ループ)",
         };
         foreach (string cmd in cmds)
         {
@@ -366,6 +384,8 @@ public class DebugTestHelper : NetworkBehaviour
             "LShift     : ガード (L1)",
             "LShift+右長押し : EG準備 → EG展開",
             "Q / 中クリック  : 無双 (○)",
+            "R              : ブレイクチャージ (L2)",
+            "E              : 仙箪強化 (R1)",
         };
         foreach (string ctrl in controls)
         {
@@ -395,10 +415,18 @@ public class DebugTestHelper : NetworkBehaviour
             string hpStr = hp != null ? $"{hp.CurrentHp}/{hp.MaxHp}" : "?";
             string musouStr = gauge != null ? $"{gauge.CurrentGauge:F0}/{gauge.MaxGauge:F0}" : "?";
             string armorStr = armorSys != null ? armorSys.CurrentArmorLevel.ToString() : "?";
+            var combo = go.GetComponent<ComboSystem>();
+            string w2Str = combo != null ? combo.Weapon2Type.ToString() : "?";
 
             GUI.Label(new Rect(x + 12, y, w - 20, 18),
                 $"{tag} {state}  HP:{hpStr}  Musou:{musouStr}  Armor:{armorStr}", label);
             y += 18;
+            if (isSelf && combo != null)
+            {
+                GUI.Label(new Rect(x + 12, y, w - 20, 18),
+                    $"     武器2:{w2Str}  BR:{combo.BreakRushStack}/{GameConfig.BREAK_RUSH_MAX_STACK}", label);
+                y += 18;
+            }
         }
     }
 }

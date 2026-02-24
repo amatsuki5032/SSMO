@@ -225,6 +225,7 @@ public class CharacterStateMachine : NetworkBehaviour
                 InputType.Jump => true,
                 InputType.Musou => true,
                 InputType.Guard => true,
+                InputType.BreakCharge => true,
                 _ => input == InputType.Move, // 移動も継続可
             },
 
@@ -247,6 +248,7 @@ public class CharacterStateMachine : NetworkBehaviour
             {
                 InputType.NormalAttack => true,   // JA
                 InputType.ChargeAttack => true,   // JC
+                InputType.BreakCharge => true,    // ABC（空中ブレイクチャージ）
                 _ => false,
             },
 

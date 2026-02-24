@@ -40,4 +40,20 @@ public struct HitboxData
             return WeaponData.GetNormalHitbox(weaponType, comboStep);
         return default;
     }
+
+    /// <summary>
+    /// ブレイクチャージの種類に応じた HitboxData を返す（武器2のパラメータ参照）
+    /// </summary>
+    /// <param name="variant">1=BC(地上=C3), 2=DBC(ダッシュ=D), 3=ABC(空中=JC)</param>
+    /// <param name="weapon2Type">武器2の武器種</param>
+    public static HitboxData GetBreakChargeHitboxData(int variant, WeaponType weapon2Type)
+    {
+        return variant switch
+        {
+            1 => WeaponData.GetChargeHitbox(weapon2Type, 3),       // BC = 武器2の C3 ヒットボックス
+            2 => WeaponData.GetDashHitbox(weapon2Type),            // DBC = 武器2の D ヒットボックス
+            3 => WeaponData.GetJumpChargeHitbox(weapon2Type),      // ABC = 武器2の JC ヒットボックス
+            _ => default,
+        };
+    }
 }

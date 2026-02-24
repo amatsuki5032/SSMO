@@ -132,6 +132,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool _musouPressed;    // 無双（押した瞬間のみ、消費後リセット）
     private bool _musouHeld;       // 無双長押し（MusouCharge用）
     private bool _enhancePressed;  // R1（Eキー、押した瞬間のみ、消費後リセット）
+    private bool _breakPressed;    // L2（Rキー、押した瞬間のみ、消費後リセット）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -270,6 +271,10 @@ public class PlayerMovement : NetworkBehaviour
         // R1（Eキー）: 仙箪強化リング発動
         if (Input.GetKeyDown(KeyCode.E))
             _enhancePressed = true;
+
+        // L2（Rキー）: ブレイクチャージ（武器2攻撃）
+        if (Input.GetKeyDown(KeyCode.R))
+            _breakPressed = true;
     }
 
     /// <summary>
@@ -421,6 +426,7 @@ public class PlayerMovement : NetworkBehaviour
             MusouPressed = _musouPressed,
             MusouHeld = _musouHeld,
             EnhancePressed = _enhancePressed,
+            BreakPressed = _breakPressed,
             Tick = _currentTick
         };
 
@@ -430,6 +436,7 @@ public class PlayerMovement : NetworkBehaviour
         _chargePressed = false;
         _musouPressed = false;
         _enhancePressed = false;
+        _breakPressed = false;
 
         if (IsServer)
         {
@@ -463,6 +470,9 @@ public class PlayerMovement : NetworkBehaviour
             // R1: 仙箪強化リング発動
             if (input.EnhancePressed && _enhancementRing != null)
                 _enhancementRing.TryActivateSlot();
+            // L2: ブレイクチャージ（武器2攻撃）
+            if (input.BreakPressed && _comboSystem != null)
+                _comboSystem.TryStartBreakCharge(IsDashing, _isJumping, input.MoveInput);
             Vector2 move = GetEffectiveMove(input);
             float speedMul = GetSpeedMultiplier();
             if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);
@@ -904,6 +914,10 @@ public class PlayerMovement : NetworkBehaviour
         // R1: 仙箪強化リング発動（サーバー権威）
         if (input.EnhancePressed && _enhancementRing != null)
             _enhancementRing.TryActivateSlot();
+
+        // L2: ブレイクチャージ（武器2攻撃、サーバー権威）
+        if (input.BreakPressed && _comboSystem != null)
+            _comboSystem.TryStartBreakCharge(IsDashing, _isJumping, input.MoveInput);
 
         // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
         Vector2 move = GetEffectiveMove(input);

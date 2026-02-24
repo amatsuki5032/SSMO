@@ -293,6 +293,11 @@ public static class GameConfig
     public const float ULTIMATE_DEF_MULT = 1.5f;        // 究極強化DEF倍率
     public const float ULTIMATE_SPEED_MULT = 1.2f;      // 究極強化移動速度倍率
 
+    // === ブレイクチャージ（武器2攻撃）===
+    public const float BREAK_RUSH_ATK_BONUS = 0.1f;       // 連続BC時の攻撃力UP率（+10%/スタック）
+    public const int BREAK_RUSH_MAX_STACK = 5;             // ブレイクラッシュ最大スタック
+    public const float BREAK_RUSH_WINDOW = 2.0f;           // ブレイクラッシュ判定ウィンドウ（秒）
+
     // === 刻印（C1/C6 モーション変更）===
     // C1 刻印 — 突/陣/砕/盾（倍率・持続時間）
     public const float INSCRIPTION_C1_THRUST_MULT = 1.8f;       // 突: 突進系。中威力
