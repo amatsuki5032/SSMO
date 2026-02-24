@@ -77,7 +77,7 @@ public static class GameConfig
     public const float EG_COUNTER_KNOCKBACK = 8f;        // EGカウンター吹き飛ばし力
     public const float EG_COUNTER_DURATION = 0.5f;       // EGカウンター持続時間（秒）
     public const float GUARD_MOVE_SPEED_MULTIPLIER = 0.5f; // ガード移動速度倍率（50%）
-    public const float GUARD_KNOCKBACK_DISTANCE = 0.3f;    // ガード成功時のノックバック距離 (m)
+    public const float GUARD_KNOCKBACK_DISTANCE = 0.1f;    // ガード成功時のノックバック距離 (m)（瞬間適用のため小さめ）
 
     // === ジャンプ ===
     public const float JUMP_FORCE = 8f;                // ジャンプ初速 (m/s)
