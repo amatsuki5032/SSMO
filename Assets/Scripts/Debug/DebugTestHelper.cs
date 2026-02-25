@@ -20,6 +20,7 @@ using UnityEngine;
 ///   F9:  全員のHP全回復 + Dead 復活
 ///   F10: 相手のアーマー段階を1上げる（ループ）
 ///   F12: 表示トグル
+///   ` (BackQuote): 俯瞰フリーカメラ トグル（CameraController）
 /// </summary>
 public class DebugTestHelper : NetworkBehaviour
 {
@@ -358,11 +359,26 @@ public class DebugTestHelper : NetworkBehaviour
             "F9 : 全員HP全回復 + 復活",
             "F10: 相手 アーマー+1(ループ)",
             "F11: 自分 武器2変更(ループ)",
+            "`  : 俯瞰フリーカメラ トグル",
         };
         foreach (string cmd in cmds)
         {
             GUI.Label(new Rect(x + 12, y, w - 20, 18), cmd, label);
             y += 16;
+        }
+
+        // 俯瞰カメラ状態
+        var cam = Camera.main != null ? Camera.main.GetComponent<CameraController>() : null;
+        if (cam != null && cam.IsDebugFreeCamera)
+        {
+            GUIStyle freeCamStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = Color.yellow }
+            };
+            GUI.Label(new Rect(x + 12, y, w - 20, 18), "** 俯瞰カメラ ON **", freeCamStyle);
+            y += 18;
         }
 
         // 最終操作

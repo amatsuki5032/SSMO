@@ -18,6 +18,7 @@
 |------|------|
 | `float Yaw` | カメラの水平回転角（PlayerMovement がカメラ基準移動方向を計算するために使用） |
 | `void Initialize(Transform)` | 追従対象を設定しカーソルロック |
+| `bool IsDebugFreeCamera` | デバッグ俯瞰カメラが有効か（Editor限定） |
 
 **NetworkVariable / ServerRpc / ClientRpc**
 

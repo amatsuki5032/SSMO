@@ -30,6 +30,24 @@ public class CameraController : MonoBehaviour
     private float _yaw;     // 水平回転角（度）
     private float _pitch;   // 垂直回転角（度）
 
+#if UNITY_EDITOR
+    // ============================================================
+    // デバッグ俯瞰カメラ（Editor限定）
+    // ============================================================
+
+    private bool _debugFreeCamera;
+    private Vector3 _freeCamPos;
+    private float _freeCamYaw;
+    private float _freeCamPitch;
+
+    private const float DEBUG_CAM_SPEED = 20f;
+    private const float DEBUG_CAM_FAST_MULT = 3f;       // Shift押し高速移動
+    private const float DEBUG_CAM_SCROLL_SPEED = 30f;    // マウスホイール高さ変更速度
+
+    /// <summary>デバッグ俯瞰カメラが有効かどうか</summary>
+    public bool IsDebugFreeCamera => _debugFreeCamera;
+#endif
+
     // ============================================================
     // 初期化
     // ============================================================
@@ -61,6 +79,28 @@ public class CameraController : MonoBehaviour
 
     private void LateUpdate()
     {
+#if UNITY_EDITOR
+        // デバッグ俯瞰カメラ切替（BackQuote ` キー）
+        if (Input.GetKeyDown(KeyCode.BackQuote))
+        {
+            _debugFreeCamera = !_debugFreeCamera;
+            if (_debugFreeCamera)
+            {
+                // プレイヤー上空30mから俯瞰開始
+                _freeCamPos = (_target != null ? _target.position : transform.position) + Vector3.up * 30f;
+                _freeCamYaw = _yaw;
+                _freeCamPitch = 60f; // 下向き（俯瞰視点）
+            }
+            Debug.Log($"[Camera] デバッグ俯瞰カメラ: {(_debugFreeCamera ? "ON" : "OFF")}");
+        }
+
+        if (_debugFreeCamera)
+        {
+            UpdateDebugFreeCamera();
+            return; // 通常カメラロジックをスキップ
+        }
+#endif
+
         if (_target == null) return;
 
         // --- マウス入力でカメラ回転 ---
@@ -100,6 +140,48 @@ public class CameraController : MonoBehaviour
         transform.position = desiredPosition;
         transform.LookAt(lookAtPoint);
     }
+
+#if UNITY_EDITOR
+    // ============================================================
+    // デバッグ俯瞰カメラ更新
+    // ============================================================
+
+    /// <summary>
+    /// 俯瞰フリーカメラの更新処理
+    /// WASD: 水平移動（yaw方向基準、ピッチに関係なく水平面を移動）
+    /// マウス: 視点回転
+    /// マウスホイール: 高さ変更
+    /// Shift: 高速移動
+    /// </summary>
+    private void UpdateDebugFreeCamera()
+    {
+        // マウスで回転
+        float mouseX = Input.GetAxis("Mouse X") * GameConfig.CAMERA_SENSITIVITY;
+        float mouseY = Input.GetAxis("Mouse Y") * GameConfig.CAMERA_SENSITIVITY;
+        _freeCamYaw += mouseX;
+        _freeCamPitch -= mouseY;
+        _freeCamPitch = Mathf.Clamp(_freeCamPitch, -89f, 89f);
+
+        // WASD で水平移動（yaw方向基準、俯瞰でもWは前方＝北方向に移動）
+        float h = Input.GetAxis("Horizontal");
+        float v = Input.GetAxis("Vertical");
+        Vector3 flatForward = Quaternion.Euler(0f, _freeCamYaw, 0f) * Vector3.forward;
+        Vector3 flatRight = Quaternion.Euler(0f, _freeCamYaw, 0f) * Vector3.right;
+
+        float speed = DEBUG_CAM_SPEED;
+        if (Input.GetKey(KeyCode.LeftShift)) speed *= DEBUG_CAM_FAST_MULT;
+
+        _freeCamPos += (flatForward * v + flatRight * h) * speed * Time.deltaTime;
+
+        // マウスホイールで高さ変更
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        _freeCamPos.y += scroll * DEBUG_CAM_SCROLL_SPEED;
+
+        // カメラ適用
+        transform.position = _freeCamPos;
+        transform.rotation = Quaternion.Euler(_freeCamPitch, _freeCamYaw, 0f);
+    }
+#endif
 
     // ============================================================
     // クリーンアップ
