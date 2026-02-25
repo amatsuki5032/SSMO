@@ -176,6 +176,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log($"[Spawn] IsServer={IsServer} IsOwner={IsOwner} pos={transform.position} grounded={GetComponent<CharacterController>()?.isGrounded}");
+
         if (IsServer)
         {
             _netPosition.Value = transform.position;
@@ -983,6 +985,10 @@ public class PlayerMovement : NetworkBehaviour
             Quaternion guardRot = Quaternion.Euler(0f, _guardRotationY, 0f);
             inputDir = guardRot * inputDir;
         }
+
+        // 落下バグ調査ログ（起動後10秒間のみ）
+        if (Time.time < 10f && IsServer)
+            Debug.Log($"[Move] pos={transform.position} velY={_verticalVelocity} grounded={_controller.isGrounded}");
 
         // 重力処理
         // ジャンプ発動フレームは isGrounded=true だが JUMP_FORCE を上書きしてはいけない
