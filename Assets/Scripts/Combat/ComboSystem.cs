@@ -215,6 +215,9 @@ public class ComboSystem : NetworkBehaviour
         _stateMachine = GetComponent<CharacterStateMachine>();
         _playerMovement = GetComponent<PlayerMovement>();
         _musouGauge = GetComponent<MusouGauge>();
+
+        if (_stateMachine == null)
+            Debug.LogError($"[ComboSystem] {gameObject.name}: CharacterStateMachine が見つかりません");
     }
 
     public override void OnNetworkSpawn()
@@ -965,7 +968,7 @@ public class ComboSystem : NetworkBehaviour
             1 => w2.ChargeDurations[2],   // BC = 武器2の C3 持続時間
             2 => w2.DashAttackDuration,    // DBC = 武器2の D 持続時間
             3 => w2.ChargeDurations[0],    // ABC = 武器2の C1 持続時間（JC用の独立パラメータがないため C1 流用）
-            _ => 0.5f,
+            _ => GameConfig.DEFAULT_BREAK_CHARGE_DURATION,
         };
     }
 

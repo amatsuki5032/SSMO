@@ -138,6 +138,7 @@ public class NPCSoldier : NetworkBehaviour
             : new Color(0.4f, 0.4f, 1f);  // 薄青
     }
 
+    /// <summary>チーム変更時のコールバック（色更新）</summary>
     private void OnTeamChanged(byte prev, byte curr)
     {
         UpdateColor();
@@ -158,10 +159,10 @@ public class NPCSoldier : NetworkBehaviour
 
         // 攻撃クールダウン減少
         if (_attackCooldown > 0f)
-            _attackCooldown -= Time.fixedDeltaTime;
+            _attackCooldown -= GameConfig.FIXED_DELTA_TIME;
 
         // 定期的に敵をスキャン（毎フレームは重いので間隔を空ける）
-        _detectTimer += Time.fixedDeltaTime;
+        _detectTimer += GameConfig.FIXED_DELTA_TIME;
         if (_detectTimer >= GameConfig.NPC_DETECT_INTERVAL)
         {
             _detectTimer = 0f;
@@ -381,10 +382,10 @@ public class NPCSoldier : NetworkBehaviour
         diff.y = 0f;
 
         // 目的地に十分近ければ停止
-        if (diff.sqrMagnitude < 1f) return;
+        if (diff.sqrMagnitude < GameConfig.NPC_STOP_DISTANCE_SQ) return;
 
         Vector3 dir = diff.normalized;
-        transform.position += dir * GameConfig.NPC_MOVE_SPEED * Time.fixedDeltaTime;
+        transform.position += dir * GameConfig.NPC_MOVE_SPEED * GameConfig.FIXED_DELTA_TIME;
         transform.rotation = Quaternion.LookRotation(dir);
     }
 
@@ -456,6 +457,7 @@ public class NPCSoldier : NetworkBehaviour
         Invoke(nameof(DespawnSelf), GameConfig.NPC_DESPAWN_DELAY);
     }
 
+    /// <summary>自身をデスポーンする（死亡後ディレイ呼び出し）</summary>
     private void DespawnSelf()
     {
         if (IsSpawned)

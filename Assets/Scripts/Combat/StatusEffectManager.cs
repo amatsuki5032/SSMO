@@ -46,6 +46,9 @@ public class StatusEffectManager : NetworkBehaviour
     {
         _stateMachine = GetComponent<CharacterStateMachine>();
         _healthSystem = GetComponent<HealthSystem>();
+
+        if (_stateMachine == null)
+            Debug.LogError($"[StatusEffectManager] {gameObject.name}: CharacterStateMachine が見つかりません");
     }
 
     public override void OnNetworkSpawn()

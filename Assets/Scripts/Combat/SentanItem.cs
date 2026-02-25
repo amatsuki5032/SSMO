@@ -63,7 +63,7 @@ public class SentanItem : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        _lifetime -= Time.fixedDeltaTime;
+        _lifetime -= GameConfig.FIXED_DELTA_TIME;
         if (_lifetime <= 0f)
         {
             Debug.Log($"[Sentan] {gameObject.name} 時間切れで消滅");
@@ -127,6 +127,7 @@ public class SentanItem : NetworkBehaviour
     // デスポーン
     // ============================================================
 
+    /// <summary>自身をデスポーンする（寿命切れ or プレイヤーが取得時）</summary>
     private void DespawnSelf()
     {
         if (IsSpawned)

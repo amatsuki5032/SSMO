@@ -142,7 +142,7 @@ public class BasePoint : NetworkBehaviour
         if ((redCount == 0 && blueCount == 0) || (redCount > 0 && blueCount > 0))
             return;
 
-        float delta = Time.fixedDeltaTime / GameConfig.BASE_CAPTURE_TIME;
+        float delta = GameConfig.FIXED_DELTA_TIME / GameConfig.BASE_CAPTURE_TIME;
 
         if (redCount > 0)
         {
@@ -199,9 +199,9 @@ public class BasePoint : NetworkBehaviour
         // 中立拠点では回復しない
         if (_status.Value == BaseStatus.Neutral) return;
 
-        _regenTimer += Time.fixedDeltaTime;
-        if (_regenTimer < 1f) return;
-        _regenTimer -= 1f;
+        _regenTimer += GameConfig.FIXED_DELTA_TIME;
+        if (_regenTimer < GameConfig.BASE_HP_REGEN_INTERVAL) return;
+        _regenTimer -= GameConfig.BASE_HP_REGEN_INTERVAL;
 
         // 拠点所属チームの味方プレイヤーのみ回復
         HashSet<ulong> allyPlayers = _status.Value == BaseStatus.Red

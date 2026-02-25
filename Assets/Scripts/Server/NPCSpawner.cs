@@ -119,7 +119,7 @@ public class NPCSpawner : NetworkBehaviour
             if (_aliveNpcs[idx].Count >= GameConfig.NPC_MAX_PER_BASE) continue;
 
             // タイマー更新
-            _spawnTimers[idx] += Time.fixedDeltaTime;
+            _spawnTimers[idx] += GameConfig.FIXED_DELTA_TIME;
             if (_spawnTimers[idx] < GameConfig.NPC_SPAWN_INTERVAL) continue;
 
             // スポーン実行

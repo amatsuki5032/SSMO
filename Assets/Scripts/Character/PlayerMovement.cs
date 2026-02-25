@@ -162,10 +162,10 @@ public class PlayerMovement : NetworkBehaviour
         _egSystem = GetComponent<EGSystem>();
         _musouGauge = GetComponent<MusouGauge>();
         _enhancementRing = GetComponent<EnhancementRing>();
+        if (_controller == null)
+            Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterController が見つかりません");
         if (_stateMachine == null)
-        {
             Debug.LogError($"[PlayerMovement] {gameObject.name}: CharacterStateMachine が見つかりません");
-        }
     }
 
     public override void OnNetworkSpawn()
@@ -923,7 +923,8 @@ public class PlayerMovement : NetworkBehaviour
 
         // 移動入力の決定（ジャンプ中は離陸方向、ガード中は生入力を使用）
         Vector2 move = GetEffectiveMove(input);
-        float speedMul = _isGuarding ? GameConfig.GUARD_MOVE_SPEED_MULTIPLIER : 1f;
+        // ガード移動 + 鈍足の速度倍率を正しく適用（GetSpeedMultiplier で一元管理）
+        float speedMul = GetSpeedMultiplier();
 
         // Idle ↔ Move ステート遷移（ジャンプ中・ガード中は不要）
         if (!_isJumping && !_isGuarding) UpdateMoveState(move.x, move.y);

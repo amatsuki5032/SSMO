@@ -326,6 +326,28 @@ public static class GameConfig
     public const float MINIMAP_SIZE = 200f;              // ミニマップ表示サイズ (px)
     public const float MINIMAP_RANGE = 50f;              // ミニマップ表示範囲 (m、プレイヤー中心からの半径)
 
+    // === のけぞり物理 ===
+    public const float HITSTUN_DECEL_RATE = 10f;           // のけぞりノックバック減速率
+    public const float SLAM_GRAVITY_MULTIPLIER = 3f;       // 叩きつけ時の重力倍率
+
+    // === 無双前進 ===
+    public const int MUSOU_HIT_INTERVAL_FRAMES = 6;        // 無双ヒット間隔（フレーム数、≒0.1秒@60Hz）
+
+    // === ダッシュラッシュ ===
+    public const float DASH_RUSH_ADVANCE_RATIO = 0.3f;     // ダッシュラッシュ追加ヒット時の前進距離倍率
+
+    // === 斬属性 ===
+    public const float SLASH_ATTACKER_MUSOU_COST_RATIO = 0.5f; // 斬属性攻撃側の無双ゲージ消費比率（仮値）
+
+    // === 拠点HP回復 ===
+    public const float BASE_HP_REGEN_INTERVAL = 1f;        // 拠点HP回復の適用間隔（秒）
+
+    // === ブレイクチャージ ===
+    public const float DEFAULT_BREAK_CHARGE_DURATION = 0.5f; // ブレイクチャージのデフォルト持続時間（秒）
+
+    // === NPC ===
+    public const float NPC_STOP_DISTANCE_SQ = 1f;          // NPC停止距離の2乗（1m²）
+
     // === M2-Visual-B: 攻撃前進距離 (m) ===
     // アクティブフレーム中にキャラ前方へ移動する合計距離
     public const float ADVANCE_N1 = 0.3f;

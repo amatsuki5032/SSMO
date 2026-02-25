@@ -230,8 +230,8 @@ public class ReactionSystem : NetworkBehaviour
     {
         _stateMachine.TryChangeState(CharacterState.Slam);
 
-        // 急速落下（重力の3倍で叩きつけ）
-        _reactionVelocity = new Vector3(0f, GameConfig.JUMP_GRAVITY * 3f, 0f);
+        // 急速落下（重力の SLAM_GRAVITY_MULTIPLIER 倍で叩きつけ）
+        _reactionVelocity = new Vector3(0f, GameConfig.JUMP_GRAVITY * GameConfig.SLAM_GRAVITY_MULTIPLIER, 0f);
         _isReactionPhysicsActive = true;
     }
 
@@ -268,7 +268,7 @@ public class ReactionSystem : NetworkBehaviour
         // のけぞり(Hitstun)の水平減速: 摩擦で徐々に停止
         if (state == CharacterState.Hitstun)
         {
-            float decel = 10f * GameConfig.FIXED_DELTA_TIME;
+            float decel = GameConfig.HITSTUN_DECEL_RATE * GameConfig.FIXED_DELTA_TIME;
             _reactionVelocity.x = Mathf.MoveTowards(_reactionVelocity.x, 0f, decel);
             _reactionVelocity.z = Mathf.MoveTowards(_reactionVelocity.z, 0f, decel);
         }

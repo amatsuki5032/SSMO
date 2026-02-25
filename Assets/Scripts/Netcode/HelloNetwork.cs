@@ -8,12 +8,19 @@ using UnityEngine;
 /// </summary>
 public class HelloNetwork : MonoBehaviour
 {
+    /// <summary>
+    /// NetworkManager のコールバックを登録する（接続・切断通知）
+    /// </summary>
     void Start()
     {
+        if (NetworkManager.Singleton == null) return;
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
     }
 
+    /// <summary>
+    /// コールバック解除（メモリリーク防止）
+    /// </summary>
     void OnDestroy()
     {
         if (NetworkManager.Singleton != null)
@@ -23,16 +30,21 @@ public class HelloNetwork : MonoBehaviour
         }
     }
 
+    /// <summary>クライアント接続時のログ出力</summary>
     void OnClientConnected(ulong clientId)
     {
         Debug.Log($"[SSMO] Client connected! ID: {clientId}");
     }
 
+    /// <summary>クライアント切断時のログ出力</summary>
     void OnClientDisconnected(ulong clientId)
     {
         Debug.Log($"[SSMO] Client disconnected! ID: {clientId}");
     }
 
+    /// <summary>
+    /// 接続UI（Host/Client/Server ボタン）と接続中の情報表示
+    /// </summary>
     void OnGUI()
     {
         GUILayout.BeginArea(new Rect(10, 10, 300, 400));

@@ -91,7 +91,7 @@ public static class DamageCalculator
         if (element == ElementType.Slash)
         {
             result.MusouDamage = result.HpDamage;
-            result.AttackerMusouCost = Mathf.RoundToInt(result.HpDamage * 0.5f); // 仮値
+            result.AttackerMusouCost = Mathf.RoundToInt(result.HpDamage * GameConfig.SLASH_ATTACKER_MUSOU_COST_RATIO);
         }
 
         return result;

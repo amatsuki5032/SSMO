@@ -59,6 +59,12 @@ public class HitboxSystem : NetworkBehaviour
         _playerMovement = GetComponent<PlayerMovement>();
         _elementSystem = GetComponent<ElementSystem>();
         _enhancementRing = GetComponent<EnhancementRing>();
+
+        // ヒット判定に必須のコンポーネントが欠けている場合はエラーログで報告
+        if (_comboSystem == null)
+            Debug.LogError($"[HitboxSystem] {gameObject.name}: ComboSystem が見つかりません");
+        if (_stateMachine == null)
+            Debug.LogError($"[HitboxSystem] {gameObject.name}: CharacterStateMachine が見つかりません");
     }
 
     /// <summary>現在の武器種を取得する</summary>
@@ -558,9 +564,8 @@ public class HitboxSystem : NetworkBehaviour
         var state = _stateMachine.CurrentState;
         if (state != CharacterState.Musou && state != CharacterState.TrueMusou) return;
 
-        // 無双中は毎フレーム一定量ずつ前進（各ヒット0.15mを60Hzで按分）
-        // 仮のヒット間隔: 6フレーム（≒0.1秒に1ヒット）
-        float perFrameDistance = GameConfig.ADVANCE_MUSOU_HIT / 6f;
+        // 無双中は毎フレーム一定量ずつ前進（各ヒット距離をヒット間隔フレームで按分）
+        float perFrameDistance = GameConfig.ADVANCE_MUSOU_HIT / GameConfig.MUSOU_HIT_INTERVAL_FRAMES;
         _characterController.Move(transform.forward * perFrameDistance);
     }
 
@@ -571,7 +576,7 @@ public class HitboxSystem : NetworkBehaviour
     {
         // ダッシュ攻撃（ラッシュ追加ヒットも同じ距離）
         if (isDash)
-            return isRush ? GameConfig.ADVANCE_DASH_ATTACK * 0.3f : GameConfig.ADVANCE_DASH_ATTACK;
+            return isRush ? GameConfig.ADVANCE_DASH_ATTACK * GameConfig.DASH_RUSH_ADVANCE_RATIO : GameConfig.ADVANCE_DASH_ATTACK;
 
         // チャージ攻撃
         if (chargeType > 0)
