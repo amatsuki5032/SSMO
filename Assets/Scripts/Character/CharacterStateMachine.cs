@@ -75,6 +75,10 @@ public class CharacterStateMachine : NetworkBehaviour
     // ReactionSystem が軽/重を指定してから TryChangeState する
     private float _hitstunOverride;
 
+    // スポーン無敵タイマー（ステート遷移に依存しない独立タイマー）
+    // リスポーン時に SetSpawnInvincibility() で設定される
+    private float _spawnInvincibleTimer;
+
     /// <summary>
     /// 次の Hitstun 遷移で使用する持続時間を設定する（サーバー側のみ）
     /// TryChangeState(Hitstun) の直前に呼ぶ。遷移後に自動で 0 にリセットされる
@@ -88,8 +92,9 @@ public class CharacterStateMachine : NetworkBehaviour
     /// 現在無敵状態か。サーバーが管理する
     /// Musou/TrueMusou/Getup は全フレーム無敵
     /// Jump/AirRecover はフレーム数で管理
+    /// スポーン無敵は独立タイマーで管理（攻撃しても解除されない）
     /// </summary>
-    public bool IsInvincible => _isInvincible;
+    public bool IsInvincible => _isInvincible || _spawnInvincibleTimer > 0f;
 
     // ============================================================
     // ライフサイクル
@@ -175,6 +180,19 @@ public class CharacterStateMachine : NetworkBehaviour
         _state.Value = newState;
         InitializeStateTimer(newState);
         InitializeInvincibility(newState);
+    }
+
+    /// <summary>
+    /// スポーン無敵を設定する（リスポーン時に SpawnManager から呼ばれる。サーバー専用）
+    /// ステート遷移に依存しない独立タイマーで管理されるため、
+    /// 攻撃やガードに遷移しても無敵が維持される（スポーンキャンプ対策）
+    /// </summary>
+    public void SetSpawnInvincibility()
+    {
+        if (!IsServer) return;
+
+        _spawnInvincibleTimer = GameConfig.SPAWN_INVINCIBLE_SEC;
+        Debug.Log($"[StateMachine] {gameObject.name}: スポーン無敵開始（{GameConfig.SPAWN_INVINCIBLE_SEC}秒）");
     }
 
     // ============================================================
@@ -497,13 +515,26 @@ public class CharacterStateMachine : NetworkBehaviour
     /// </summary>
     private void UpdateInvincibility()
     {
+        // フレーム数管理の無敵（ジャンプ離陸・受け身）
         // -1 はステート終了まで無敵（タイマー管理）なので減算しない
-        if (_invincibleFrames <= 0) return;
-
-        _invincibleFrames--;
-        if (_invincibleFrames <= 0)
+        if (_invincibleFrames > 0)
         {
-            _isInvincible = false;
+            _invincibleFrames--;
+            if (_invincibleFrames <= 0)
+            {
+                _isInvincible = false;
+            }
+        }
+
+        // スポーン無敵タイマー（ステート遷移に依存しない独立タイマー）
+        if (_spawnInvincibleTimer > 0f)
+        {
+            _spawnInvincibleTimer -= GameConfig.FIXED_DELTA_TIME;
+            if (_spawnInvincibleTimer <= 0f)
+            {
+                _spawnInvincibleTimer = 0f;
+                Debug.Log($"[StateMachine] {gameObject.name}: スポーン無敵終了");
+            }
         }
     }
 

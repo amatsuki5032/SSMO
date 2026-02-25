@@ -192,10 +192,13 @@ public class SpawnManager : NetworkBehaviour
 
         if (controller != null) controller.enabled = true;
 
-        // ステートを Idle にリセット
+        // ステートを Idle にリセット + スポーン無敵
         var stateMachine = playerObject.GetComponent<CharacterStateMachine>();
         if (stateMachine != null)
+        {
             stateMachine.ForceState(CharacterState.Idle);
+            stateMachine.SetSpawnInvincibility();
+        }
 
         // HP全回復
         var health = playerObject.GetComponent<HealthSystem>();
@@ -233,6 +236,6 @@ public class SpawnManager : NetworkBehaviour
                 comboSystem.ResetEnhancements();
         }
 
-        Debug.Log($"[SpawnManager] Client {clientId} リスポーン完了 → {spawnPos} (HP全回復 / 無双MAX)");
+        Debug.Log($"[SpawnManager] Client {clientId} リスポーン完了 → {spawnPos} (HP全回復 / 無双MAX / 無敵{GameConfig.SPAWN_INVINCIBLE_SEC}秒)");
     }
 }

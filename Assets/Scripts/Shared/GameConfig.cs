@@ -348,6 +348,9 @@ public static class GameConfig
     // === NPC ===
     public const float NPC_STOP_DISTANCE_SQ = 1f;          // NPC停止距離の2乗（1m²）
 
+    // === スポーン無敵 ===
+    public const float SPAWN_INVINCIBLE_SEC = 3f;         // リスポーン後の無敵時間 (秒)
+
     // === 微弱ロックオン（ソフトターゲット）===
     public const float SOFT_TARGET_RANGE = 10f;           // 検出範囲 (m)
     public const float SOFT_TARGET_ANGLE = 90f;            // 前方扇形の半角 (度。90 = 180度コーン)

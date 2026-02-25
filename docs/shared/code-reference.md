@@ -94,6 +94,7 @@
 | `void AddStatusEffect(StatusEffect)` | 状態異常フラグを付与（サーバー側） |
 | `void RemoveStatusEffect(StatusEffect)` | 状態異常フラグを解除（サーバー側） |
 | `bool HasStatusEffect(StatusEffect)` | 指定の状態異常フラグがあるか判定 |
+| `void SetSpawnInvincibility()` | スポーン無敵を設定する（リスポーン時。サーバー専用。独立タイマー3秒） |
 
 **NetworkVariable**
 
@@ -163,6 +164,7 @@
 | ダッシュラッシュ | `DASH_RUSH_ADVANCE_RATIO(0.3)` |
 | 斬属性 | `SLASH_ATTACKER_MUSOU_COST_RATIO(0.5)` |
 | 拠点HP回復 | `BASE_HP_REGEN_INTERVAL(1)` |
+| スポーン無敵 | `SPAWN_INVINCIBLE_SEC(3)` |
 | NPC停止 | `NPC_STOP_DISTANCE_SQ(1)` |
 | ブレイクチャージデフォルト | `DEFAULT_BREAK_CHARGE_DURATION(0.5)` |
 | 微弱ロックオン | `SOFT_TARGET_RANGE(10)`, `SOFT_TARGET_ANGLE(90)` |
