@@ -80,8 +80,8 @@ public class CameraController : MonoBehaviour
     private void LateUpdate()
     {
 #if UNITY_EDITOR
-        // デバッグ俯瞰カメラ切替（BackQuote ` キー）
-        if (Input.GetKeyDown(KeyCode.BackQuote))
+        // デバッグ俯瞰カメラ切替（Tキー）
+        if (Input.GetKeyDown(KeyCode.T))
         {
             _debugFreeCamera = !_debugFreeCamera;
             if (_debugFreeCamera)

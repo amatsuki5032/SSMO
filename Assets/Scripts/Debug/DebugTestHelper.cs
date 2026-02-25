@@ -8,19 +8,20 @@ using UnityEngine;
 /// NetworkPlayer Prefab にアタッチして使用。
 /// Host の自分プレイヤーオブジェクト上でのみ動作する。
 ///
-/// キー操作:
-///   F1:  相手を Hitstun トグル
-///   F2:  相手を Launch トグル
+/// キー操作（使用頻度順）:
+///   F1:  相手を正面2mに瞬間移動
+///   F2:  全員HP全回復 + Dead 復活
 ///   F3:  自分の無双ゲージ MAX
-///   F4:  相手を EG展開トグル（ゲージ補充付き、EG維持用）
-///   F5:  相手を自分の正面2mに瞬間移動
-///   F6:  相手にガード状態を強制トグル
-///   F7:  自分のHPを20%に（真無双テスト用）
-///   F8:  相手を自分の背面2mに移動（めくりテスト用）
-///   F9:  全員のHP全回復 + Dead 復活
+///   F4:  自分のHPを20%に（真無双テスト用）
+///   F5:  相手にガード状態を強制トグル
+///   F6:  相手を背面2mに移動（めくりテスト用）
+///   F7:  相手を Hitstun トグル
+///   F8:  相手を EG展開トグル（ゲージ補充付き、EG維持用）
+///   F9:  相手を Launch トグル
 ///   F10: 相手のアーマー段階を1上げる（ループ）
+///   F11: 自分の武器2を変更（ループ）
 ///   F12: 表示トグル
-///   ` (BackQuote): 俯瞰フリーカメラ トグル（CameraController）
+///   T:   俯瞰フリーカメラ トグル（CameraController）
 /// </summary>
 public class DebugTestHelper : NetworkBehaviour
 {
@@ -40,15 +41,15 @@ public class DebugTestHelper : NetworkBehaviour
         if (!IsServer || !IsOwner) return;
 
         if (Input.GetKeyDown(KeyCode.F12)) _showGui = !_showGui;
-        if (Input.GetKeyDown(KeyCode.F1))  DoToggleHitstun();
-        if (Input.GetKeyDown(KeyCode.F2))  DoToggleLaunch();
+        if (Input.GetKeyDown(KeyCode.F1))  DoTeleportTarget();
+        if (Input.GetKeyDown(KeyCode.F2))  DoHealAll();
         if (Input.GetKeyDown(KeyCode.F3))  DoFillMusou();
-        if (Input.GetKeyDown(KeyCode.F4))  DoToggleTargetEGReady();
-        if (Input.GetKeyDown(KeyCode.F5))  DoTeleportTarget();
-        if (Input.GetKeyDown(KeyCode.F6))  DoToggleGuard();
-        if (Input.GetKeyDown(KeyCode.F7))  DoSetHpLow();
-        if (Input.GetKeyDown(KeyCode.F8))  DoTeleportTargetBehind();
-        if (Input.GetKeyDown(KeyCode.F9))  DoHealAll();
+        if (Input.GetKeyDown(KeyCode.F4))  DoSetHpLow();
+        if (Input.GetKeyDown(KeyCode.F5))  DoToggleGuard();
+        if (Input.GetKeyDown(KeyCode.F6))  DoTeleportTargetBehind();
+        if (Input.GetKeyDown(KeyCode.F7))  DoToggleHitstun();
+        if (Input.GetKeyDown(KeyCode.F8))  DoToggleTargetEGReady();
+        if (Input.GetKeyDown(KeyCode.F9))  DoToggleLaunch();
         if (Input.GetKeyDown(KeyCode.F10)) DoCycleArmor();
         if (Input.GetKeyDown(KeyCode.F11)) DoCycleWeapon2();
     }
@@ -69,7 +70,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F1: 相手を Hitstun トグル
+    // F7: 相手を Hitstun トグル
     // ============================================================
 
     private void DoToggleHitstun()
@@ -93,7 +94,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F2: 相手を Launch トグル
+    // F9: 相手を Launch トグル
     // ============================================================
 
     private void DoToggleLaunch()
@@ -131,7 +132,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F4: 相手を EG展開状態にする（トグル）
+    // F8: 相手を EG展開状態にする（トグル）
     // ============================================================
 
     private void DoToggleTargetEGReady()
@@ -164,7 +165,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F5: 相手を自分の正面2mに瞬間移動
+    // F1: 相手を自分の正面2mに瞬間移動
     // ============================================================
 
     private void DoTeleportTarget()
@@ -184,7 +185,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F6: 相手にガード状態を強制トグル
+    // F5: 相手にガード状態を強制トグル
     // ============================================================
 
     private void DoToggleGuard()
@@ -210,7 +211,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F7: 自分のHPを20%に設定（真無双テスト用）
+    // F4: 自分のHPを20%に設定（真無双テスト用）
     // ============================================================
 
     private void DoSetHpLow()
@@ -228,7 +229,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F8: 相手を自分の背面2mに移動（めくりテスト用）
+    // F6: 相手を自分の背面2mに移動（めくりテスト用）
     // ============================================================
 
     private void DoTeleportTargetBehind()
@@ -250,7 +251,7 @@ public class DebugTestHelper : NetworkBehaviour
     }
 
     // ============================================================
-    // F9: 全員のHP全回復 + Dead 復活
+    // F2: 全員のHP全回復 + Dead 復活
     // ============================================================
 
     private void DoHealAll()
@@ -348,18 +349,18 @@ public class DebugTestHelper : NetworkBehaviour
         // デバッグコマンド一覧
         string[] cmds =
         {
-            "F1 : 相手 Hitstun トグル",
-            "F2 : 相手 Launch トグル",
+            "F1 : 相手を正面2mに移動",
+            "F2 : 全員HP全回復 + 復活",
             "F3 : 自分 無双ゲージ MAX",
-            "F4 : 相手 EG展開 トグル",
-            "F5 : 相手を正面2mに移動",
-            "F6 : 相手 ガード トグル",
-            "F7 : 自分 HP20%(真無双テスト)",
-            "F8 : 相手を背面2mに移動(めくり)",
-            "F9 : 全員HP全回復 + 復活",
+            "F4 : 自分 HP20%(真無双テスト)",
+            "F5 : 相手 ガード トグル",
+            "F6 : 相手を背面2mに移動(めくり)",
+            "F7 : 相手 Hitstun トグル",
+            "F8 : 相手 EG展開 トグル",
+            "F9 : 相手 Launch トグル",
             "F10: 相手 アーマー+1(ループ)",
             "F11: 自分 武器2変更(ループ)",
-            "`  : 俯瞰フリーカメラ トグル",
+            "T  : 俯瞰フリーカメラ トグル",
         };
         foreach (string cmd in cmds)
         {
@@ -393,15 +394,15 @@ public class DebugTestHelper : NetworkBehaviour
         // 通常操作キー一覧（PlayerMovement.cs の実際のキーバインドに準拠）
         string[] controls =
         {
-            "WASD       : 移動",
-            "Space      : ジャンプ",
-            "左クリック : 通常攻撃 (□)",
-            "右クリック : チャージ攻撃 (△)",
-            "LShift     : ガード (L1)",
-            "LShift+右長押し : EG準備 → EG展開",
-            "Q / 中クリック  : 無双 (○)",
-            "R              : ブレイクチャージ (L2)",
-            "E              : 仙箪強化 (R1)",
+            "WASD           : 移動",
+            "N / .          : ジャンプ",
+            "J / 左クリック : 通常攻撃 (□)",
+            "K / 右クリック : チャージ攻撃 (△)",
+            "U / O / LShift : ガード (L1)",
+            "ガード+K長押し : EG準備 → EG展開",
+            "L / 中クリック : 無双 (○)",
+            "H              : ブレイクチャージ (L2)",
+            "I              : 仙箪強化 (R1)",
         };
         foreach (string ctrl in controls)
         {
