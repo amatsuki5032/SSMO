@@ -30,20 +30,20 @@
 - [ ] 視認性改善: チーム色反映（赤/青）、地面暗めグレー、NPC色分け
 
 ### M5: インフラ＆チート対策（7件）
-- [ ] M5-1: Firebase Auth認証 → tasks/m5-1.md 🔧
+- [ ] M5-1: Firebase Auth認証 → tasks/m5-1.md 🔧Firebase SDK導入+Console設定
 - [ ] M5-2: Firestoreプレイヤーデータ → tasks/m5-2.md
-- [ ] M5-3: Unity Relay接続 → tasks/m5-3.md 🔧
-- [ ] M5-4: ロビー＆マッチメイキング → tasks/m5-4.md 🔧
+- [ ] M5-3: Unity Relay接続 → tasks/m5-3.md 🔧Relay Service有効化+パッケージ追加
+- [ ] M5-4: ロビー＆マッチメイキング → tasks/m5-4.md 🔧Lobby Service有効化+パッケージ追加
 - [ ] M5-5: チート対策・入力バリデーション → tasks/m5-5.md
 - [ ] M5-6: サーバーログ＆監視 → tasks/m5-6.md
 - [ ] M5-7: ドキュメント更新 → tasks/m5-7.md
 
 ### M6: ポリッシュ＆α版リリース（7件）
-- [ ] M6-1: キャラクターモデル＆アニメーション → tasks/m6-1.md 🔧
+- [ ] M6-1: キャラクターモデル＆アニメーション → tasks/m6-1.md 🔧モデルインポート+Animator設定
 - [ ] M6-2: ヒットエフェクト＆属性エフェクト → tasks/m6-2.md
-- [ ] M6-3: サウンドシステム → tasks/m6-3.md 🔧
-- [ ] M6-4: UI改善（uGUI移行） → tasks/m6-4.md 🔧
-- [ ] M6-5: バトルマップ改善 → tasks/m6-5.md 🔧
+- [ ] M6-3: サウンドシステム → tasks/m6-3.md 🔧音素材インポート
+- [ ] M6-4: UI改善（uGUI移行） → tasks/m6-4.md 🔧Canvas/Prefab手動設定多数
+- [ ] M6-5: バトルマップ改善 → tasks/m6-5.md 🔧地形・アセット手動配置
 - [ ] M6-6: バランス調整 → tasks/m6-6.md
 - [ ] M6-7: ドキュメント更新 → tasks/m6-7.md
 
