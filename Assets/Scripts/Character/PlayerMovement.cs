@@ -137,8 +137,8 @@ public class PlayerMovement : NetworkBehaviour
     private bool _chargeHeld;      // チャージ長押し（EG準備用）
     private bool _musouPressed;    // 無双（押した瞬間のみ、消費後リセット）
     private bool _musouHeld;       // 無双長押し（MusouCharge用）
-    private bool _enhancePressed;  // R1（Eキー、押した瞬間のみ、消費後リセット）
-    private bool _breakPressed;    // L2（Rキー、押した瞬間のみ、消費後リセット）
+    private bool _enhancePressed;  // R1（Iキー、押した瞬間のみ、消費後リセット）
+    private bool _breakPressed;    // L2（Hキー、押した瞬間のみ、消費後リセット）
 
     // --- クライアント予測用リングバッファ ---
     // 過去の入力と予測結果を保持し、リコンシリエーション時のリプレイに使う
@@ -258,26 +258,26 @@ public class PlayerMovement : NetworkBehaviour
             _jumpPressed = true;
 
         // ガードは押しっぱなしで true
-        // SSMO Online準拠: U or O
-        _guardHeld = Input.GetKey(KeyCode.U) || Input.GetKey(KeyCode.O);
+        // SSMO Online準拠: U or O or LShift
+        _guardHeld = Input.GetKey(KeyCode.U) || Input.GetKey(KeyCode.O) || Input.GetKey(KeyCode.LeftShift);
 
-        // 通常攻撃（Jキー）: 押した瞬間のみ true（FixedUpdate で消費されるまで保持）
-        if (Input.GetKeyDown(KeyCode.J))
+        // 通常攻撃（Jキー or 左クリック）: 押した瞬間のみ true（FixedUpdate で消費されるまで保持）
+        if (Input.GetKeyDown(KeyCode.J) || Input.GetMouseButtonDown(0))
             _attackPressed = true;
 
-        // チャージ攻撃（Kキー）: 押した瞬間のみ true
-        if (Input.GetKeyDown(KeyCode.K))
+        // チャージ攻撃（Kキー or 右クリック）: 押した瞬間のみ true
+        if (Input.GetKeyDown(KeyCode.K) || Input.GetMouseButtonDown(1))
             _chargePressed = true;
 
         // チャージ長押し（EG準備用）
-        _chargeHeld = Input.GetKey(KeyCode.K);
+        _chargeHeld = Input.GetKey(KeyCode.K) || Input.GetMouseButton(1);
 
-        // 無双（Lキー）: 押した瞬間
-        if (Input.GetKeyDown(KeyCode.L))
+        // 無双（Lキー or 中クリック）: 押した瞬間
+        if (Input.GetKeyDown(KeyCode.L) || Input.GetMouseButtonDown(2))
             _musouPressed = true;
 
         // 無双長押し（MusouCharge 用）
-        _musouHeld = Input.GetKey(KeyCode.L);
+        _musouHeld = Input.GetKey(KeyCode.L) || Input.GetMouseButton(2);
 
         // R1（Iキー）: 仙箪強化リング発動
         if (Input.GetKeyDown(KeyCode.I))
