@@ -266,7 +266,7 @@ public class CharacterStateMachine : NetworkBehaviour
             {
                 InputType.NormalAttack => true,   // JA
                 InputType.ChargeAttack => true,   // JC
-                InputType.BreakCharge => true,    // ABC（空中ブレイクチャージ）
+                InputType.BreakCharge => true,    // JBC（空中ブレイクチャージ）
                 _ => false,
             },
 

@@ -370,7 +370,11 @@ NetworkVariable / RPC / GetComponent なし。
 | `void SetC6Inscription(InscriptionType)` | C6刻印を設定する（全6種。サーバー専用） |
 | `WeaponType Weapon2Type` | 武器2の武器種（読み取り専用プロパティ。サーバー権威） |
 | `bool IsBreakCharging` | ブレイクチャージ中か（HitboxSystem用。読み取り専用プロパティ） |
-| `int BreakChargeVariant` | ブレイクチャージの種類（1=BC地上, 2=DBCダッシュ, 3=ABC空中） |
+| `int BreakChargeVariant` | ブレイクチャージの種類（1=BC地上, 2=DBCダッシュ, 3=JBC空中） |
+| `bool IsJumpAttacking` | ジャンプ攻撃(JA)中か（HitboxSystem用。読み取り専用プロパティ） |
+| `bool IsJumpCharging` | ジャンプチャージ(JC)中か（HitboxSystem用。読み取り専用プロパティ） |
+| `void TryStartJumpAttack()` | ジャンプ通常攻撃(JA)を開始する（サーバー権威。Jump中に□） |
+| `void TryStartJumpCharge()` | ジャンプチャージ攻撃(JC)を開始する（サーバー権威。Jump中に△） |
 | `int BreakRushStack` | ブレイクラッシュスタック数（0〜5。連続BC回数） |
 | `float BreakRushAtkMultiplier` | ブレイクラッシュATKボーナス倍率（1.0 + 0.1 * stack） |
 | `float GetBreakChargeMultiplier()` | ブレイクチャージのモーション倍率を返す（武器2パラメータ参照） |

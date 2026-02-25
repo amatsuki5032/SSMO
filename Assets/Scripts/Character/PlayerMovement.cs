@@ -476,8 +476,11 @@ public class PlayerMovement : NetworkBehaviour
                 ApplySoftTarget(input.MoveInput);
             if (input.AttackPressed && _comboSystem != null)
             {
-                // ダッシュ状態 or ダッシュ攻撃中 → ダッシュ攻撃/ラッシュ優先
-                if (IsDashing || _comboSystem.IsDashAttacking)
+                if (_isJumping)
+                {
+                    _comboSystem.TryStartJumpAttack();
+                }
+                else if (IsDashing || _comboSystem.IsDashAttacking)
                 {
                     _comboSystem.TryStartDashAttack();
                     _moveTime = 0f;
@@ -489,7 +492,12 @@ public class PlayerMovement : NetworkBehaviour
                 }
             }
             if (input.ChargePressed && _comboSystem != null)
-                _comboSystem.TryStartCharge(input.MoveInput);
+            {
+                if (_isJumping)
+                    _comboSystem.TryStartJumpCharge();
+                else
+                    _comboSystem.TryStartCharge(input.MoveInput);
+            }
             // 無双入力処理
             if (_musouGauge != null)
             {
@@ -1069,8 +1077,11 @@ public class PlayerMovement : NetworkBehaviour
         // 攻撃入力 → コンボシステムに委譲（サーバー権威）
         if (input.AttackPressed && _comboSystem != null)
         {
-            // ダッシュ状態 or ダッシュ攻撃中 → ダッシュ攻撃/ラッシュ優先
-            if (IsDashing || _comboSystem.IsDashAttacking)
+            if (_isJumping)
+            {
+                _comboSystem.TryStartJumpAttack();
+            }
+            else if (IsDashing || _comboSystem.IsDashAttacking)
             {
                 _comboSystem.TryStartDashAttack();
                 _moveTime = 0f;
@@ -1082,7 +1093,12 @@ public class PlayerMovement : NetworkBehaviour
             }
         }
         if (input.ChargePressed && _comboSystem != null)
-            _comboSystem.TryStartCharge(input.MoveInput);
+        {
+            if (_isJumping)
+                _comboSystem.TryStartJumpCharge();
+            else
+                _comboSystem.TryStartCharge(input.MoveInput);
+        }
 
         // 無双入力処理（サーバー権威）
         if (_musouGauge != null)

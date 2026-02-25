@@ -137,6 +137,20 @@ public class ComboSystem : NetworkBehaviour
     public bool IsDashAttacking => _isDashAttacking;
 
     // ============================================================
+    // サーバー側管理データ — ジャンプ攻撃
+    // ============================================================
+
+    private bool _isJumpAttacking;      // JA（ジャンプ通常攻撃）中フラグ
+    private bool _isJumpCharging;       // JC（ジャンプチャージ攻撃）中フラグ
+    private float _jumpAttackTimer;     // JA/JC モーションの残り時間
+
+    /// <summary>ジャンプ攻撃中か（HitboxSystem 用）</summary>
+    public bool IsJumpAttacking => _isJumpAttacking;
+
+    /// <summary>ジャンプチャージ中か（HitboxSystem 用）</summary>
+    public bool IsJumpCharging => _isJumpCharging;
+
+    // ============================================================
     // HitboxSystem 向け公開プロパティ
     // ============================================================
 
@@ -192,12 +206,12 @@ public class ComboSystem : NetworkBehaviour
     private float _breakChargeTimer;    // ブレイクチャージモーションの残り時間
     private int _breakRushStack;        // ブレイクラッシュスタック数（連続BC回数）
     private float _breakRushTimer;      // ブレイクラッシュウィンドウタイマー
-    private int _breakChargeVariant;    // ブレイクチャージの種類: 1=BC(地上), 2=DBC(ダッシュ), 3=ABC(空中)
+    private int _breakChargeVariant;    // ブレイクチャージの種類: 1=BC(地上), 2=DBC(ダッシュ), 3=JBC(空中)
 
     /// <summary>ブレイクチャージ中か（HitboxSystem 用）</summary>
     public bool IsBreakCharging => _isBreakCharging;
 
-    /// <summary>ブレイクチャージの種類（1=BC, 2=DBC, 3=ABC）</summary>
+    /// <summary>ブレイクチャージの種類（1=BC, 2=DBC, 3=JBC）</summary>
     public int BreakChargeVariant => _breakChargeVariant;
 
     /// <summary>ブレイクラッシュスタック数（攻撃力ボーナス計算用）</summary>
@@ -253,6 +267,7 @@ public class ComboSystem : NetworkBehaviour
         UpdateCombo();
         UpdateCharge();
         UpdateDashAttack();
+        UpdateJumpAttack();
         UpdateBreakCharge();
         UpdateSegmentTimer();
     }
@@ -551,6 +566,90 @@ public class ComboSystem : NetworkBehaviour
     }
 
     // ============================================================
+    // ジャンプ攻撃入力処理（★サーバー側で実行★）
+    // ============================================================
+
+    /// <summary>
+    /// ジャンプ通常攻撃（JA）を開始する。サーバー権威
+    /// Jump ステート中に □ で発動。着地まで入力不可
+    /// </summary>
+    public void TryStartJumpAttack()
+    {
+        if (!IsServer) return;
+        if (!_stateMachine.CanAcceptInput(InputType.NormalAttack)) return;
+
+        // 他の攻撃状態をリセット
+        ResetCombo();
+        ResetCharge();
+        ResetDashAttack();
+
+        _isJumpAttacking = true;
+        _isJumpCharging = false;
+        // JA の持続時間: 武器種の N1 持続時間を流用（JA 専用パラメータがないため）
+        _jumpAttackTimer = WeaponData.GetWeaponParams(GetWeaponType()).NormalDurations[0];
+        _attackSequence++;
+        _segmentElapsed = 0f;
+
+        _stateMachine.TryChangeState(CharacterState.JumpAttack);
+        Debug.Log($"[Combo] {gameObject.name}: JA（ジャンプ攻撃）開始");
+    }
+
+    /// <summary>
+    /// ジャンプチャージ攻撃（JC）を開始する。サーバー権威
+    /// Jump ステート中に △ で発動。着地まで入力不可
+    /// </summary>
+    public void TryStartJumpCharge()
+    {
+        if (!IsServer) return;
+        if (!_stateMachine.CanAcceptInput(InputType.ChargeAttack)) return;
+
+        // 他の攻撃状態をリセット
+        ResetCombo();
+        ResetCharge();
+        ResetDashAttack();
+
+        _isJumpAttacking = false;
+        _isJumpCharging = true;
+        // JC の持続時間: 武器種の C1 持続時間を流用（JC 専用パラメータがないため）
+        _jumpAttackTimer = WeaponData.GetWeaponParams(GetWeaponType()).ChargeDurations[0];
+        _attackSequence++;
+        _segmentElapsed = 0f;
+
+        _stateMachine.TryChangeState(CharacterState.JumpAttack);
+        Debug.Log($"[Combo] {gameObject.name}: JC（ジャンプチャージ）開始");
+    }
+
+    // ============================================================
+    // ジャンプ攻撃更新（★サーバー側 FixedUpdate★）
+    // ============================================================
+
+    /// <summary>
+    /// JA/JC タイマーを毎 FixedUpdate で更新する
+    /// タイマー満了で Jump に遷移（まだ空中なので着地判定は PlayerMovement に任せる）
+    /// </summary>
+    private void UpdateJumpAttack()
+    {
+        if (!_isJumpAttacking && !_isJumpCharging) return;
+
+        // 外部要因で JumpAttack から離脱した場合（被弾等）→ リセット
+        if (_stateMachine.CurrentState != CharacterState.JumpAttack)
+        {
+            ResetJumpAttack();
+            return;
+        }
+
+        _jumpAttackTimer -= GameConfig.FIXED_DELTA_TIME;
+
+        if (_jumpAttackTimer <= 0f)
+        {
+            string label = _isJumpCharging ? "JC" : "JA";
+            Debug.Log($"[Combo] {gameObject.name}: {label} 終了");
+            ResetJumpAttack();
+            _stateMachine.TryChangeState(CharacterState.Jump);
+        }
+    }
+
+    // ============================================================
     // 内部ヘルパー — 通常攻撃
     // ============================================================
 
@@ -642,6 +741,16 @@ public class ComboSystem : NetworkBehaviour
         _isDashAttacking = false;
         _dashAttackTimer = 0f;
         _dashRushHitCount = 0;
+    }
+
+    /// <summary>
+    /// ジャンプ攻撃状態をリセットする
+    /// </summary>
+    private void ResetJumpAttack()
+    {
+        _isJumpAttacking = false;
+        _isJumpCharging = false;
+        _jumpAttackTimer = 0f;
     }
 
     // ============================================================
@@ -819,7 +928,7 @@ public class ComboSystem : NetworkBehaviour
     /// 状況に応じて武器2のパラメータで攻撃する。3パターン:
     ///   地上通常 (BC)  → 武器2の C3
     ///   ダッシュ中 (DBC) → 武器2の D
-    ///   空中 (ABC)      → 武器2の JC
+    ///   空中 (JBC)      → 武器2の JC
     /// 連続発動でブレイクラッシュ（ATK+10%スタック）
     /// </summary>
     /// <param name="isDashing">ダッシュ状態か</param>
@@ -835,10 +944,10 @@ public class ComboSystem : NetworkBehaviour
         // 入力受付判定
         if (!_stateMachine.CanAcceptInput(InputType.BreakCharge)) return;
 
-        // 空中ブレイクチャージ（ABC）: Jump ステート中のみ
+        // 空中ブレイクチャージ（JBC）: Jump ステート中のみ
         if (isAirborne)
         {
-            StartBreakCharge(3, moveInput); // ABC = 武器2のJC
+            StartBreakCharge(3, moveInput); // JBC = 武器2のJC
             return;
         }
 
@@ -856,7 +965,7 @@ public class ComboSystem : NetworkBehaviour
     /// <summary>
     /// ブレイクチャージを開始する
     /// </summary>
-    /// <param name="variant">1=BC(地上), 2=DBC(ダッシュ), 3=ABC(空中)</param>
+    /// <param name="variant">1=BC(地上), 2=DBC(ダッシュ), 3=JBC(空中)</param>
     /// <param name="moveInput">向き設定用の移動入力</param>
     private void StartBreakCharge(int variant, Vector2 moveInput)
     {
@@ -892,7 +1001,7 @@ public class ComboSystem : NetworkBehaviour
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
         }
 
-        string[] variantNames = { "", "BC(地上)", "DBC(ダッシュ)", "ABC(空中)" };
+        string[] variantNames = { "", "BC(地上)", "DBC(ダッシュ)", "JBC(空中)" };
         Debug.Log($"[BreakCharge] {gameObject.name}: {variantNames[variant]} 開始（武器2: {_weapon2Type.Value}）");
     }
 
@@ -929,7 +1038,7 @@ public class ComboSystem : NetworkBehaviour
 
         if (_breakChargeTimer <= 0f)
         {
-            string[] variantNames = { "", "BC", "DBC", "ABC" };
+            string[] variantNames = { "", "BC", "DBC", "JBC" };
             Debug.Log($"[BreakCharge] {gameObject.name}: {variantNames[_breakChargeVariant]} 終了");
             ResetBreakCharge(true); // 正常終了: ラッシュウィンドウ開始
             _stateMachine.TryChangeState(CharacterState.Idle);
@@ -967,7 +1076,7 @@ public class ComboSystem : NetworkBehaviour
         {
             1 => w2.ChargeDurations[2],   // BC = 武器2の C3 持続時間
             2 => w2.DashAttackDuration,    // DBC = 武器2の D 持続時間
-            3 => w2.ChargeDurations[0],    // ABC = 武器2の C1 持続時間（JC用の独立パラメータがないため C1 流用）
+            3 => w2.ChargeDurations[0],    // JBC = 武器2の C1 持続時間（JC用の独立パラメータがないため C1 流用）
             _ => GameConfig.DEFAULT_BREAK_CHARGE_DURATION,
         };
     }
@@ -982,7 +1091,7 @@ public class ComboSystem : NetworkBehaviour
         {
             1 => w2.ChargeMultipliers[2],      // BC = 武器2の C3 倍率
             2 => w2.DashAttackMultiplier,       // DBC = 武器2の D 倍率
-            3 => w2.JumpChargeMultiplier,       // ABC = 武器2の JC 倍率
+            3 => w2.JumpChargeMultiplier,       // JBC = 武器2の JC 倍率
             _ => 1.0f,
         };
     }

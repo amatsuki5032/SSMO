@@ -108,12 +108,18 @@ public class HitboxSystem : NetworkBehaviour
         bool isRush = _comboSystem.IsRush;
         bool isEvolution = _comboSystem.IsEvolution;
         bool isBreak = _comboSystem.IsBreakCharging;
+        bool isJA = _comboSystem.IsJumpAttacking;
+        bool isJC = _comboSystem.IsJumpCharging;
 
-        if (comboStep == 0 && chargeType == 0 && !isDash && !isBreak) return;
+        if (comboStep == 0 && chargeType == 0 && !isDash && !isBreak && !isJA && !isJC) return;
 
         // 現在の攻撃に対応する HitboxData を取得（武器種リーチ反映、エボリューション・刻印・ブレイクチャージ対応）
         HitboxData hitbox;
-        if (isBreak)
+        if (isJA)
+            hitbox = WeaponData.GetJumpAttackHitbox(GetWeaponType());
+        else if (isJC)
+            hitbox = WeaponData.GetJumpChargeHitbox(GetWeaponType());
+        else if (isBreak)
             hitbox = HitboxData.GetBreakChargeHitboxData(_comboSystem.BreakChargeVariant, _comboSystem.Weapon2Type);
         else
             hitbox = HitboxData.GetHitboxData(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvolution, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
@@ -292,9 +298,15 @@ public class HitboxSystem : NetworkBehaviour
             bool isEvo = _comboSystem.IsEvolution;
             bool isBreakHit = _comboSystem.IsBreakCharging;
 
-            // モーション倍率: ブレイクチャージは武器2パラメータから取得
+            // モーション倍率: JA/JC/ブレイクチャージは専用パラメータから取得
+            bool isJAHit = _comboSystem.IsJumpAttacking;
+            bool isJCHit = _comboSystem.IsJumpCharging;
             float motionMultiplier;
-            if (isBreakHit)
+            if (isJAHit)
+                motionMultiplier = WeaponData.GetWeaponParams(GetWeaponType()).JumpAttackMultiplier;
+            else if (isJCHit)
+                motionMultiplier = WeaponData.GetWeaponParams(GetWeaponType()).JumpChargeMultiplier;
+            else if (isBreakHit)
                 motionMultiplier = _comboSystem.GetBreakChargeMultiplier();
             else
                 motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), isEvo, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
@@ -418,10 +430,16 @@ public class HitboxSystem : NetworkBehaviour
         Debug.Log($"[Hit-NPC] {gameObject.name} → {npcSoldier.gameObject.name} ヒット確定" +
                   $" (N{comboStep}/C{chargeType}/D={isDash})");
 
-        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし、刻印・ブレイクチャージ対応）
+        // NPC向け簡易ダメージ計算: ATK × モーション倍率（ガード・根性補正なし、JA/JC/刻印・ブレイクチャージ対応）
+        bool isJAHitNPC = _comboSystem.IsJumpAttacking;
+        bool isJCHitNPC = _comboSystem.IsJumpCharging;
         bool isBreakHitNPC = _comboSystem.IsBreakCharging;
         float motionMultiplier;
-        if (isBreakHitNPC)
+        if (isJAHitNPC)
+            motionMultiplier = WeaponData.GetWeaponParams(GetWeaponType()).JumpAttackMultiplier;
+        else if (isJCHitNPC)
+            motionMultiplier = WeaponData.GetWeaponParams(GetWeaponType()).JumpChargeMultiplier;
+        else if (isBreakHitNPC)
             motionMultiplier = _comboSystem.GetBreakChargeMultiplier();
         else
             motionMultiplier = DamageCalculator.GetMotionMultiplier(comboStep, chargeType, isDash, isRush, GetWeaponType(), false, _comboSystem.C1Inscription, _comboSystem.C6Inscription);
