@@ -348,6 +348,10 @@ public static class GameConfig
     // === NPC ===
     public const float NPC_STOP_DISTANCE_SQ = 1f;          // NPC停止距離の2乗（1m²）
 
+    // === 微弱ロックオン（ソフトターゲット）===
+    public const float SOFT_TARGET_RANGE = 10f;           // 検出範囲 (m)
+    public const float SOFT_TARGET_ANGLE = 90f;            // 前方扇形の半角 (度。90 = 180度コーン)
+
     // === M2-Visual-B: 攻撃前進距離 (m) ===
     // アクティブフレーム中にキャラ前方へ移動する合計距離
     public const float ADVANCE_N1 = 0.3f;

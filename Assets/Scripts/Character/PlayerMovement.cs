@@ -103,6 +103,9 @@ public class PlayerMovement : NetworkBehaviour
     private float _moveTime;        // 連続移動時間（サーバー管理、クライアント予測用）
     private bool _wasDashing;       // ダッシュログ1回出力用
 
+    // --- 微弱ロックオン用バッファ（GC回避・全プレイヤーで共有）---
+    private static readonly Collider[] _softTargetBuffer = new Collider[32];
+
     /// <summary>
     /// ダッシュ状態か。連続移動時間が閾値を超えたら true
     /// M2-4b でダッシュ攻撃発動の条件として使う
@@ -447,6 +450,9 @@ public class PlayerMovement : NetworkBehaviour
             if (_egSystem != null) _egSystem.ProcessEG(input.ChargeHeld, input.GuardHeld);
             ProcessJump(input, true);
             ProcessDashTracking(input);
+            // 微弱ロックオン: 攻撃入力時にスティック入力なし → 最近敵に自動回転
+            if ((input.AttackPressed || input.ChargePressed || input.BreakPressed) && _comboSystem != null)
+                ApplySoftTarget(input.MoveInput);
             if (input.AttackPressed && _comboSystem != null)
             {
                 // ダッシュ状態 or ダッシュ攻撃中 → ダッシュ攻撃/ラッシュ優先
@@ -796,6 +802,118 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     // ============================================================
+    // 微弱ロックオン（ソフトターゲット）
+    // ============================================================
+
+    /// <summary>
+    /// 微弱ロックオン: 攻撃開始時にスティック入力がない場合、前方扇形内の最近敵に自動回転する
+    /// - スティック入力がある場合はプレイヤー方向が絶対優先（何もしない）
+    /// - プレイヤー/NPCの区別なし（近い敵に吸われる＝本家仕様）
+    /// - サーバー権威で実行（攻撃入力処理の直前に呼ぶ）
+    /// </summary>
+    private void ApplySoftTarget(Vector2 moveInput)
+    {
+        // スティック入力あり → プレイヤー方向が絶対優先
+        if (moveInput.sqrMagnitude > 0.01f) return;
+
+        // ジャンプ中・ガード中はスキップ
+        if (_isJumping || _isGuarding) return;
+
+        // TeamManager が未初期化ならスキップ
+        if (TeamManager.Instance == null) return;
+
+        Team myTeam = TeamManager.Instance.GetPlayerTeam(OwnerClientId);
+        Vector3 myPos = transform.position;
+        Vector3 myForward = transform.forward;
+
+        int count = Physics.OverlapSphereNonAlloc(myPos, GameConfig.SOFT_TARGET_RANGE, _softTargetBuffer);
+
+        float nearestDistSq = float.MaxValue;
+        Vector3 nearestPos = Vector3.zero;
+        bool found = false;
+
+        for (int i = 0; i < count; i++)
+        {
+            var col = _softTargetBuffer[i];
+            if (col.transform == transform) continue;
+
+            Vector3 targetPos = col.transform.position;
+
+            // 敵NPC判定
+            var npc = col.GetComponent<NPCSoldier>();
+            if (npc != null)
+            {
+                if (npc.IsDead) continue;
+                if (npc.SoldierTeam == myTeam) continue;
+
+                float distSq = HorizontalDistanceSq(myPos, targetPos);
+                if (distSq < nearestDistSq && IsInForwardCone(myPos, myForward, targetPos))
+                {
+                    nearestDistSq = distSq;
+                    nearestPos = targetPos;
+                    found = true;
+                }
+                continue;
+            }
+
+            // 敵プレイヤー判定
+            var netObj = col.GetComponent<NetworkObject>();
+            if (netObj == null) continue;
+            if (netObj.OwnerClientId == OwnerClientId) continue;
+
+            var hurtbox = col.GetComponent<HurtboxComponent>();
+            if (hurtbox == null) continue;
+
+            Team playerTeam = TeamManager.Instance.GetPlayerTeam(netObj.OwnerClientId);
+            if (playerTeam == myTeam) continue;
+
+            // Dead プレイヤー除外
+            var sm = col.GetComponent<CharacterStateMachine>();
+            if (sm != null && sm.CurrentState == CharacterState.Dead) continue;
+
+            float pDistSq = HorizontalDistanceSq(myPos, targetPos);
+            if (pDistSq < nearestDistSq && IsInForwardCone(myPos, myForward, targetPos))
+            {
+                nearestDistSq = pDistSq;
+                nearestPos = targetPos;
+                found = true;
+            }
+        }
+
+        if (!found) return;
+
+        // 最近敵の方向に即座に回転
+        Vector3 dir = nearestPos - myPos;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.001f)
+        {
+            float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+        }
+    }
+
+    /// <summary>前方扇形内に対象がいるか判定（Y軸無視）</summary>
+    private static bool IsInForwardCone(Vector3 origin, Vector3 forward, Vector3 target)
+    {
+        Vector3 toTarget = target - origin;
+        toTarget.y = 0f;
+        forward.y = 0f;
+
+        if (toTarget.sqrMagnitude < 0.001f) return false;
+
+        float angle = Vector3.Angle(forward, toTarget);
+        return angle <= GameConfig.SOFT_TARGET_ANGLE;
+    }
+
+    /// <summary>水平距離の2乗（比較用、sqrt 不要でパフォーマンス良好）</summary>
+    private static float HorizontalDistanceSq(Vector3 a, Vector3 b)
+    {
+        float dx = a.x - b.x;
+        float dz = a.z - b.z;
+        return dx * dx + dz * dz;
+    }
+
+    // ============================================================
     // 共通移動計算
     // ============================================================
 
@@ -887,6 +1005,10 @@ public class PlayerMovement : NetworkBehaviour
 
         // ダッシュ判定トラッキング
         ProcessDashTracking(input);
+
+        // 微弱ロックオン: 攻撃入力時にスティック入力なし → 最近敵に自動回転（サーバー権威）
+        if ((input.AttackPressed || input.ChargePressed || input.BreakPressed) && _comboSystem != null)
+            ApplySoftTarget(input.MoveInput);
 
         // 攻撃入力 → コンボシステムに委譲（サーバー権威）
         if (input.AttackPressed && _comboSystem != null)

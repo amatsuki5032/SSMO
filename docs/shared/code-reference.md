@@ -67,6 +67,8 @@
 | `ComboSystem` | 攻撃入力の委譲 |
 | `EGSystem` | EG入力処理の委譲 |
 | `MusouGauge` | 無双入力処理の委譲 |
+| `EnhancementRing` | 仙箪強化リング発動の委譲 |
+| `TeamManager.Instance` | 微弱ロックオン時の敵味方判定 |
 
 ---
 
@@ -163,6 +165,7 @@
 | 拠点HP回復 | `BASE_HP_REGEN_INTERVAL(1)` |
 | NPC停止 | `NPC_STOP_DISTANCE_SQ(1)` |
 | ブレイクチャージデフォルト | `DEFAULT_BREAK_CHARGE_DURATION(0.5)` |
+| 微弱ロックオン | `SOFT_TARGET_RANGE(10)`, `SOFT_TARGET_ANGLE(90)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
