@@ -307,8 +307,8 @@ NetworkVariable / RPC / GetComponent なし。
 | `ChargeHeld` | `bool` | △ 長押し（EG準備用） |
 | `MusouPressed` | `bool` | ○（押した瞬間） |
 | `MusouHeld` | `bool` | ○ 長押し（無双チャージ用） |
-| `EnhancePressed` | `bool` | R1（Eキー）仙箪強化リング発動 |
-| `BreakPressed` | `bool` | L2（Rキー）ブレイクチャージ（武器2攻撃） |
+| `EnhancePressed` | `bool` | R1（Iキー）仙箪強化リング発動 |
+| `BreakPressed` | `bool` | L2（Hキー）ブレイクチャージ（武器2攻撃） |
 | `Tick` | `uint` | ティック番号 |
 
 **主要 public メソッド**
