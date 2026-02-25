@@ -154,6 +154,15 @@
 | 燃焼 | `BURN_DAMAGE_PER_SEC(10)`, `BURN_TICK_INTERVAL(0.5)`, `BURN_DURATION(5)` |
 | 鈍足 | `SLOW_DURATION(5)`, `SLOW_SPEED_MULT(0.5)` |
 | 凍結 | `FREEZE_PROBABILITY(0.3)`, `FREEZE_DURATION(2.0)` |
+| 気絶 | `STUN_DURATION(3.0)` |
+| 感電 | `ELECTRIFIED_DURATION(2.0)`, `ELECTRIFIED_MAX_COMBO(10)` |
+| のけぞり物理 | `HITSTUN_DECEL_RATE(10)`, `SLAM_GRAVITY_MULTIPLIER(3)` |
+| 無双前進 | `MUSOU_HIT_INTERVAL_FRAMES(6)` |
+| ダッシュラッシュ | `DASH_RUSH_ADVANCE_RATIO(0.3)` |
+| 斬属性 | `SLASH_ATTACKER_MUSOU_COST_RATIO(0.5)` |
+| 拠点HP回復 | `BASE_HP_REGEN_INTERVAL(1)` |
+| NPC停止 | `NPC_STOP_DISTANCE_SQ(1)` |
+| ブレイクチャージデフォルト | `DEFAULT_BREAK_CHARGE_DURATION(0.5)` |
 | 攻撃前進距離 | `ADVANCE_N1〜N4(0.3)`, `ADVANCE_C1(0.5)`, `ADVANCE_C4(1.0)`, `ADVANCE_DASH_ATTACK(1.5)`, `ADVANCE_MUSOU_HIT(0.15)` |
 
 ---
@@ -459,6 +468,13 @@ NetworkVariable / RPC / GetComponent なし。
 | 項目 | 内容 |
 |------|------|
 | クラス名 | `EnhancementRing : NetworkBehaviour` |
+| 属性 | `[RequireComponent(typeof(ComboSystem))]` |
+
+**内部 enum**
+
+| 名前 | 説明 |
+|------|------|
+| `SlotEffect` | スロット効果種別（AtkUp, DefUp, MoveUp, SubGeneral, ComboEnhance） |
 
 **主要 public メソッド / プロパティ**
 
@@ -490,6 +506,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 取得先 | 用途 |
 |--------|------|
 | `ComboSystem` | 仙箪カウント参照・連撃強化 |
+| `UltimateEnhancement` | 究極強化の発動・死亡時リセット |
 
 ---
 
@@ -498,6 +515,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 項目 | 内容 |
 |------|------|
 | クラス名 | `UltimateEnhancement : NetworkBehaviour` |
+| 属性 | `[RequireComponent(typeof(ArmorSystem))]` |
 
 **主要 public メソッド / プロパティ**
 
@@ -524,19 +542,6 @@ NetworkVariable / RPC / GetComponent なし。
 | 取得先 | 用途 |
 |--------|------|
 | `ArmorSystem` | アーマーレベル+1の適用/復元 |
-
----
-
-### EnhancementRingHUD.cs
-
-| 項目 | 内容 |
-|------|------|
-| クラス名 | `EnhancementRingHUD : MonoBehaviour` |
-
-**主な機能**
-- クライアント専用UI（OnGUI）
-- 画面右下に仙箪カウント・リングスロット表示
-- リング回転中は現在スロットをハイライト
 
 ---
 
@@ -992,6 +997,34 @@ NetworkVariable / RPC / GetComponent なし。
 
 ---
 
+### EnhancementRingHUD.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `EnhancementRingHUD : MonoBehaviour`（クライアント専用UI） |
+
+**主要 public メソッド / プロパティ**
+
+なし（全て private。OnGUI で仙箪カウント・リングスロットを描画）
+
+**主な機能**
+- 画面右下に仙箪所持数・強化段階・連撃Lv表示
+- リング回転中はスロット一覧を横並び表示、現在位置を金色ハイライト
+- ローカルプレイヤーの EnhancementRing / ComboSystem を参照
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存**
+
+| 取得先 | 用途 |
+|--------|------|
+| `EnhancementRing`（ローカルプレイヤー） | リング状態・バフ回数表示 |
+| `ComboSystem`（ローカルプレイヤー） | 仙箪カウント・連撃Lv表示 |
+
+---
+
 ## Server/
 
 ### TeamManager.cs
@@ -1060,6 +1093,8 @@ NetworkVariable / RPC / GetComponent なし。
 | `MusouGauge` | 無双ゲージMAX |
 | `ReactionSystem` | リアクション物理リセット |
 | `StatusEffectManager` | 全状態異常クリア |
+| `EnhancementRing` | 全強化リセット（死亡時バフ消失） |
+| `ComboSystem` | 連撃強化リセット（EnhancementRing 未装備時のフォールバック） |
 | `TeamManager.Instance` | チーム情報取得 |
 
 ---
@@ -1096,6 +1131,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 項目 | 内容 |
 |------|------|
 | クラス名 | `BasePoint : NetworkBehaviour` |
+| 属性 | `[RequireComponent(typeof(SphereCollider))]` |
 
 **主要 public メソッド / プロパティ**
 
