@@ -180,6 +180,19 @@ public class PlayerMovement : NetworkBehaviour
 
         if (IsServer)
         {
+            // SpawnManager からチーム別スポーン位置を取得してテレポート
+            // CharacterController が有効だと transform.position 直接設定が効かないため一時無効化
+            if (SpawnManager.Instance != null && TeamManager.Instance != null)
+            {
+                Team team = TeamManager.Instance.GetPlayerTeam(OwnerClientId);
+                Vector3 spawnPos = SpawnManager.Instance.GetSpawnPosition(OwnerClientId, team);
+                _controller.enabled = false;
+                transform.position = spawnPos;
+                transform.rotation = Quaternion.Euler(0f, team == Team.Red ? 90f : -90f, 0f);
+                _controller.enabled = true;
+                Debug.Log($"[Spawn] テレポート完了: Client {OwnerClientId} → {spawnPos}");
+            }
+
             _netPosition.Value = transform.position;
             _netRotationY.Value = transform.eulerAngles.y;
 
