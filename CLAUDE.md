@@ -97,7 +97,8 @@ docs/
 │   ├── combat-spec.md          # ★ 戦闘仕様の正（Single Source of Truth）
 │   ├── code-reference.md       # コードAPI参照
 │   ├── unity-setup-checklist.md # Prefab/シーン手動設定チェックリスト
-│   └── ssmo-system-prompt.md   # 仕様収集用プロンプト
+│   ├── ssmo-system-prompt.md   # 仕様収集用プロンプト
+│   └── investigation-log.md    # バグ調査・技術検証の記録
 ├── design/                     # 設計メモ（参考用）
 │   ├── combat-design.md
 │   └── netcode-design.md
