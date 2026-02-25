@@ -244,36 +244,38 @@ public class PlayerMovement : NetworkBehaviour
         _inputV = Input.GetAxisRaw("Vertical");
 
         // ジャンプは押した瞬間のみ true にする（FixedUpdate で消費されるまで保持）
-        if (Input.GetKeyDown(KeyCode.Space))
+        // SSMO Online準拠: N or .(ピリオド)
+        if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Period))
             _jumpPressed = true;
 
         // ガードは押しっぱなしで true
-        _guardHeld = Input.GetKey(KeyCode.LeftShift);
+        // SSMO Online準拠: U or O
+        _guardHeld = Input.GetKey(KeyCode.U) || Input.GetKey(KeyCode.O);
 
-        // 攻撃は押した瞬間のみ true（FixedUpdate で消費されるまで保持）
-        if (Input.GetMouseButtonDown(0))
+        // 通常攻撃（Jキー）: 押した瞬間のみ true（FixedUpdate で消費されるまで保持）
+        if (Input.GetKeyDown(KeyCode.J))
             _attackPressed = true;
 
-        // チャージ攻撃（右クリック）も押した瞬間のみ true
-        if (Input.GetMouseButtonDown(1))
+        // チャージ攻撃（Kキー）: 押した瞬間のみ true
+        if (Input.GetKeyDown(KeyCode.K))
             _chargePressed = true;
 
         // チャージ長押し（EG準備用）
-        _chargeHeld = Input.GetMouseButton(1);
+        _chargeHeld = Input.GetKey(KeyCode.K);
 
-        // 無双（Q or 中クリック）: 押した瞬間
-        if (Input.GetKeyDown(KeyCode.Q) || Input.GetMouseButtonDown(2))
+        // 無双（Lキー）: 押した瞬間
+        if (Input.GetKeyDown(KeyCode.L))
             _musouPressed = true;
 
         // 無双長押し（MusouCharge 用）
-        _musouHeld = Input.GetKey(KeyCode.Q) || Input.GetMouseButton(2);
+        _musouHeld = Input.GetKey(KeyCode.L);
 
-        // R1（Eキー）: 仙箪強化リング発動
-        if (Input.GetKeyDown(KeyCode.E))
+        // R1（Iキー）: 仙箪強化リング発動
+        if (Input.GetKeyDown(KeyCode.I))
             _enhancePressed = true;
 
-        // L2（Rキー）: ブレイクチャージ（武器2攻撃）
-        if (Input.GetKeyDown(KeyCode.R))
+        // L2（Hキー）: ブレイクチャージ（武器2攻撃）
+        if (Input.GetKeyDown(KeyCode.H))
             _breakPressed = true;
     }
 
