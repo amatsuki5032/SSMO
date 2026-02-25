@@ -62,6 +62,15 @@ public class MapGenerator : MonoBehaviour
         float planeScale = GameConfig.MAP_SIZE / 10f;
         ground.transform.localScale = new Vector3(planeScale, 1f, planeScale);
 
+        // Plane は MeshCollider のみ（薄い面）なので、CharacterController のすり抜け防止用に BoxCollider を追加
+        // MeshCollider は削除して BoxCollider に統一（厚みがあるため確実に着地できる）
+        var meshCollider = ground.GetComponent<MeshCollider>();
+        if (meshCollider != null) Object.Destroy(meshCollider);
+        var boxCollider = ground.AddComponent<BoxCollider>();
+        // Plane のメッシュ範囲 = -5〜+5（スケール1で10m）。BoxCollider のサイズはローカル座標
+        boxCollider.size = new Vector3(10f, 0.1f, 10f);
+        boxCollider.center = new Vector3(0f, -0.05f, 0f); // 表面がY=0に一致するよう下にオフセット
+
         // 地面の色を設定（暗めグレー = キャラクターの視認性を優先）
         var renderer = ground.GetComponent<Renderer>();
         if (renderer != null)
