@@ -259,6 +259,14 @@ public class TeamManager : NetworkBehaviour
     // ============================================================
 
     /// <summary>
+    /// 指定プレイヤーにチームが割り当て済みかどうかを返す
+    /// </summary>
+    public bool IsTeamAssigned(ulong clientId)
+    {
+        return _teamCache.ContainsKey(clientId);
+    }
+
+    /// <summary>
     /// 指定プレイヤーのチームを取得
     /// </summary>
     /// <param name="clientId">対象のクライアントID</param>

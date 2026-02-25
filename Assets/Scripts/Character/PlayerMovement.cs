@@ -106,6 +106,9 @@ public class PlayerMovement : NetworkBehaviour
     // --- 微弱ロックオン用バッファ（GC回避・全プレイヤーで共有）---
     private static readonly Collider[] _softTargetBuffer = new Collider[32];
 
+    // --- チーム色（視認性改善）---
+    private bool _teamColorApplied;
+
     /// <summary>
     /// ダッシュ状態か。連続移動時間が閾値を超えたら true
     /// M2-4b でダッシュ攻撃発動の条件として使う
@@ -241,6 +244,9 @@ public class PlayerMovement : NetworkBehaviour
     /// </summary>
     private void Update()
     {
+        // チーム色の1回適用（全インスタンス対象・Owner以外も色を変える）
+        if (!_teamColorApplied) TryApplyTeamColor();
+
         if (!IsOwner) return;
 
         _inputH = Input.GetAxisRaw("Horizontal");
@@ -803,6 +809,37 @@ public class PlayerMovement : NetworkBehaviour
 
     // ============================================================
     // 微弱ロックオン（ソフトターゲット）
+    // ============================================================
+
+    /// <summary>
+    // ============================================================
+    // チーム色適用（視認性改善）
+    // ============================================================
+
+    /// <summary>
+    /// チーム色をプレイヤーのビジュアルに適用する（1回のみ）
+    /// TeamManager の割り当て完了後に反映。Update で毎フレーム試行し、成功したら停止
+    /// プレイヤー: 濃い赤/青、NPC: 薄い赤/青で視覚的に区別する
+    /// </summary>
+    private void TryApplyTeamColor()
+    {
+        if (TeamManager.Instance == null) return;
+        if (!TeamManager.Instance.IsTeamAssigned(OwnerClientId)) return;
+
+        Team team = TeamManager.Instance.GetPlayerTeam(OwnerClientId);
+        var renderer = GetComponentInChildren<Renderer>();
+        if (renderer == null) return;
+
+        renderer.material = new Material(Shader.Find("Standard"));
+        renderer.material.color = team == Team.Red
+            ? new Color(0.85f, 0.15f, 0.15f)   // 濃い赤（プレイヤー）
+            : new Color(0.15f, 0.15f, 0.85f);  // 濃い青（プレイヤー）
+
+        _teamColorApplied = true;
+    }
+
+    // ============================================================
+    // 微弱ロックオン
     // ============================================================
 
     /// <summary>

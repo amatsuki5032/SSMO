@@ -62,12 +62,12 @@ public class MapGenerator : MonoBehaviour
         float planeScale = GameConfig.MAP_SIZE / 10f;
         ground.transform.localScale = new Vector3(planeScale, 1f, planeScale);
 
-        // 地面の色を設定（暗めの緑 = 戦場の草原イメージ）
+        // 地面の色を設定（暗めグレー = キャラクターの視認性を優先）
         var renderer = ground.GetComponent<Renderer>();
         if (renderer != null)
         {
             renderer.material = new Material(Shader.Find("Standard"));
-            renderer.material.color = new Color(0.3f, 0.45f, 0.25f); // 暗緑色
+            renderer.material.color = new Color(0.25f, 0.25f, 0.28f); // 暗めグレー
         }
 
         // レイヤーをデフォルトに（地面判定はCharacterControllerが自動処理）

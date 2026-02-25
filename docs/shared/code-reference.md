@@ -1050,6 +1050,7 @@ NetworkVariable / RPC / GetComponent なし。
 | 名前 | 説明 |
 |------|------|
 | `static TeamManager Instance` | シングルトン |
+| `bool IsTeamAssigned(ulong)` | 指定プレイヤーにチームが割り当て済みか |
 | `Team GetPlayerTeam(ulong)` | 指定プレイヤーのチームを取得 |
 | `List<ulong> GetTeamMembers(Team)` | 指定チームのメンバー一覧を取得（コピー） |
 | `int GetTeamCount(Team)` | 指定チームの現在の人数を取得 |
