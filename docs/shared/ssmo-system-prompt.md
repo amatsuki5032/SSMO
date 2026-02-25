@@ -217,6 +217,23 @@ docs/
 git commit -m "[コミットメッセージ]"
 ```
 
+### 指示書作成時のチェック項目
+
+#### integration-test.md 更新
+- 新機能の実装指示を作る時、テスト可能な項目があれば
+  `docs/shared/integration-test.md` への追記もCCの指示に含めること
+- 追記内容: 該当マイルストーンセクションにチェックリスト形式で追加
+- 例: `- [ ] 究極強化の30秒バフが適用される`
+- テスト不可能な内部リファクタ等は不要
+
+#### code-reference.md 更新
+- public メソッド追加・変更、NetworkVariable 追加、新規ファイル作成時は
+  `docs/shared/code-reference.md` への更新もCCの指示に含めること
+
+#### 手動作業（🔧）の明示
+- Prefab への Add Component が必要な場合は指示書に 🔧 マークを付ける
+- Unity エディタ操作の具体手順を指示書末尾に記載する
+
 ---
 
 ## 📝 レスポンス形式
