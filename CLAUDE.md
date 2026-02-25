@@ -96,6 +96,7 @@ docs/
 ├── shared/                     # claude.ai プロジェクトナレッジと同期するファイル
 │   ├── combat-spec.md          # ★ 戦闘仕様の正（Single Source of Truth）
 │   ├── code-reference.md       # コードAPI参照
+│   ├── prefab-checklist.md     # Prefab/シーン手動設定チェックリスト
 │   └── ssmo-system-prompt.md   # 仕様収集用プロンプト
 ├── design/                     # 設計メモ（参考用）
 │   ├── combat-design.md
