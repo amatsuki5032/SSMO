@@ -268,8 +268,8 @@ public class PlayerMovement : NetworkBehaviour
         _inputV = Input.GetAxisRaw("Vertical");
 
         // ジャンプは押した瞬間のみ true にする（FixedUpdate で消費されるまで保持）
-        // SSMO Online準拠: N or .(ピリオド)
-        if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Period))
+        // SSMO Online準拠: N or .(ピリオド) + Space併存
+        if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Period) || Input.GetKeyDown(KeyCode.Space))
             _jumpPressed = true;
 
         // ガードは押しっぱなしで true
