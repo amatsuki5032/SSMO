@@ -20,6 +20,8 @@
 | `void Initialize(Transform)` | 追従対象を設定しカーソルロック |
 | `bool IsDebugFreeCamera` | デバッグ俯瞰カメラが有効か（Editor限定） |
 
+**デバッグ操作**: `T` キーで俯瞰フリーカメラ切替（Editor限定。旧 BackQuote から変更）
+
 **NetworkVariable / ServerRpc / ClientRpc**
 
 なし（MonoBehaviour。オーナー専用のローカルカメラ）
@@ -58,6 +60,8 @@
 |-----------|------|------|
 | `SubmitInputServerRpc(PlayerInput)` | ServerRpc | クライアント→サーバーへ統合入力送信 |
 | `ConfirmStateClientRpc(uint, Vector3, float, float)` | ClientRpc | サーバー確定状態をオーナーに返送（リコンシリエーション用） |
+
+**備考**: `OnNetworkSpawn()` でサーバー側が `SpawnManager.GetSpawnPosition()` を呼び、チーム別スポーン地点にテレポートする（CharacterController 一時無効化→position設定→再有効化）
 
 **依存（GetComponent）**
 
@@ -1306,21 +1310,23 @@ NetworkVariable / RPC / GetComponent なし。
 
 なし（全て private。Host の自プレイヤー上でのみ動作）
 
-**デバッグキー操作**
+**デバッグキー操作（使用頻度順に再配置済み）**
 
 | キー | 機能 |
 |------|------|
-| F1 | 相手を Hitstun トグル |
-| F2 | 相手を Launch トグル |
+| F1 | 相手を正面2mに瞬間移動 |
+| F2 | 全員HP全回復 + Dead復活 |
 | F3 | 自分の無双ゲージ MAX |
-| F4 | 相手を EG展開トグル（強制維持+ゲージ補充） |
-| F5 | 相手を自分の正面2mに瞬間移動 |
-| F6 | 相手にガード状態を強制トグル |
-| F7 | 自分のHPを20%に設定（真無双テスト用） |
-| F8 | 相手を自分の背面2mに移動（めくりテスト用） |
-| F9 | 全員のHP全回復 + Dead復活 |
+| F4 | 自分のHPを20%に設定（真無双テスト用） |
+| F5 | 相手にガード状態を強制トグル |
+| F6 | 相手を背面2mに移動（めくりテスト用） |
+| F7 | 相手を Hitstun トグル |
+| F8 | 相手を EG展開トグル（強制維持+ゲージ補充） |
+| F9 | 相手を Launch トグル |
 | F10 | 相手のアーマー段階を+1（ループ） |
+| F11 | 自分の武器2を変更（ループ） |
 | F12 | GUI表示トグル |
+| T | 俯瞰フリーカメラ トグル（CameraController） |
 
 **NetworkVariable / ServerRpc / ClientRpc**
 

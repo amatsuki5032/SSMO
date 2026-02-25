@@ -210,6 +210,7 @@ NPC 兵士（雑兵）。NPCSpawner の `_npcSoldierPrefab` に設定する。
 
 ### 注意事項
 
+- **シーンにデフォルトの Plane がある場合は削除すること**（MapGenerator が地面を自動生成するため、残っていると二重になりコライダーが干渉する）
 - **MapGenerator** が Awake で地面・壁・拠点・障害物を自動生成するため、手動でマップオブジェクトを配置する必要はない
 - **BasePoint** は MapGenerator が拠点生成時に動的に AddComponent するため、手動追加不要
 - **LagCompensationManager** はシングルトンで遅延初期化（`Instance` アクセス時に自動生成）のため、シーン配置不要
