@@ -44,8 +44,12 @@ else if (!_controller.isGrounded)
 #### 5. 対応履歴
 - `069cb237`: MeshCollider → BoxCollider に変更（すり抜け防止）
 
-### 結論
-コード上は問題なし。実際に発生した場合の確認ポイント:
-1. ParrelSync クローン側で MapGenerator がシーンに存在するか
-2. CharacterController の Skin Width / Step Offset（Prefab Inspector）
-3. Console ログで実際のスポーンY座標を確認
+### 結論（実際の原因を特定・修正済み）
+**原因**: `PlayerMovement.OnNetworkSpawn()` で `SpawnManager.GetSpawnPosition()` を呼んでいなかった。
+`transform.position` が原点 (0,0,0) のまま → 地面 (Y=0) と同じ高さで接地失敗 → 落下。
+
+**修正** (`5d85fe54`): `OnNetworkSpawn()` でサーバー側が `SpawnManager.GetSpawnPosition()` を呼び、
+CharacterController を一時無効化 → `transform.position` をスポーン地点にテレポート → 再有効化。
+
+上記の調査項目1〜4は全て正常だった（コライダー・重力・タイミングに問題なし）。
+根本原因はスポーン位置の未設定だった。
