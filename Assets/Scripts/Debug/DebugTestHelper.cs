@@ -144,6 +144,13 @@ public class DebugTestHelper : NetworkBehaviour
         var eg = target.GetComponent<EGSystem>();
         if (sm == null || eg == null) return;
 
+        // Dead状態ではEGトグル不可
+        if (sm.CurrentState == CharacterState.Dead)
+        {
+            _lastAction = "相手: Dead状態 (EG不可)";
+            return;
+        }
+
         if (sm.CurrentState == CharacterState.EGReady)
         {
             // EG解除 + 強制維持フラグOFF

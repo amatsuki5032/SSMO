@@ -95,6 +95,9 @@ public class EGSystem : NetworkBehaviour
 
         var state = _stateMachine.CurrentState;
 
+        // Dead状態ではEG処理をスキップ
+        if (state == CharacterState.Dead) return;
+
         // EGPrepare 中: タイマー加算 → 完了で EGReady
         if (state == CharacterState.EGPrepare)
         {
