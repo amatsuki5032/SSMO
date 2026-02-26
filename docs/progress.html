@@ -168,7 +168,7 @@ const PROGRESS_DATA = {
     m2: { progress: 100, status: "done" },
     m3: { progress: 100, status: "done" },
     m4: { progress: 100, status: "done" },
-    m5: { progress: 14, status: "active" },
+    m5: { progress: 28, status: "active" },
     m6: { progress: 0, status: "locked" },
   },
   m0Tasks: [
@@ -590,12 +590,13 @@ const PROGRESS_DATA = {
     {
       id: "m5-2",
       title: "Firestoreプレイヤーデータ",
-      status: "todo",
-      desc: "プレイヤーデータ永続化（ステータス・武器・戦績）",
+      status: "done",
+      desc: "PlayerDataManager実装・インメモリフォールバック（SDK導入待ち）",
       details: [
-        { text: "Firestoreデータ構造設計", done: false },
-        { text: "プレイヤーデータ読み書き", done: false },
-        { text: "鍛錬・武器・刻印データ永続化", done: false },
+        { text: "PlayerData構造体（武器・鍛錬・属性・刻印・戦績）", done: true },
+        { text: "PlayerDataManager.cs 新規作成（Load/Save/UpdateBattleResults）", done: true },
+        { text: "インメモリキャッシュ＆Firestoreフォールバック", done: true },
+        { text: "GameConfig.FIRESTORE_TIMEOUT_SEC 追加", done: true },
       ],
     },
     {

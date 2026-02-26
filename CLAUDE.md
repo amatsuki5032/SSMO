@@ -55,6 +55,7 @@ Unity 6.3 LTS (C#) + Netcode for GameObjects (NGO) で開発中。
 | `Shared/PlayerInput.cs` | PlayerInput | 入力構造体（INetworkSerializable。移動・攻撃・ガード・チャージ等） |
 | `Netcode/LagCompensationManager.cs` | LagCompensationManager | ラグコンペンセーション（ワールドスナップショット・Rewindスコープ） |
 | `Netcode/AuthManager.cs` | AuthManager | プレイヤー認証（Firebase Auth匿名認証・ダミーUIDフォールバック・接続承認） |
+| `Netcode/PlayerDataManager.cs` | PlayerDataManager | プレイヤーデータ永続化（Firestore・インメモリフォールバック・戦績管理） |
 | `Netcode/HelloNetwork.cs` | HelloNetwork | 接続UI（認証チェック・UID表示・Host/Client/Server接続） |
 | `UI/NetworkStatsHUD.cs` | NetworkStatsHUD | ネットワーク統計表示（RTT・PacketLoss） |
 | `UI/BattleHUD.cs` | BattleHUD | 戦闘HUD（自キャラHP・無双ゲージ・ターゲットHP） |

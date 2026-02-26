@@ -20,7 +20,6 @@
 ### INBOX転記
 
 ### M5: インフラ＆チート対策（7件）
-- [ ] M5-2: Firestoreプレイヤーデータ → instructions/m5-2.md
 - [ ] M5-3: Unity Relay接続 → instructions/m5-3.md 🔧Relay Service有効化+パッケージ追加
 - [ ] M5-4: ロビー＆マッチメイキング → instructions/m5-4.md 🔧Lobby Service有効化+パッケージ追加
 - [ ] M5-5: チート対策・入力バリデーション → instructions/m5-5.md
@@ -86,3 +85,4 @@
 | 2026-02-25 | デバッグ用俯瞰カメラ（`キーでトグル・WASD+ホイール自由移動） |
 | 2026-02-25 | 視認性改善（チーム色赤/青・地面暗めグレー・NPC色分け） |
 | 2026-02-26 | M5-1: Firebase Auth認証基盤 🔧 |
+| 2026-02-26 | M5-2: Firestoreプレイヤーデータ保存 |

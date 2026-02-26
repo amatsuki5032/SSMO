@@ -169,7 +169,7 @@
 | ダッシュラッシュ | `DASH_RUSH_ADVANCE_RATIO(0.3)` |
 | 斬属性 | `SLASH_ATTACKER_MUSOU_COST_RATIO(0.5)` |
 | 拠点HP回復 | `BASE_HP_REGEN_INTERVAL(1)` |
-| 認証 | `AUTH_TIMEOUT_SEC(10)` |
+| 認証・データ | `AUTH_TIMEOUT_SEC(10)`, `FIRESTORE_TIMEOUT_SEC(5)` |
 | スポーン無敵 | `SPAWN_INVINCIBLE_SEC(3)` |
 | NPC停止 | `NPC_STOP_DISTANCE_SQ(1)` |
 | ブレイクチャージデフォルト | `DEFAULT_BREAK_CHARGE_DURATION(0.5)` |
@@ -905,6 +905,41 @@ NetworkVariable / RPC / GetComponent なし。
 **依存（GetComponent）**
 
 なし（`NetworkManager.Singleton` を直接参照）
+
+---
+
+### PlayerDataManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `PlayerDataManager : MonoBehaviour`（シングルトン、DontDestroyOnLoad） |
+
+**内部クラス**
+
+| 名前 | 説明 |
+|------|------|
+| `PlayerData` | プレイヤーデータ（Firestoreドキュメント構造対応。武器・鍛錬・属性・戦績） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static PlayerDataManager Instance` | シングルトン |
+| `async Task<PlayerData> LoadPlayerData(string)` | UID指定でプレイヤーデータを読み込む（キャッシュ優先） |
+| `async Task SavePlayerData(string, PlayerData)` | プレイヤーデータを保存する |
+| `async Task UpdateBattleResults(string, int, int, bool)` | 戦績更新（kills, deaths, won） |
+| `PlayerData GetCachedData(string)` | キャッシュ済みデータを取得（ロード済みでなければnull） |
+| `void ClearCache()` | キャッシュクリア |
+
+**条件コンパイル**: `#if FIREBASE_FIRESTORE` でFirestore SDK依存コードを分離。未定義時はインメモリストレージで動作
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
+なし（`AuthManager.Instance` のUIDを引数として受け取る）
 
 ---
 
