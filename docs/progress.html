@@ -160,7 +160,7 @@
 // status: "done" | "inprogress" | "todo"
 // ============================================================
 const PROGRESS_DATA = {
-  lastUpdated: "2026-02-25",
+  lastUpdated: "2026-02-26",
   currentMilestone: "m5",
   milestones: {
     m0: { progress: 100, status: "done" },
@@ -168,7 +168,7 @@ const PROGRESS_DATA = {
     m2: { progress: 100, status: "done" },
     m3: { progress: 100, status: "done" },
     m4: { progress: 100, status: "done" },
-    m5: { progress: 0, status: "active" },
+    m5: { progress: 14, status: "active" },
     m6: { progress: 0, status: "locked" },
   },
   m0Tasks: [
@@ -577,12 +577,14 @@ const PROGRESS_DATA = {
     {
       id: "m5-1",
       title: "Firebase Auth認証",
-      status: "todo",
-      desc: "Firebase SDK導入・Console設定・認証フロー",
+      status: "done",
+      desc: "AuthManager実装・接続承認・ダミーUID（SDK導入待ち）",
       details: [
+        { text: "AuthManager.cs 新規作成（シングルトン・匿名認証・ダミーUIDフォールバック）", done: true },
+        { text: "HelloNetwork.cs 認証チェック追加（UID表示・ボタン無効化）", done: true },
+        { text: "ConnectionApprovalCallback（サーバー側UID検証）", done: true },
+        { text: "GameConfig.AUTH_TIMEOUT_SEC 追加", done: true },
         { text: "Firebase SDK導入＆Console設定", done: false },
-        { text: "メール/パスワード認証", done: false },
-        { text: "ゲスト認証（匿名ログイン）", done: false },
       ],
     },
     {

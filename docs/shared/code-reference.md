@@ -169,6 +169,7 @@
 | ダッシュラッシュ | `DASH_RUSH_ADVANCE_RATIO(0.3)` |
 | 斬属性 | `SLASH_ATTACKER_MUSOU_COST_RATIO(0.5)` |
 | 拠点HP回復 | `BASE_HP_REGEN_INTERVAL(1)` |
+| 認証 | `AUTH_TIMEOUT_SEC(10)` |
 | スポーン無敵 | `SPAWN_INVINCIBLE_SEC(3)` |
 | NPC停止 | `NPC_STOP_DISTANCE_SQ(1)` |
 | ブレイクチャージデフォルト | `DEFAULT_BREAK_CHARGE_DURATION(0.5)` |
@@ -876,6 +877,37 @@ NetworkVariable / RPC / GetComponent なし。
 
 ---
 
+### AuthManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `AuthManager : MonoBehaviour`（シングルトン、DontDestroyOnLoad） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static AuthManager Instance` | シングルトン |
+| `string CurrentUid` | 認証済みプレイヤーのUID（未認証時はnull） |
+| `bool IsAuthenticated` | 認証済みかどうか |
+| `event Action<bool> OnAuthStateChanged` | 認証状態変更イベント（true=認証済み） |
+| `byte[] GetConnectionPayload()` | 接続リクエスト用UIDペイロードを取得 |
+| `static string ExtractUidFromPayload(byte[])` | ペイロードからUIDを抽出（サーバー側） |
+| `void SetupConnectionApproval()` | ConnectionApprovalCallbackを設定（Host/Server起動前） |
+| `void RefreshToken()` | トークン強制リフレッシュ（FIREBASE_AUTH定義時のみ） |
+
+**条件コンパイル**: `#if FIREBASE_AUTH` でFirebase SDK依存コードを分離。未定義時はダミーUID（dev_xxxxxxxx）で動作
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
+なし（`NetworkManager.Singleton` を直接参照）
+
+---
+
 ### HelloNetwork.cs
 
 | 項目 | 内容 |
@@ -886,13 +918,19 @@ NetworkVariable / RPC / GetComponent なし。
 
 なし（全て private。OnGUI で Host/Client/Server 接続UI を表示）
 
+**主な機能**
+- 認証未完了時は「認証中...」表示でボタン無効化
+- 認証済みUID表示
+- Host/Server起動前にConnectionApprovalCallback設定
+- Client/Host接続前にUIDをConnectionDataに設定
+
 **NetworkVariable / ServerRpc / ClientRpc**
 
 なし（MonoBehaviour。NetworkBehaviour ではない）
 
 **依存（GetComponent）**
 
-なし（`NetworkManager.Singleton` を直接参照）
+なし（`NetworkManager.Singleton`, `AuthManager.Instance` を直接参照）
 
 ---
 

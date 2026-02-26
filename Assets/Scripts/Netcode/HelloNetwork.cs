@@ -2,9 +2,10 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// M0: 最初のネットワーク動作確認スクリプト
+/// M0: ネットワーク接続UIスクリプト
 /// 空の GameObject にアタッチして使用
 /// Host / Client / Server ボタンで接続テスト
+/// AuthManager による認証完了後にボタンが有効化される
 /// </summary>
 public class HelloNetwork : MonoBehaviour
 {
@@ -44,6 +45,7 @@ public class HelloNetwork : MonoBehaviour
 
     /// <summary>
     /// 接続UI（Host/Client/Server ボタン）と接続中の情報表示
+    /// 認証未完了時は「認証中...」を表示してボタンを無効化
     /// </summary>
     void OnGUI()
     {
@@ -55,18 +57,41 @@ public class HelloNetwork : MonoBehaviour
             GUILayout.Label("=== SSMO Network Test ===");
             GUILayout.Space(10);
 
+            // 認証状態チェック: AuthManager が存在し認証済みでないとボタン無効
+            bool isAuth = AuthManager.Instance != null && AuthManager.Instance.IsAuthenticated;
+
+            if (!isAuth)
+            {
+                GUILayout.Label("認証中...");
+                GUILayout.EndArea();
+                return;
+            }
+
+            GUILayout.Label($"UID: {AuthManager.Instance.CurrentUid}");
+            GUILayout.Space(5);
+
             if (GUILayout.Button("Host (Server + Client)", GUILayout.Height(40)))
+            {
+                SetupConnectionData();
+                AuthManager.Instance.SetupConnectionApproval();
                 NetworkManager.Singleton.StartHost();
+            }
 
             GUILayout.Space(5);
 
             if (GUILayout.Button("Client", GUILayout.Height(40)))
+            {
+                SetupConnectionData();
                 NetworkManager.Singleton.StartClient();
+            }
 
             GUILayout.Space(5);
 
             if (GUILayout.Button("Dedicated Server", GUILayout.Height(40)))
+            {
+                AuthManager.Instance.SetupConnectionApproval();
                 NetworkManager.Singleton.StartServer();
+            }
         }
         else
         {
@@ -78,6 +103,9 @@ public class HelloNetwork : MonoBehaviour
             GUILayout.Label($"Local Client ID: {NetworkManager.Singleton.LocalClientId}");
             GUILayout.Label($"Transport: {NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetType().Name}");
 
+            if (AuthManager.Instance != null)
+                GUILayout.Label($"UID: {AuthManager.Instance.CurrentUid}");
+
             GUILayout.Space(10);
 
             if (GUILayout.Button("Disconnect", GUILayout.Height(30)))
@@ -87,5 +115,17 @@ public class HelloNetwork : MonoBehaviour
         }
 
         GUILayout.EndArea();
+    }
+
+    /// <summary>
+    /// 接続前にUID認証ペイロードをConnectionDataに設定する
+    /// </summary>
+    private void SetupConnectionData()
+    {
+        if (AuthManager.Instance != null)
+        {
+            NetworkManager.Singleton.NetworkConfig.ConnectionData =
+                AuthManager.Instance.GetConnectionPayload();
+        }
     }
 }
