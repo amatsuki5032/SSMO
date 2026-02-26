@@ -231,6 +231,9 @@ public class CharacterStateMachine : NetworkBehaviour
     /// </summary>
     public bool CanAcceptInput(InputType input)
     {
+        // Dead状態では全入力を拒否（個別システム側でのチェック漏れを一括防止）
+        if (_state.Value == CharacterState.Dead) return false;
+
         return _state.Value switch
         {
             // === 基本行動 ===
