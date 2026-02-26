@@ -169,7 +169,7 @@
 | ダッシュラッシュ | `DASH_RUSH_ADVANCE_RATIO(0.3)` |
 | 斬属性 | `SLASH_ATTACKER_MUSOU_COST_RATIO(0.5)` |
 | 拠点HP回復 | `BASE_HP_REGEN_INTERVAL(1)` |
-| 認証・データ | `AUTH_TIMEOUT_SEC(10)`, `FIRESTORE_TIMEOUT_SEC(5)` |
+| 認証・データ・Relay | `AUTH_TIMEOUT_SEC(10)`, `FIRESTORE_TIMEOUT_SEC(5)`, `RELAY_REGION("asia-east")` |
 | スポーン無敵 | `SPAWN_INVINCIBLE_SEC(3)` |
 | NPC停止 | `NPC_STOP_DISTANCE_SQ(1)` |
 | ブレイクチャージデフォルト | `DEFAULT_BREAK_CHARGE_DURATION(0.5)` |
@@ -908,6 +908,34 @@ NetworkVariable / RPC / GetComponent なし。
 
 ---
 
+### RelayManager.cs
+
+| 項目 | 内容 |
+|------|------|
+| クラス名 | `RelayManager : MonoBehaviour`（シングルトン、DontDestroyOnLoad） |
+
+**主要 public メソッド / プロパティ**
+
+| 名前 | 説明 |
+|------|------|
+| `static RelayManager Instance` | シングルトン |
+| `string JoinCode` | ホスト側のJoinCode（読み取り専用） |
+| `bool IsRelayActive` | Relay経由接続が有効か |
+| `async Task<string> CreateRelay()` | Relayアロケーション作成 + JoinCode取得（ホスト側） |
+| `async Task<bool> JoinRelay(string)` | JoinCodeでRelay参加（クライアント側） |
+
+**条件コンパイル**: `#if UNITY_RELAY` でRelay SDK依存コードを分離。未定義時はlocalhost直結にフォールバック
+
+**NetworkVariable / ServerRpc / ClientRpc**
+
+なし（MonoBehaviour。NetworkBehaviour ではない）
+
+**依存（GetComponent）**
+
+なし（`NetworkManager.Singleton`, `UnityTransport` を直接参照）
+
+---
+
 ### PlayerDataManager.cs
 
 | 項目 | 内容 |
@@ -956,6 +984,9 @@ NetworkVariable / RPC / GetComponent なし。
 **主な機能**
 - 認証未完了時は「認証中...」表示でボタン無効化
 - 認証済みUID表示
+- Relay接続（本番）: Host=JoinCode表示、Client=JoinCode入力フィールド
+- Direct接続（UNITY_EDITOR限定）: localhost直結（ParrelSync テスト用）
+- Relay失敗時はDirect接続にフォールバック
 - Host/Server起動前にConnectionApprovalCallback設定
 - Client/Host接続前にUIDをConnectionDataに設定
 
@@ -965,7 +996,7 @@ NetworkVariable / RPC / GetComponent なし。
 
 **依存（GetComponent）**
 
-なし（`NetworkManager.Singleton`, `AuthManager.Instance` を直接参照）
+なし（`NetworkManager.Singleton`, `AuthManager.Instance`, `RelayManager.Instance` を直接参照）
 
 ---
 

@@ -348,9 +348,10 @@ public static class GameConfig
     // === NPC ===
     public const float NPC_STOP_DISTANCE_SQ = 1f;          // NPC停止距離の2乗（1m²）
 
-    // === 認証・データ ===
+    // === 認証・データ・Relay ===
     public const float AUTH_TIMEOUT_SEC = 10f;             // 認証タイムアウト (秒)
     public const float FIRESTORE_TIMEOUT_SEC = 5f;         // Firestoreタイムアウト (秒)
+    public const string RELAY_REGION = "asia-east";        // Relay最寄りリージョン
 
     // === スポーン無敵 ===
     public const float SPAWN_INVINCIBLE_SEC = 3f;         // リスポーン後の無敵時間 (秒)

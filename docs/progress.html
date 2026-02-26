@@ -168,7 +168,7 @@ const PROGRESS_DATA = {
     m2: { progress: 100, status: "done" },
     m3: { progress: 100, status: "done" },
     m4: { progress: 100, status: "done" },
-    m5: { progress: 28, status: "active" },
+    m5: { progress: 42, status: "active" },
     m6: { progress: 0, status: "locked" },
   },
   m0Tasks: [
@@ -602,11 +602,13 @@ const PROGRESS_DATA = {
     {
       id: "m5-3",
       title: "Unity Relay接続",
-      status: "todo",
-      desc: "Unity Relay Service経由のNAT越え接続",
+      status: "done",
+      desc: "RelayManager実装・HelloNetwork Relay/Direct切替（SDK導入待ち）",
       details: [
+        { text: "RelayManager.cs 新規作成（CreateRelay/JoinRelay・フォールバック）", done: true },
+        { text: "HelloNetwork.cs Relay/Direct UI切替（JoinCode入力・状態管理）", done: true },
+        { text: "GameConfig.RELAY_REGION 追加", done: true },
         { text: "Relay Service有効化＆パッケージ追加", done: false },
-        { text: "Relay接続フロー実装", done: false },
         { text: "NAT越え接続テスト", done: false },
       ],
     },
