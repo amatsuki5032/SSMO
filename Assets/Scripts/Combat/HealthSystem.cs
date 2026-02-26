@@ -38,6 +38,9 @@ public class HealthSystem : NetworkBehaviour
 
     private CharacterStateMachine _stateMachine;
 
+    // リスポーンタイマー（サーバーのみ。Dead遷移後にカウントダウンして自動リスポーン）
+    private float _respawnTimer;
+
     // ============================================================
     // ライフサイクル
     // ============================================================
@@ -53,6 +56,45 @@ public class HealthSystem : NetworkBehaviour
         {
             _maxHp.Value = GameConfig.DEFAULT_MAX_HP;
             _currentHp.Value = GameConfig.DEFAULT_MAX_HP;
+        }
+    }
+
+    // ============================================================
+    // リスポーンタイマー（★サーバー側で実行★）
+    // ============================================================
+
+    private void FixedUpdate()
+    {
+        if (!IsServer) return;
+        if (_respawnTimer <= 0f) return;
+
+        _respawnTimer -= GameConfig.FIXED_DELTA_TIME;
+        if (_respawnTimer > 0f) return;
+
+        _respawnTimer = 0f;
+        ExecuteRespawn();
+    }
+
+    /// <summary>
+    /// Dead後の自動リスポーンを実行する
+    /// SpawnManager.RespawnPlayer で HP全回復・無双MAX・強化リセット・テレポートを行う
+    /// </summary>
+    private void ExecuteRespawn()
+    {
+        var networkObject = GetComponent<NetworkObject>();
+        if (networkObject == null) return;
+
+        if (SpawnManager.Instance != null)
+        {
+            Debug.Log($"[HP] {gameObject.name} 自動リスポーン実行");
+            SpawnManager.Instance.RespawnPlayer(networkObject);
+        }
+        else
+        {
+            // SpawnManager がない場合のフォールバック（テスト環境等）
+            Debug.LogWarning("[HP] SpawnManager が見つかりません。最小限のリスポーンを実行");
+            FullHeal();
+            _stateMachine.ForceState(CharacterState.Idle);
         }
     }
 
@@ -82,11 +124,14 @@ public class HealthSystem : NetworkBehaviour
 
         Debug.Log($"[HP] {gameObject.name} が {damage} ダメージ → 残HP: {_currentHp.Value}/{_maxHp.Value}");
 
-        // HP 0 → 死亡
+        // HP 0 → 死亡 → リスポーンタイマー開始
         if (_currentHp.Value <= 0)
         {
             Debug.Log($"[HP] {gameObject.name} 死亡");
-            _stateMachine.TryChangeState(CharacterState.Dead);
+            if (_stateMachine.TryChangeState(CharacterState.Dead))
+            {
+                _respawnTimer = GameConfig.RESPAWN_DELAY;
+            }
         }
     }
 
