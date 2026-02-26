@@ -92,7 +92,7 @@ public class CharacterStateMachine : NetworkBehaviour
     /// 現在無敵状態か。サーバーが管理する
     /// Musou/TrueMusou/Getup は全フレーム無敵
     /// Jump/AirRecover はフレーム数で管理
-    /// スポーン無敵は独立タイマーで管理（攻撃しても解除されない）
+    /// スポーン無敵は独立タイマーで管理（能動的アクションで即解除）
     /// </summary>
     public bool IsInvincible => _isInvincible || _spawnInvincibleTimer > 0f;
 
@@ -166,6 +166,10 @@ public class CharacterStateMachine : NetworkBehaviour
         if (newState == CharacterState.Hitstun)
             _hitstunOverride = 0f;
 
+        // 能動的アクション（攻撃・ダッシュ等）ではスポーン無敵を即解除
+        if (IsOffensiveState(newState))
+            CancelSpawnInvincibility();
+
         return true;
     }
 
@@ -193,6 +197,39 @@ public class CharacterStateMachine : NetworkBehaviour
 
         _spawnInvincibleTimer = GameConfig.SPAWN_INVINCIBLE_SEC;
         Debug.Log($"[StateMachine] {gameObject.name}: スポーン無敵開始（{GameConfig.SPAWN_INVINCIBLE_SEC}秒）");
+    }
+
+    /// <summary>
+    /// 能動的アクション（攻撃・ダッシュ等）のステートか判定する
+    /// スポーン無敵の即解除判定に使用
+    /// </summary>
+    private static bool IsOffensiveState(CharacterState state)
+    {
+        return state switch
+        {
+            CharacterState.Attack => true,
+            CharacterState.Charge => true,
+            CharacterState.DashAttack => true,
+            CharacterState.DashRush => true,
+            CharacterState.BreakCharge => true,
+            CharacterState.JumpAttack => true,
+            CharacterState.MusouCharge => true,
+            CharacterState.Musou => true,
+            CharacterState.TrueMusou => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// スポーン無敵を即解除する（能動的アクション時に呼ばれる）
+    /// </summary>
+    private void CancelSpawnInvincibility()
+    {
+        if (_spawnInvincibleTimer > 0f)
+        {
+            _spawnInvincibleTimer = 0f;
+            Debug.Log($"[StateMachine] {gameObject.name}: スポーン無敵解除（能動的アクション）");
+        }
     }
 
     // ============================================================

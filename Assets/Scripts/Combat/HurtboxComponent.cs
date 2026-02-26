@@ -23,7 +23,10 @@ public class HurtboxComponent : NetworkBehaviour
     /// </summary>
     public bool IsInvincible()
     {
-        return _stateMachine != null && _stateMachine.IsInvincible;
+        if (_stateMachine == null) return false;
+        // Dead状態は無敵扱い（死体蹴り防止）
+        if (_stateMachine.CurrentState == CharacterState.Dead) return true;
+        return _stateMachine.IsInvincible;
     }
 
     /// <summary>

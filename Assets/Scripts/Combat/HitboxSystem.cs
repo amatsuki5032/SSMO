@@ -221,6 +221,10 @@ public class HitboxSystem : NetworkBehaviour
         // 自分自身を除外
         if (hurtbox.NetworkObjectId == NetworkObjectId) return;
 
+        // Dead状態のターゲットを除外（死体蹴り防止。HurtboxのIsInvincibleでも弾くが二重チェック）
+        var targetStateMachineForDead = hurtbox.GetComponent<CharacterStateMachine>();
+        if (targetStateMachineForDead != null && targetStateMachineForDead.CurrentState == CharacterState.Dead) return;
+
         // 無敵状態を除外
         if (hurtbox.IsInvincible()) return;
 
