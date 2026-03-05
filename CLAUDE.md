@@ -371,6 +371,9 @@ docs/
 - public メソッド追加・変更、NetworkVariable 追加、新規ファイル作成時は `docs/shared/code-reference.md` も更新すること
 - コミット時に code-reference.md の更新も含めること
 
+## SYNC-STATUS 更新ルール
+- `docs/SYNC-STATUS.md` の対象ファイルを更新した場合、該当行の「リポジトリ更新日」を更新し、PK版より新しければ状態を「⚠️ 要更新」に変更すること
+
 ## コミットルール
 - タスク完了時は自動で `git add -A && git commit && git push` まで実行すること
 - コミットメッセージ形式: "M[番号]-[サブ番号]: [タスク名]"
