@@ -372,7 +372,7 @@ docs/
 - コミット時に code-reference.md の更新も含めること
 
 ## SYNC-STATUS 更新ルール
-- `docs/SYNC-STATUS.md` の対象ファイルを更新した場合、該当行の「リポジトリ更新日」を更新し、PK版より新しければ状態を「⚠️ 要更新」に変更すること
+- `docs/shared/SYNC-STATUS.md` の対象ファイルを更新した場合、該当行の「リポジトリ更新日」を更新し、PK版より新しければ状態を「⚠️ 要更新」に変更すること
 
 ## コミットルール
 - タスク完了時は自動で `git add -A && git commit && git push` まで実行すること

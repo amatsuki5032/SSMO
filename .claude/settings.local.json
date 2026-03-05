@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cd:*)",
-      "WebFetch(domain:www.gamecity.ne.jp)"
+      "WebFetch(domain:www.gamecity.ne.jp)",
+      "Bash(mv:*)"
     ]
   }
 }
