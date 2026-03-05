@@ -6,20 +6,21 @@
 
 ## 対象ファイル一覧
 
-| ファイル | リポジトリの場所 | リポジトリ更新日 | PK版の更新日 | 状態 |
-|---------|----------------|----------------|------------|------|
-| CLAUDE.md | `CLAUDE.md` | 2026-03-05 | 2026-03-05 | ✅ 同期済み |
-| 戦闘仕様書 | `docs/shared/combat-spec.md` | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
-| コードリファレンス | `docs/shared/code-reference.md` | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
-| Unity設定チェックリスト | `docs/shared/unity-setup-checklist.md` | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
-| 仕様収集プロンプト | `docs/shared/ssmo-system-prompt.md` | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
-| 調査ログ | `docs/shared/investigation-log.md` | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
-| 統合テスト手順 | `docs/shared/integration-test.md` | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
-| 戦闘設計メモ | `docs/design/combat-design.md` | 2026-02-23 | 2026-03-05 | ✅ 同期済み |
-| ネットコード設計メモ | `docs/design/netcode-design.md` | 2026-02-23 | 2026-03-05 | ✅ 同期済み |
-| 進捗トラッカー | `docs/progress.html` | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
-| PKサマリー (v2) | `docs/SSMO-project-knowledge-v2.md` | 2026-02-23 | 2026-03-05 | ✅ 同期済み |
-| バックログ | `BACKLOG.md` | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
+| ファイル | リポジトリの場所 | PK上のファイル名 | リポジトリ更新日 | PK版の更新日 | 状態 |
+|---------|----------------|---------------|----------------|------------|------|
+| CLAUDE.md | `CLAUDE.md` | CLAUDE.md | 2026-03-05 | 2026-03-05 | ✅ 同期済み |
+| 戦闘仕様書 | `docs/shared/combat-spec.md` | combat-spec.md | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
+| コードリファレンス | `docs/shared/code-reference.md` | code-reference.md | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
+| Unity設定チェックリスト | `docs/shared/unity-setup-checklist.md` | unity-setup-checklist.md | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
+| 仕様収集プロンプト | `docs/shared/ssmo-system-prompt.md` | ssmo-system-prompt.md | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
+| 調査ログ | `docs/shared/investigation-log.md` | investigation-log.md | 2026-02-25 | 2026-03-05 | ✅ 同期済み |
+| 統合テスト手順 | `docs/shared/integration-test.md` | integration-test.md | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
+| 戦闘設計メモ | `docs/design/combat-design.md` | design-combat-design.md | 2026-02-23 | 2026-03-05 | ✅ 同期済み |
+| ネットコード設計メモ | `docs/design/netcode-design.md` | design-netcode-design.md | 2026-02-23 | 2026-03-05 | ✅ 同期済み |
+| 進捗トラッカー | `docs/progress.html` | progress.html | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
+| PKサマリー (v2) | `docs/SSMO-project-knowledge-v2.md` | SSMO-project-knowledge-v2.md | 2026-02-23 | 2026-03-05 | ✅ 同期済み |
+| バックログ | `BACKLOG.md` | BACKLOG.md | 2026-02-26 | 2026-03-05 | ✅ 同期済み |
+| PK同期状態 | `docs/shared/SYNC-STATUS.md` | SYNC-STATUS.md | 2026-03-05 | 2026-03-05 | ✅ 同期済み |
 
 ## 状態の定義
 

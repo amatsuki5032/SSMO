@@ -373,6 +373,11 @@ docs/
 
 ## SYNC-STATUS 更新ルール
 - `docs/shared/SYNC-STATUS.md` の対象ファイルを更新した場合、該当行の「リポジトリ更新日」を更新し、PK版より新しければ状態を「⚠️ 要更新」に変更すること
+- 対象ファイルを更新した場合、`python tools/export-for-pk.py` を実行し shared/ を最新化すること
+
+## PK更新手順
+1. `python tools/export-for-pk.py` を実行
+2. shared/ フォルダの中身をProject Knowledgeにアップロード
 
 ## コミットルール
 - タスク完了時は自動で `git add -A && git commit && git push` まで実行すること

@@ -49,3 +49,6 @@ Thumbs.db
 ParrelSync/
 
 *.slnx
+
+# PK export (tools/export-for-pk.py の出力先)
+/shared/
