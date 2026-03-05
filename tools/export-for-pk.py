@@ -31,6 +31,9 @@ def main():
         print("対象ファイルが見つかりませんでした")
         return
 
+    # エクスポート先を一度クリアして古いファイルが残らないようにする
+    if EXPORT_DIR.exists():
+        shutil.rmtree(EXPORT_DIR)
     EXPORT_DIR.mkdir(exist_ok=True)
 
     print(f"エクスポート先: {EXPORT_DIR}")
